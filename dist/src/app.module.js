@@ -10,8 +10,6 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
-const professionals_module_1 = require("../src/professionals/professionals.module");
-const patients_module_1 = require("./patients/patients.module");
 const users_module_1 = require("./users/users.module");
 let AppModule = class AppModule {
 };
@@ -21,8 +19,6 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
-            professionals_module_1.ProfessionalsModule,
-            patients_module_1.PatientsModule,
             users_module_1.UsersModule
         ],
     })

@@ -14,46 +14,46 @@ enum Role {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  name      String?
+  phone     String?
+  location  String?
+  bio       String?
   role      Role
-  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  patient      Patient?
-  professional Professional?
-  admin        Admin?
 }
 
-model Patient {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  name      String
-  birthDate DateTime?
-  phone     String?
-  notes     String?
-  createdAt DateTime @default(now())
+// --- Modelos comentados temporalmente hasta que se usen ---
+// model Patient {
+//   id        String   @id @default(uuid())
+//   userId    String   @unique
+//   name      String
+//   birthDate DateTime?
+//   phone     String?
+//   notes     String?
+//   createdAt DateTime @default(now())
+// 
+//   user User @relation(fields: [userId], references: [id])
+// }
 
-  user User @relation(fields: [userId], references: [id])
-}
+// model Professional {
+//   id                 String   @id @default(uuid())
+//   userId             String   @unique
+//   name               String
+//   specialties        String[]
+//   defaultDurationMin Int      @default(30)
+//   bufferMin          Int      @default(10)
+//   createdAt          DateTime @default(now())
+// 
+//   user User @relation(fields: [userId], references: [id])
+// }
 
-model Professional {
-  id                 String   @id @default(uuid())
-  userId             String   @unique
-  name               String
-  specialties        String[]
-  defaultDurationMin Int      @default(30)
-  bufferMin          Int      @default(10)
-  createdAt          DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-}
-
-model Admin {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  clinicId  String?
-  user      User     @relation(fields: [userId], references: [id])
-}
+// model Admin {
+//   id        String   @id @default(uuid())
+//   userId    String   @unique
+//   clinicId  String?
+//   user      User     @relation(fields: [userId], references: [id])
+// }

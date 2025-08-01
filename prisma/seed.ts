@@ -11,13 +11,7 @@ async function main() {
       email: 'paciente@clinera.io',
       password,
       role: 'PATIENT',
-      patient: {
-        create: {
-          name: 'Paciente Prueba',
-          birthDate: new Date('1990-01-01'),
-          phone: '1234567890',
-        },
-      },
+      name: 'Paciente Prueba',
     },
   });
 
@@ -26,14 +20,7 @@ async function main() {
       email: 'profesional@clinera.io',
       password,
       role: 'PROFESSIONAL',
-      professional: {
-        create: {
-          name: 'Dra. Profesional',
-          specialties: ['dermatología'],
-          defaultDurationMin: 30,
-          bufferMin: 10,
-        },
-      },
+      name: 'Dra. Profesional',
     },
   });
 
@@ -42,11 +29,7 @@ async function main() {
       email: 'admin@clinera.io',
       password,
       role: 'ADMIN',
-      admin: {
-        create: {
-          clinicId: null,
-        },
-      },
+      name: 'Admin General',
     },
   });
 }

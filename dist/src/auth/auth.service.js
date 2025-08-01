@@ -73,14 +73,19 @@ let AuthService = class AuthService {
         return { access_token: this.jwtService.sign(payload) };
     }
     async register(dto) {
+        const role = dto.role.toUpperCase();
+        if (!['ADMIN', 'RECEPCIONIST', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
+            throw new common_1.BadRequestException('Rol inválido');
+        }
         const hashed = await bcrypt.hash(dto.password, 10);
         const user = await this.prisma.user.create({
             data: {
                 email: dto.email,
                 password: hashed,
-                role: dto.role,
+                role: role,
             },
         });
+        console.log("PASS", user.password);
         return this.login(user);
     }
 };

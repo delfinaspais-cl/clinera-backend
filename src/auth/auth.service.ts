@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,15 +34,23 @@ export class AuthService {
   }
 
   async register(dto: RegisterAuthDto) {
-    const hashed = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashed,
-        role: dto.role as any,
-      },
-    });
-    return this.login(user);
+  const role = dto.role.toUpperCase(); // normaliza
+  if (!['ADMIN', 'RECEPCIONIST', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
+    throw new BadRequestException('Rol inválido');
   }
+
+  const hashed = await bcrypt.hash(dto.password, 10);
+  const user = await this.prisma.user.create({
+    data: {
+      email: dto.email,
+      password: hashed,
+      role: role as any,
+    },
+  });
+  console.log("PASS", user.password)
+
+  return this.login(user);
+}
+
 }
 
