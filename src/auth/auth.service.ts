@@ -34,23 +34,40 @@ export class AuthService {
   }
 
   async register(dto: RegisterAuthDto) {
-  const role = dto.role.toUpperCase(); // normaliza
-  if (!['ADMIN', 'RECEPCIONIST', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
-    throw new BadRequestException('Rol inválido');
+    try {
+      const role = dto.role.toUpperCase(); // normaliza
+      if (!['ADMIN', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
+        throw new BadRequestException('Rol inválido');
+      }
+
+      // Verificar si el email ya existe
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email }
+      });
+
+      if (existingUser) {
+        throw new BadRequestException('El email ya está registrado');
+      }
+
+      const hashed = await bcrypt.hash(dto.password, 10);
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashed,
+          name: dto.name,
+          role: role as any,
+        },
+      });
+
+      return this.login(user);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en registro:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
   }
-
-  const hashed = await bcrypt.hash(dto.password, 10);
-  const user = await this.prisma.user.create({
-    data: {
-      email: dto.email,
-      password: hashed,
-      role: role as any,
-    },
-  });
-  console.log("PASS", user.password)
-
-  return this.login(user);
-}
 
 }
 
