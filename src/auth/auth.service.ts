@@ -35,9 +35,17 @@ export class AuthService {
 
   async register(dto: RegisterAuthDto) {
     try {
+      // Debug: Log de los datos recibidos
+      console.log('Datos recibidos en registro:', JSON.stringify(dto, null, 2));
+      
+      // Validar que el campo role existe
+      if (!dto.role) {
+        throw new BadRequestException('El campo "role" es requerido');
+      }
+
       const role = dto.role.toUpperCase(); // normaliza
       if (!['ADMIN', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
-        throw new BadRequestException('Rol inválido');
+        throw new BadRequestException(`Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN`);
       }
 
       // Verificar si el email ya existe
