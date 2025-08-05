@@ -11,6 +11,50 @@ enum Role {
   PATIENT
   PROFESSIONAL
   ADMIN
+  OWNER
+  SECRETARY
+}
+
+model Clinica {
+  id              String   @id @default(cuid())
+  name            String
+  url             String   @unique
+  address         String?
+  phone           String?
+  email           String?
+  logo            String?
+  colorPrimario   String?  @default("#3B82F6")
+  colorSecundario String?  @default("#1E40AF")
+  estado          String?  @default("activa")
+  estadoPago      String?  @default("pagado")
+  fechaCreacion   DateTime @default(now())
+  ultimoPago      DateTime?
+  proximoPago     DateTime?
+  horarios        String?
+  especialidades  String?  // JSON string para almacenar array
+  descripcion     String?
+  contacto        String?  // JSON object
+  rating          Float?   @default(4.5)
+  stats           String?  // JSON object
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  users User[]
+  mensajes Mensaje[]
+  turnos Turno[]
+}
+
+model Mensaje {
+  id        String   @id @default(cuid())
+  asunto    String
+  mensaje   String
+  tipo      String   // "pago" | "soporte" | "general"
+  leido     Boolean  @default(false)
+  clinicaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  clinica Clinica @relation(fields: [clinicaId], references: [id])
 }
 
 model User {
@@ -22,8 +66,30 @@ model User {
   location  String?
   bio       String?
   role      Role
+  clinicaId String?
+  estado    String?  @default("activo")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+}
+
+model Turno {
+  id            String   @id @default(cuid())
+  paciente      String
+  email         String
+  telefono      String?
+  especialidad  String
+  doctor        String
+  fecha         DateTime
+  hora          String
+  estado        String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
+  motivo        String?
+  clinicaId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  clinica Clinica @relation(fields: [clinicaId], references: [id])
 }
 
 // --- Modelos comentados temporalmente hasta que se usen ---

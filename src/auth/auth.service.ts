@@ -4,6 +4,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { OwnerLoginDto } from './dto/owner-login.dto';
+import { ClinicaLoginDto } from './dto/clinica-login.dto';
 
 @Injectable()
 export class AuthService {
@@ -44,8 +46,8 @@ export class AuthService {
       }
 
       const role = dto.role.toUpperCase(); // normaliza
-      if (!['ADMIN', 'PROFESSIONAL', 'PATIENT'].includes(role)) {
-        throw new BadRequestException(`Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN`);
+      if (!['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'].includes(role)) {
+        throw new BadRequestException(`Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`);
       }
 
       // Verificar si el email ya existe
@@ -75,6 +77,133 @@ export class AuthService {
       console.error('Error en registro:', error);
       throw new BadRequestException('Error interno del servidor');
     }
+  }
+
+  async ownerLogin(dto: OwnerLoginDto) {
+    try {
+      // Buscar usuario por username (que será el email para owners)
+      const user = await this.prisma.user.findUnique({ 
+        where: { email: dto.username } 
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+
+      // Verificar que sea un OWNER
+      if (user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo propietarios pueden acceder.');
+      }
+
+      // Verificar contraseña
+      const isValidPassword = await bcrypt.compare(dto.password, user.password);
+      if (!isValidPassword) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+
+      // Generar token
+      const payload = { 
+        sub: user.id, 
+        email: user.email, 
+        role: user.role,
+        name: user.name 
+      };
+      
+      const token = this.jwtService.sign(payload);
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          email: user.email
+        }
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error en owner login:', error);
+      throw new UnauthorizedException('Error interno del servidor');
+    }
+  }
+
+  async ownerLogout(token: string) {
+    // En una implementación real, aquí podrías invalidar el token
+    // Por ahora, solo retornamos éxito
+    return { success: true };
+  }
+
+  async clinicaLogin(dto: ClinicaLoginDto) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: dto.clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new UnauthorizedException('Clínica no encontrada');
+      }
+
+      // Buscar usuario por username (email) y clínica
+      const user = await this.prisma.user.findFirst({
+        where: { 
+          email: dto.username,
+          clinicaId: clinica.id
+        },
+        include: {
+          clinica: true
+        }
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+
+      // Verificar contraseña
+      const isValidPassword = await bcrypt.compare(dto.password, user.password);
+      if (!isValidPassword) {
+        throw new UnauthorizedException('Credenciales inválidas');
+      }
+
+      // Generar token
+      const payload = { 
+        sub: user.id, 
+        email: user.email, 
+        role: user.role,
+        name: user.name,
+        clinicaId: user.clinicaId,
+        clinicaUrl: clinica.url
+      };
+      
+      const token = this.jwtService.sign(payload);
+
+      return {
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          clinicaId: user.clinicaId,
+          clinicaUrl: clinica.url
+        }
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error en clínica login:', error);
+      throw new UnauthorizedException('Error interno del servidor');
+    }
+  }
+
+  async clinicaLogout(token: string) {
+    // En una implementación real, aquí podrías invalidar el token
+    // Por ahora, solo retornamos éxito
+    return { success: true };
   }
 
 }

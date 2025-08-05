@@ -4,6 +4,9 @@ import { AuthModule } from './auth/auth.module';
 // import { ProfessionalsModule } from '../src/professionals/professionals.module';
 // import { PatientsModule } from './patients/patients.module';
 import { UsersModule } from './users/users.module';
+import { OwnersModule } from './owners/owners.module';
+import { ClinicasModule } from './clinicas/clinicas.module';
+import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
@@ -11,7 +14,10 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     // ProfessionalsModule,
     // PatientsModule,
-    UsersModule
+    UsersModule,
+    OwnersModule,
+    ClinicasModule,
+    PublicModule
     // otros módulos
   ],
 })
