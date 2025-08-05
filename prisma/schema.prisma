@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -16,44 +16,44 @@ enum Role {
 }
 
 model Clinica {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   name            String
-  url             String   @unique
+  url             String    @unique
   address         String?
   phone           String?
   email           String?
   logo            String?
-  colorPrimario   String?  @default("#3B82F6")
-  colorSecundario String?  @default("#1E40AF")
-  estado          String?  @default("activa")
-  estadoPago      String?  @default("pagado")
-  fechaCreacion   DateTime @default(now())
+  colorPrimario   String?   @default("#3B82F6")
+  colorSecundario String?   @default("#1E40AF")
+  estado          String?   @default("activa")
+  estadoPago      String?   @default("pagado")
+  fechaCreacion   DateTime  @default(now())
   ultimoPago      DateTime?
   proximoPago     DateTime?
   horarios        String?
-  especialidades  String?  // JSON string para almacenar array
+  especialidades  String? // JSON string para almacenar array
   descripcion     String?
-  contacto        String?  // JSON object
-  rating          Float?   @default(4.5)
-  stats           String?  // JSON object
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  users User[]
+  contacto        String? // JSON object
+  rating          Float?    @default(4.5)
+  stats           String? // JSON object
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  users    User[]
   mensajes Mensaje[]
-  turnos Turno[]
+  turnos   Turno[]
 }
 
 model Mensaje {
   id        String   @id @default(cuid())
   asunto    String
   mensaje   String
-  tipo      String   // "pago" | "soporte" | "general"
+  tipo      String // "pago" | "soporte" | "general"
   leido     Boolean  @default(false)
   clinicaId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   clinica Clinica @relation(fields: [clinicaId], references: [id])
 }
 
@@ -70,52 +70,67 @@ model User {
   estado    String?  @default("activo")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+
+  clinica      Clinica?      @relation(fields: [clinicaId], references: [id])
+  patient      Patient?
+  professional Professional?
 }
 
 model Turno {
-  id            String   @id @default(cuid())
-  paciente      String
-  email         String
-  telefono      String?
-  especialidad  String
-  doctor        String
-  fecha         DateTime
-  hora          String
-  estado        String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
-  motivo        String?
-  clinicaId     String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
+  id           String   @id @default(cuid())
+  paciente     String
+  email        String
+  telefono     String?
+  especialidad String
+  doctor       String
+  fecha        DateTime
+  hora         String
+  estado       String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
+  motivo       String?
+  clinicaId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   clinica Clinica @relation(fields: [clinicaId], references: [id])
 }
 
-// --- Modelos comentados temporalmente hasta que se usen ---
-// model Patient {
-//   id        String   @id @default(uuid())
-//   userId    String   @unique
-//   name      String
-//   birthDate DateTime?
-//   phone     String?
-//   notes     String?
-//   createdAt DateTime @default(now())
-// 
-//   user User @relation(fields: [userId], references: [id])
-// }
+model Patient {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  name      String
+  birthDate DateTime?
+  phone     String?
+  notes     String?
+  createdAt DateTime  @default(now())
 
-// model Professional {
-//   id                 String   @id @default(uuid())
-//   userId             String   @unique
-//   name               String
-//   specialties        String[]
-//   defaultDurationMin Int      @default(30)
-//   bufferMin          Int      @default(10)
-//   createdAt          DateTime @default(now())
-// 
-//   user User @relation(fields: [userId], references: [id])
-// }
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Professional {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  name               String
+  specialties        String[]
+  defaultDurationMin Int      @default(30)
+  bufferMin          Int      @default(10)
+  notes              String?    // 👈 AGREGÁ ESTA LÍNEA
+  createdAt          DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id])
+  agendas Agenda[]
+}
+
+model Agenda {
+  id             String   @id @default(uuid())
+  professionalId String
+  dia            String   // Ej: "LUNES", "MARTES"
+  horaInicio     String   // "08:00"
+  horaFin        String   // "12:00"
+  duracionMin    Int
+  createdAt      DateTime @default(now())
+
+  professional  Professional @relation(fields: [professionalId], references: [id])
+}
 
 // model Admin {
 //   id        String   @id @default(uuid())

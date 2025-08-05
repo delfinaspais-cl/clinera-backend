@@ -39,4 +39,13 @@ export class UsersService {
     },
   });
  }
+
+ async findPatients() {
+  return this.prisma.user.findMany({
+    where: {
+      role: 'PATIENT',
+    },
+  });
+}
+
 }

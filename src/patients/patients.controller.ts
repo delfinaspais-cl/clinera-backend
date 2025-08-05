@@ -1,14 +1,50 @@
-// import { Controller, Get, UseGuards, Req } from '@nestjs/common';
-// import { JwtAuthGuard } from '../auth/jwt.auth.guard';
-// import { PatientsService } from './patients.service';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt.auth.guard';
+import { PatientsService } from './patients.service';
+import { CreatePatientDto } from './dto/create-patient.dto';
+import { UpdatePatientDto } from './dto/update-client.dto';
 
-// @Controller('patients')
-// @UseGuards(JwtAuthGuard)
-// export class PatientsController {
-//   constructor(private readonly patientsService: PatientsService) {}
+@UseGuards(JwtAuthGuard)
+@Controller('clinica/:clinicaUrl/pacientes')
+export class PatientsController {
+  constructor(private readonly patientsService: PatientsService) {}
 
-//   @Get()
-//   findAll(@Req() req) {
-//     return this.patientsService.findAll(); // req.user para acceder a los datos del token
-//   }
-// }
+  @Get()
+  findAll(@Param('clinicaUrl') clinicaUrl: string) {
+    return this.patientsService.findAll(clinicaUrl);
+  }
+
+  @Post()
+  create(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreatePatientDto,
+  ) {
+    return this.patientsService.create(clinicaUrl, dto);
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+  ) {
+    return this.patientsService.findOne(clinicaUrl, id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+    @Body() dto: UpdatePatientDto,
+  ) {
+    return this.patientsService.update(clinicaUrl, id, dto);
+  }
+}

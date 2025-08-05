@@ -1,20 +1,46 @@
-// import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-// import { ProfessionalsService } from './professionals.service';
-// import { CreateProfessionalDto } from './dto/create-professional.dto';
-// import { JwtAuthGuard } from '../auth/jwt.auth.guard';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
+import { ProfessionalsService } from './professionals.service';
+import { CreateProfessionalDto } from './dto/create-professional.dto';
+import { UpdateProfessionalDto } from './dto/update-professional.dto';
+import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
-// @Controller('professionals')
-// @UseGuards(JwtAuthGuard)
-// export class ProfessionalsController {
-//   constructor(private readonly professionalsService: ProfessionalsService) {}
+@UseGuards(JwtAuthGuard)
+@Controller('clinica/:clinicaUrl/profesionales')
+export class ProfessionalsController {
+  constructor(private readonly professionalsService: ProfessionalsService) {}
 
-//   @Post()
-//   create(@Body() dto: CreateProfessionalDto) {
-//     return this.professionalsService.create(dto);
-//   }
+  @Get()
+  findAll(@Param('clinicaUrl') clinicaUrl: string) {
+    return this.professionalsService.findAll(clinicaUrl);
+  }
 
-//   @Get()
-//   findAll() {
-//     return this.professionalsService.findAll();
-//   }
-// }
+  @Post()
+  create(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreateProfessionalDto,
+  ) {
+    return this.professionalsService.create(clinicaUrl, dto);
+  }
+
+  @Get(':id')
+  findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
+    return this.professionalsService.findOne(clinicaUrl, id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateProfessionalDto,
+  ) {
+    return this.professionalsService.update(clinicaUrl, id, dto);
+  }
+}

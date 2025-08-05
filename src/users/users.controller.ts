@@ -23,4 +23,9 @@ export class UsersController {
 updateMe(@Request() req, @Body() dto: UpdateProfileDto) {
   return this.usersService.updateProfile(req.user.id, dto);
  }
+
+ @Get('patients')
+async findAllPatients() {
+  return this.usersService.findPatients();
+}
 }

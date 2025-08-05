@@ -1,31 +1,33 @@
-import {
-  IsEmail,
-  IsString,
-  IsArray,
-  IsOptional,
-  IsNumber,
-  MinLength,
-} from 'class-validator';
+// src/professionals/dto/create-professional.dto.ts
+import { IsArray, IsInt, IsOptional, IsString, IsEmail } from 'class-validator';
 
 export class CreateProfessionalDto {
-  @IsEmail()
-  email: string;
-
-  @MinLength(6)
-  password: string;
-
+  // Campos para User
   @IsString()
   name: string;
 
-  @IsArray()
-  @IsOptional()
-  specialties?: string[];
+  @IsString()
+  phone: string;
 
-  @IsNumber()
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  password: string;
+
+  // Campos para Professional
+  @IsArray()
+  specialties: string[];
+
   @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsInt()
   defaultDurationMin?: number;
 
-  @IsNumber()
   @IsOptional()
+  @IsInt()
   bufferMin?: number;
 }
