@@ -361,44 +361,49 @@ export class ClinicasService {
   }
 
   async getClinicaConfiguracion(clinicaUrl: string) {
-    try {
-      // Buscar la clínica por URL
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl }
-      });
+  try {
+    // Buscar la clínica por URL incluyendo relaciones
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+      include: {
+        horarios: true,
+        especialidades: true,
+      },
+    });
 
-      if (!clinica) {
-        throw new BadRequestException('Clínica no encontrada');
-      }
-
-      // Transformar los datos para el formato requerido
-      const clinicaFormateada = {
-        id: clinica.id,
-        nombre: clinica.name,
-        url: clinica.url,
-        colorPrimario: clinica.colorPrimario,
-        colorSecundario: clinica.colorSecundario,
-        direccion: clinica.address,
-        telefono: clinica.phone,
-        email: clinica.email,
-        horarios: clinica.horarios,
-        especialidades: clinica.especialidades ? JSON.parse(clinica.especialidades) : [],
-        descripcion: clinica.descripcion,
-        contacto: clinica.contacto ? JSON.parse(clinica.contacto) : {}
-      };
-
-      return {
-        success: true,
-        clinica: clinicaFormateada
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      console.error('Error al obtener configuración de clínica:', error);
-      throw new BadRequestException('Error interno del servidor');
+    if (!clinica) {
+      throw new BadRequestException('Clínica no encontrada');
     }
+
+    // Transformar los datos para el formato requerido
+    const clinicaFormateada = {
+      id: clinica.id,
+      nombre: clinica.name,
+      url: clinica.url,
+      colorPrimario: clinica.colorPrimario,
+      colorSecundario: clinica.colorSecundario,
+      direccion: clinica.address,
+      telefono: clinica.phone,
+      email: clinica.email,
+      horarios: clinica.horarios,
+      especialidades: clinica.especialidades,
+      descripcion: clinica.descripcion,
+      contacto: clinica.contacto ? JSON.parse(clinica.contacto) : {}
+    };
+
+    return {
+      success: true,
+      clinica: clinicaFormateada
+    };
+  } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    console.error('Error al obtener configuración de clínica:', error);
+    throw new BadRequestException('Error interno del servidor');
   }
+}
+
 
   async updateClinicaConfiguracion(clinicaUrl: string, dto: UpdateClinicaConfiguracionDto) {
     try {
@@ -457,76 +462,80 @@ export class ClinicasService {
   }
 
   async getClinicaLanding(clinicaUrl: string) {
-    try {
-      // Buscar la clínica por URL
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl }
-      });
+  try {
+    // Buscar la clínica por URL incluyendo relaciones
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+      include: {
+        horarios: true,
+        especialidades: true,
+      },
+    });
 
-      if (!clinica) {
-        throw new BadRequestException('Clínica no encontrada');
-      }
-
-      // Obtener turnos disponibles (confirmados) para los próximos 7 días
-      const fechaInicio = new Date();
-      const fechaFin = new Date();
-      fechaFin.setDate(fechaFin.getDate() + 7);
-
-      const turnosDisponibles = await this.prisma.turno.findMany({
-        where: {
-          clinicaId: clinica.id,
-          estado: 'confirmado',
-          fecha: {
-            gte: fechaInicio,
-            lte: fechaFin
-          }
-        },
-        orderBy: [
-          { fecha: 'asc' },
-          { hora: 'asc' }
-        ],
-        take: 10 // Limitar a 10 turnos
-      });
-
-      // Transformar los datos para el formato requerido
-      const clinicaFormateada = {
-        id: clinica.id,
-        nombre: clinica.name,
-        url: clinica.url,
-        logo: clinica.logo,
-        colorPrimario: clinica.colorPrimario,
-        colorSecundario: clinica.colorSecundario,
-        descripcion: clinica.descripcion,
-        direccion: clinica.address,
-        telefono: clinica.phone,
-        email: clinica.email,
-        horarios: clinica.horarios,
-        especialidades: clinica.especialidades ? JSON.parse(clinica.especialidades) : [],
-        rating: clinica.rating,
-        stats: clinica.stats ? JSON.parse(clinica.stats) : {}
-      };
-
-      // Transformar turnos disponibles
-      const turnosFormateados = turnosDisponibles.map(turno => ({
-        fecha: turno.fecha.toISOString().split('T')[0],
-        hora: turno.hora,
-        especialidad: turno.especialidad,
-        doctor: turno.doctor
-      }));
-
-      return {
-        success: true,
-        clinica: clinicaFormateada,
-        turnosDisponibles: turnosFormateados
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      console.error('Error al obtener datos de landing de clínica:', error);
-      throw new BadRequestException('Error interno del servidor');
+    if (!clinica) {
+      throw new BadRequestException('Clínica no encontrada');
     }
+
+    // Obtener turnos disponibles (confirmados) para los próximos 7 días
+    const fechaInicio = new Date();
+    const fechaFin = new Date();
+    fechaFin.setDate(fechaFin.getDate() + 7);
+
+    const turnosDisponibles = await this.prisma.turno.findMany({
+      where: {
+        clinicaId: clinica.id,
+        estado: 'confirmado',
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin
+        }
+      },
+      orderBy: [
+        { fecha: 'asc' },
+        { hora: 'asc' }
+      ],
+      take: 10 // Limitar a 10 turnos
+    });
+
+    // Transformar los datos para el formato requerido
+    const clinicaFormateada = {
+      id: clinica.id,
+      nombre: clinica.name,
+      url: clinica.url,
+      logo: clinica.logo,
+      colorPrimario: clinica.colorPrimario,
+      colorSecundario: clinica.colorSecundario,
+      descripcion: clinica.descripcion,
+      direccion: clinica.address,
+      telefono: clinica.phone,
+      email: clinica.email,
+      horarios: clinica.horarios,
+      especialidades: clinica.especialidades,
+      rating: clinica.rating,
+      stats: clinica.stats ? JSON.parse(clinica.stats) : {}
+    };
+
+    const turnosFormateados = turnosDisponibles.map(turno => ({
+      fecha: turno.fecha.toISOString().split('T')[0],
+      hora: turno.hora,
+      especialidad: turno.especialidad,
+      doctor: turno.doctor
+    }));
+
+    return {
+      success: true,
+      clinica: clinicaFormateada,
+      turnosDisponibles: turnosFormateados
+    };
+  } catch (error) {
+    if (error instanceof BadRequestException) {
+      throw error;
+    }
+    console.error('Error al obtener datos de landing de clínica:', error);
+    throw new BadRequestException('Error interno del servidor');
   }
+}
+
 
   async createTurnoFromLanding(clinicaUrl: string, dto: CreateTurnoLandingDto) {
     try {

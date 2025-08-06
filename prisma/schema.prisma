@@ -18,7 +18,7 @@ enum Role {
 model Clinica {
   id              String    @id @default(cuid())
   name            String
-  url             String    @unique
+  url             String    @unique @map("slug")
   address         String?
   phone           String?
   email           String?
@@ -30,8 +30,6 @@ model Clinica {
   fechaCreacion   DateTime  @default(now())
   ultimoPago      DateTime?
   proximoPago     DateTime?
-  horarios        String?
-  especialidades  String? // JSON string para almacenar array
   descripcion     String?
   contacto        String? // JSON object
   rating          Float?    @default(4.5)
@@ -39,9 +37,11 @@ model Clinica {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  users    User[]
-  mensajes Mensaje[]
-  turnos   Turno[]
+  users          User[]
+  mensajes       Mensaje[]
+  turnos         Turno[]
+  horarios       Horario[]
+  especialidades Especialidad[]
 }
 
 model Mensaje {
@@ -113,7 +113,7 @@ model Professional {
   specialties        String[]
   defaultDurationMin Int      @default(30)
   bufferMin          Int      @default(10)
-  notes              String?    // 👈 AGREGÁ ESTA LÍNEA
+  notes              String? // 👈 AGREGÁ ESTA LÍNEA
   createdAt          DateTime @default(now())
 
   user    User     @relation(fields: [userId], references: [id])
@@ -123,13 +123,29 @@ model Professional {
 model Agenda {
   id             String   @id @default(uuid())
   professionalId String
-  dia            String   // Ej: "LUNES", "MARTES"
-  horaInicio     String   // "08:00"
-  horaFin        String   // "12:00"
+  dia            String // Ej: "LUNES", "MARTES"
+  horaInicio     String // "08:00"
+  horaFin        String // "12:00"
   duracionMin    Int
   createdAt      DateTime @default(now())
 
-  professional  Professional @relation(fields: [professionalId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+}
+
+model Horario {
+  id        Int     @id @default(autoincrement())
+  day       String
+  openTime  String
+  closeTime String
+  clinicaId String
+  clinica   Clinica @relation(fields: [clinicaId], references: [id])
+}
+
+model Especialidad {
+  id        Int     @id @default(autoincrement())
+  name      String
+  clinicaId String
+  clinica   Clinica @relation(fields: [clinicaId], references: [id])
 }
 
 // model Admin {

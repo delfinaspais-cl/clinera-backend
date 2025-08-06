@@ -10,6 +10,8 @@ import { PublicModule } from './public/public.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ReportsModule } from './reports/reports.module';
 import { MensajesModule } from './messages/messages.module';
+import { HorariosModule } from './horarios/horarios.module';
+import { EspecialidadesModule } from './especialidades/especialidades.module';
 
 @Module({
   imports: [
@@ -23,7 +25,9 @@ import { MensajesModule } from './messages/messages.module';
     PublicModule,
     ScheduleModule,
     ReportsModule,
-    MensajesModule
+    MensajesModule,
+    HorariosModule,
+    EspecialidadesModule
     // otros módulos
   ],
 })

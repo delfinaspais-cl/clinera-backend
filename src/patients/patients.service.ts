@@ -10,8 +10,13 @@ export class PatientsService {
 
   async findAll(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
+  where: { url: clinicaUrl },
+  include: {
+    especialidades: true,
+    horarios: true,
+  },
+});
+
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     return this.prisma.patient.findMany({

@@ -12,30 +12,30 @@ export class ScheduleService {
 
     const professionals = await this.prisma.professional.findMany({
       where: { user: { clinicaId: clinica.id } },
-      include: { schedules: true },
+      include: { agendas: true },
     });
 
     return professionals.map(p => ({
       professionalId: p.id,
       name: p.name,
-      schedules: p.schedules,
+      schedules: p.agendas,
     }));
   }
 
   async findByProfessional(clinicaUrl: string, professionalId: string) {
     const prof = await this.prisma.professional.findUnique({
       where: { id: professionalId },
-      include: { schedules: true },
+      include: { agendas: true },
     });
     if (!prof) throw new NotFoundException('Profesional no encontrado');
 
-    return prof.schedules;
+    return prof.agendas;
   }
 
   async create(clinicaUrl: string, dto: CreateScheduleDto) {
     const prof = await this.prisma.professional.findUnique({ where: { id: dto.professionalId } });
     if (!prof) throw new NotFoundException('Profesional no encontrado');
 
-    return this.prisma.schedule.create({ data: dto });
+    return this.prisma.agenda.create({ data: dto });
   }
 }

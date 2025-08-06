@@ -6,28 +6,40 @@ const prisma = new PrismaClient();
 async function main() {
   const password = await bcrypt.hash('123456', 10);
 
-  // 1. Crear Clínica
-  const clinica = await prisma.clinica.upsert({
-    where: { url: 'clinica-demo' },
-    update: {},
-    create: {
+  // 1. Crear clínica
+  const clinica = await prisma.clinica.create({
+    data: {
       name: 'Clínica Demo',
       url: 'clinica-demo',
-      address: 'Av. Siempre Viva 123',
-      phone: '123456789',
-      email: 'info@clinicademo.com',
-      logo: 'https://via.placeholder.com/150',
-      colorPrimario: '#00AEEF',
-      colorSecundario: '#007ACC',
+      colorPrimario: '#3B82F6',
+      colorSecundario: '#1E40AF',
       estado: 'activa',
       estadoPago: 'pagado',
-      descripcion: 'Clínica modelo para pruebas.',
-      contacto: JSON.stringify({ whatsapp: '1122334455', web: 'clinicademo.com' }),
-      especialidades: JSON.stringify(['Cardiología', 'Dermatología']),
+      fechaCreacion: new Date(),
+      ultimoPago: new Date(),
+      proximoPago: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
   });
 
-  // 2. Usuarios por rol
+  // 2. Crear especialidades relacionadas
+  await prisma.especialidad.createMany({
+    data: [
+      { name: 'Cardiología', clinicaId: clinica.id },
+      { name: 'Dermatología', clinicaId: clinica.id },
+      { name: 'Pediatría', clinicaId: clinica.id },
+    ],
+  });
+
+  // 3. Crear horarios
+  await prisma.horario.createMany({
+    data: [
+      { day: 'monday', openTime: '08:00', closeTime: '16:00', clinicaId: clinica.id },
+      { day: 'tuesday', openTime: '09:00', closeTime: '17:00', clinicaId: clinica.id },
+      { day: 'wednesday', openTime: '10:00', closeTime: '18:00', clinicaId: clinica.id },
+    ],
+  });
+
+  // 4. Crear usuarios por rol
   const roles = ['ADMIN', 'OWNER', 'SECRETARY', 'PROFESSIONAL', 'PATIENT'] as const;
 
   for (const role of roles) {
@@ -50,7 +62,7 @@ async function main() {
     }
   }
 
-  // 3. Crear registros Professional para usuarios con ese rol
+  // 5. Crear profesionales
   const professionalUsers = await prisma.user.findMany({
     where: { role: 'PROFESSIONAL' },
   });
@@ -69,7 +81,7 @@ async function main() {
     });
   }
 
-  // 4. Turnos de prueba
+  // 6. Crear turnos de prueba
   await prisma.turno.createMany({
     data: [
       {

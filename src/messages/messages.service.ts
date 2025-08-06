@@ -23,7 +23,9 @@ export class MensajesService {
 
     return this.prisma.mensaje.create({
       data: {
-        contenido: dto.contenido,
+        asunto: dto.asunto,
+        mensaje: dto.mensaje,
+        tipo: dto.tipo,
         clinicaId: clinica.id,
       },
     });

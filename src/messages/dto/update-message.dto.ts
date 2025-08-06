@@ -3,7 +3,7 @@ import { IsBoolean, IsOptional, IsString } from 'class-validator';
 export class UpdateMensajeDto {
   @IsOptional()
   @IsString()
-  contenido?: string;
+  mensaje?: string;
 
   @IsOptional()
   @IsBoolean()

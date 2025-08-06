@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClinicaDto } from './dto/create-clinica.dto';
-import { UpdateClinicaEstadoDto } from './dto/update-clinica-estado.dto';
+import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
 
 @Injectable()
@@ -52,96 +52,138 @@ export class OwnersService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
-    try {
-      // Verificar si la URL ya existe
-      const existingClinica = await this.prisma.clinica.findUnique({
-        where: { url: dto.url }
-      });
+  const existingClinica = await this.prisma.clinica.findUnique({
+    where: { url: dto.url }
+  });
 
-      if (existingClinica) {
-        throw new BadRequestException('La URL de la clínica ya existe');
-      }
-
-      // Crear la clínica
-      const clinica = await this.prisma.clinica.create({
-        data: {
-          name: dto.nombre,
-          url: dto.url,
-          address: dto.direccion,
-          phone: dto.telefono,
-          email: dto.email,
-          colorPrimario: dto.colorPrimario || '#3B82F6',
-          colorSecundario: dto.colorSecundario || '#1E40AF',
-          horarios: dto.horarios,
-          especialidades: dto.especialidades ? JSON.stringify(dto.especialidades) : null,
-          estado: 'activa',
-          estadoPago: 'pagado',
-          fechaCreacion: new Date(),
-          ultimoPago: new Date(),
-          proximoPago: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 días
-        }
-      });
-
-      return {
-        success: true,
-        clinica: {
-          id: clinica.id,
-          nombre: clinica.name,
-          url: clinica.url,
-          logo: clinica.logo,
-          colorPrimario: clinica.colorPrimario,
-          colorSecundario: clinica.colorSecundario,
-          estado: clinica.estado,
-          estadoPago: clinica.estadoPago,
-          fechaCreacion: clinica.fechaCreacion.toISOString().split('T')[0],
-          ultimoPago: clinica.ultimoPago ? clinica.ultimoPago.toISOString().split('T')[0] : null,
-          proximoPago: clinica.proximoPago ? clinica.proximoPago.toISOString().split('T')[0] : null,
-          direccion: clinica.address,
-          telefono: clinica.phone,
-          email: clinica.email,
-          horarios: clinica.horarios,
-          especialidades: clinica.especialidades ? JSON.parse(clinica.especialidades) : []
-        }
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      console.error('Error al crear clínica:', error);
-      throw new BadRequestException('Error interno del servidor');
-    }
+  if (existingClinica) {
+    throw new BadRequestException('La URL de la clínica ya existe');
   }
 
-  async updateClinicaEstado(clinicaId: string, dto: UpdateClinicaEstadoDto) {
-    try {
-      // Verificar si la clínica existe
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { id: clinicaId }
-      });
-
-      if (!clinica) {
-        throw new BadRequestException('Clínica no encontrada');
-      }
-
-      // Actualizar el estado de la clínica
-      await this.prisma.clinica.update({
-        where: { id: clinicaId },
-        data: {
-          estado: dto.estado
-        }
-      });
-
-      return {
-        success: true
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      console.error('Error al actualizar estado de clínica:', error);
-      throw new BadRequestException('Error interno del servidor');
+  const clinica = await this.prisma.clinica.create({
+    data: {
+      name: dto.nombre,
+      url: dto.url,
+      address: dto.direccion,
+      phone: dto.telefono,
+      email: dto.email,
+      colorPrimario: dto.colorPrimario || '#3B82F6',
+      colorSecundario: dto.colorSecundario || '#1E40AF',
+      estado: 'activa',
+      estadoPago: 'pagado',
+      fechaCreacion: new Date(),
+      ultimoPago: new Date(),
+      proximoPago: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     }
+  });
+
+  if (dto.especialidades?.length) {
+    await this.prisma.especialidad.createMany({
+      data: dto.especialidades.map(name => ({ name, clinicaId: clinica.id }))
+    });
   }
+
+  if (dto.horarios?.length) {
+    await this.prisma.horario.createMany({
+      data: dto.horarios.map(h => ({
+        day: h.day,
+        openTime: h.openTime,
+        closeTime: h.closeTime,
+        clinicaId: clinica.id
+      }))
+    });
+  }
+
+  const clinicaConRelaciones = await this.prisma.clinica.findUnique({
+    where: { id: clinica.id },
+    include: { especialidades: true, horarios: true }
+  });
+
+  return {
+    success: true,
+    clinica: clinicaConRelaciones
+  };
+}
+
+
+  async updateClinica(clinicaId: string, dto: UpdateClinicaDto) {
+  try {
+    // Verificar si la clínica existe
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { id: clinicaId },
+    });
+
+    if (!clinica) {
+      throw new BadRequestException('Clínica no encontrada');
+    }
+
+    // Actualizar campos simples
+    await this.prisma.clinica.update({
+      where: { id: clinicaId },
+      data: {
+        name: dto.nombre,
+        address: dto.direccion,
+        phone: dto.telefono,
+        email: dto.email,
+        colorPrimario: dto.colorPrimario,
+        colorSecundario: dto.colorSecundario,
+      },
+    });
+
+    // Reemplazar especialidades si se envían
+    if (dto.especialidades) {
+      await this.prisma.especialidad.deleteMany({
+        where: { clinicaId },
+      });
+
+      if (dto.especialidades.length > 0) {
+        await this.prisma.especialidad.createMany({
+          data: dto.especialidades.map((nombre) => ({
+            name: nombre,
+            clinicaId: clinicaId,
+          })),
+        });
+      }
+    }
+
+    // Reemplazar horarios si se envían
+    if (dto.horarios) {
+      await this.prisma.horario.deleteMany({
+        where: { clinicaId },
+      });
+
+      if (dto.horarios.length > 0) {
+        await this.prisma.horario.createMany({
+  data: dto.horarios.map((h) => ({
+    day: h.day,
+    openTime: h.openTime,
+    closeTime: h.closeTime,
+    clinicaId: clinicaId,
+  })),
+});
+
+      }
+    }
+
+    // Devolver clínica actualizada con relaciones
+    const clinicaActualizada = await this.prisma.clinica.findUnique({
+      where: { id: clinicaId },
+      include: {
+        especialidades: true,
+        horarios: true,
+      },
+    });
+
+    return {
+      success: true,
+      clinica: clinicaActualizada,
+    };
+  } catch (error) {
+    console.error('Error al actualizar clínica:', error);
+    throw new BadRequestException('Error interno del servidor');
+  }
+}
+
 
   async sendMensaje(clinicaId: string, dto: SendMensajeDto) {
     try {

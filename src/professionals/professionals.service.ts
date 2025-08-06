@@ -10,8 +10,13 @@ export class ProfessionalsService {
 
   async findAll(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
+  where: { url: clinicaUrl },
+  include: {
+    especialidades: true,
+    horarios: true,
+  },
+});
+
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     return this.prisma.professional.findMany({
@@ -22,8 +27,13 @@ export class ProfessionalsService {
 
   async create(clinicaUrl: string, dto: CreateProfessionalDto) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
+  where: { url: clinicaUrl },
+  include: {
+    especialidades: true,
+    horarios: true,
+  },
+});
+
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
