@@ -7,6 +7,7 @@ import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
 import * as bcrypt from 'bcrypt';
+import { CreateTurnoDto } from './dto/create-turno.dto';
 
 @Injectable()
 export class ClinicasService {
@@ -746,4 +747,57 @@ export class ClinicasService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  async createTurno(clinicaUrl: string, dto: CreateTurnoDto) {
+  const clinica = await this.prisma.clinica.findUnique({
+    where: { url: clinicaUrl },
+  });
+
+  if (!clinica) {
+    throw new BadRequestException('Clínica no encontrada');
+  }
+
+  const turno = await this.prisma.turno.create({
+    data: {
+      paciente: dto.paciente,
+      email: dto.email,
+      telefono: dto.telefono,
+      especialidad: dto.especialidad,
+      doctor: dto.doctor,
+      fecha: new Date(dto.fecha),
+      hora: dto.hora,
+      motivo: dto.motivo,
+      clinicaId: clinica.id,
+    },
+  });
+
+  return {
+    success: true,
+    turno,
+  };
+}  
+
+// async getTurnosByClinicaUrl(clinicaUrl: string, filters: GetTurnosFiltersDto) {
+//   const clinica = await this.prisma.clinica.findUnique({
+//     where: { url: clinicaUrl },
+//     select: { id: true }
+//   });
+
+//   if (!clinica) {
+//     throw new Error('Clínica no encontrada');
+//   }
+
+//   const { fecha, estado, especialidad } = filters;
+
+//   return this.prisma.turno.findMany({
+//     where: {
+//       clinicaId: clinica.id,
+//       ...(fecha && { fecha: new Date(fecha) }),
+//       ...(estado && { estado }),
+//       ...(especialidad && { especialidad }),
+//     },
+//     orderBy: { fecha: 'asc' }
+//   });
+// }
+
 } 

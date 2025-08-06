@@ -6,7 +6,7 @@ import {
   Param,
   Body,
   UseGuards,
-  Req,
+  Request
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PatientsService } from './patients.service';
@@ -47,4 +47,9 @@ export class PatientsController {
   ) {
     return this.patientsService.update(clinicaUrl, id, dto);
   }
+
+  @Get('mis-turnos')
+async getMisTurnos(@Request() req) {
+  return this.patientsService.getMisTurnos(req.user.email);
+}
 }

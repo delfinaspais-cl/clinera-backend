@@ -79,4 +79,12 @@ export class PatientsService {
       include: { user: true },
     });
   }
+
+  async getMisTurnos(email: string) {
+  return this.prisma.turno.findMany({
+    where: { email },
+    orderBy: { fecha: 'desc' },
+  });
+}
+
 }

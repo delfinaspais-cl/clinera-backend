@@ -1,16 +1,15 @@
-import { IsOptional, IsString, IsDateString } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsOptional, IsString } from 'class-validator';
 
 export class GetTurnosFiltersDto {
   @IsOptional()
-  @IsDateString()
-  fecha?: string;
+  @IsString()
+  fecha?: string; // formato: YYYY-MM-DD
 
   @IsOptional()
   @IsString()
-  estado?: string;
+  estado?: string; // pendiente | confirmado | cancelado
 
   @IsOptional()
   @IsString()
   especialidad?: string;
-} 
+}

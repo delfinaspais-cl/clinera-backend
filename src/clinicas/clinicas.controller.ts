@@ -6,6 +6,8 @@ import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
+import { CreateTurnoDto } from './dto/create-turno.dto';
+
 
 @Controller('clinica')
 export class ClinicasController {
@@ -189,5 +191,36 @@ export class ClinicasController {
       throw new BadRequestException('Acceso denegado. No tienes permisos para acceder a las estadísticas de esta clínica.');
     }
   }
+
+@Post(':clinicaUrl/turnos')
+@UseGuards(JwtAuthGuard)
+async createTurno(
+  @Request() req,
+  @Param('clinicaUrl') clinicaUrl: string,
+  @Body() dto: CreateTurnoDto
+) {
+  const role = req.user.role;
+
+  if (role !== 'OWNER' && role !== 'ADMIN' && role !== 'PATIENT') {
+    throw new BadRequestException('No tienes permiso para crear un turno.');
+  }
+
+  return this.clinicasService.createTurno(clinicaUrl, dto);
+}
+
+// @Get(':clinicaUrl/turnos')
+// @UseGuards(JwtAuthGuard)
+// async getTurnosByClinicaUrl(
+//   @Request() req,
+//   @Param('clinicaUrl') clinicaUrl: string,
+//   @Query() filters: GetTurnosFiltersDto
+// ) {
+//   // OWNER o ADMIN puede ver turnos
+//   if (req.user.role === 'OWNER' || (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl)) {
+//     return this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, filters);
+//   } else {
+//     throw new Error('No tienes permisos para ver los turnos de esta clínica');
+//   }
+// }
 
 } 
