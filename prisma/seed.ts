@@ -30,12 +30,12 @@ async function main() {
     ],
   });
 
-  // 3. Crea horarios
+  // 3. Crea horarios (corrigiendo los días)
   await prisma.horario.createMany({
     data: [
-      { day: 'monday', openTime: '08:00', closeTime: '16:00', clinicaId: clinica.id },
-      { day: 'tuesday', openTime: '09:00', closeTime: '17:00', clinicaId: clinica.id },
-      { day: 'wednesday', openTime: '10:00', closeTime: '18:00', clinicaId: clinica.id },
+      { day: 'LUNES', openTime: '08:00', closeTime: '16:00', clinicaId: clinica.id },
+      { day: 'MARTES', openTime: '09:00', closeTime: '17:00', clinicaId: clinica.id },
+      { day: 'MIERCOLES', openTime: '10:00', closeTime: '18:00', clinicaId: clinica.id },
     ],
   });
 
@@ -81,7 +81,39 @@ async function main() {
     });
   }
 
-  // 6. Crea turnos de prueba
+  // 6. Crea pacientes (relacionados con usuarios de rol PATIENT)
+  const patientUsers = await prisma.user.findMany({
+    where: { role: 'PATIENT' },
+  });
+  for (const user of patientUsers) {
+    await prisma.patient.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        name: user.name ?? 'Paciente sin nombre',
+        birthDate: new Date('1990-01-01'),
+        phone: user.phone,
+        notes: 'Paciente de prueba',
+      },
+    });
+  }
+
+  // 7. Crea agendas para profesionales
+  const professionals = await prisma.professional.findMany();
+  for (const prof of professionals) {
+    await prisma.agenda.create({
+      data: {
+        professionalId: prof.id,
+        dia: 'LUNES',
+        horaInicio: '08:00',
+        horaFin: '12:00',
+        duracionMin: 30,
+      },
+    });
+  }
+
+  // 8. Crea turnos de prueba
   await prisma.turno.createMany({
     data: [
       {
@@ -106,6 +138,24 @@ async function main() {
         hora: '14:30',
         estado: 'pendiente',
         motivo: 'Consulta por alergia',
+        clinicaId: clinica.id,
+      },
+    ],
+  });
+
+  // 9. Crea mensajes de ejemplo
+  await prisma.mensaje.createMany({
+    data: [
+      {
+        asunto: 'Bienvenida',
+        mensaje: '¡Bienvenido a la clínica!',
+        tipo: 'general',
+        clinicaId: clinica.id,
+      },
+      {
+        asunto: 'Recordatorio de pago',
+        mensaje: 'Recuerda abonar tu cuota mensual.',
+        tipo: 'pago',
         clinicaId: clinica.id,
       },
     ],
