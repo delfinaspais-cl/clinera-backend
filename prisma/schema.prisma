@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  // Forcing Railway deploy
+  // Forcing Railway deploy - fresh start
 }
 
 datasource db {
