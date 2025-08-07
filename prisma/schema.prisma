@@ -1,11 +1,11 @@
 generator client {
   provider = "prisma-client-js"
-  // Forcing Railway deploy - fresh start
+  // Fresh start - Railway deployment
 }
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:UWUBLqmIYUijMpuFakEXjnkUGFNdMoiO@yamabiko.proxy.rlwy.net:10790/railway"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
