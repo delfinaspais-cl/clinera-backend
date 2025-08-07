@@ -9,3 +9,8 @@ restartPolicyType = "on_failure"
 
 [deploy.envs]
 NODE_ENV = "production"
+
+# Build commands
+[build.steps]
+build = "npm run build"
+postBuild = "npm run prisma:generate"
