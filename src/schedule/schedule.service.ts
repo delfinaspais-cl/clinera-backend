@@ -33,9 +33,46 @@ export class ScheduleService {
   }
 
   async create(clinicaUrl: string, dto: CreateScheduleDto) {
-    const prof = await this.prisma.professional.findUnique({ where: { id: dto.professionalId } });
-    if (!prof) throw new NotFoundException('Profesional no encontrado');
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
 
     return this.prisma.agenda.create({ data: dto });
+  }
+
+  async remove(clinicaUrl: string, id: string) {
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
+
+    // Verificar que la agenda pertenece a un profesional de la clínica
+    const agenda = await this.prisma.agenda.findFirst({
+      where: { 
+        id,
+        professional: {
+          user: {
+            clinicaId: clinica.id
+          }
+        }
+      }
+    });
+
+    if (!agenda) {
+      throw new Error('Agenda no encontrada en esta clínica');
+    }
+
+    await this.prisma.agenda.delete({
+      where: { id },
+    });
+
+    return { message: 'Agenda eliminada correctamente' };
   }
 }

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   const password = await bcrypt.hash('123456', 10);
 
-  // 1. Crear clínica
+  // 1. Crea clínica
   const clinica = await prisma.clinica.create({
     data: {
       name: 'Clínica Demo',
@@ -21,7 +21,7 @@ async function main() {
     },
   });
 
-  // 2. Crear especialidades relacionadas
+  // 2. Crea especialidades relacionadas
   await prisma.especialidad.createMany({
     data: [
       { name: 'Cardiología', clinicaId: clinica.id },
@@ -30,7 +30,7 @@ async function main() {
     ],
   });
 
-  // 3. Crear horarios
+  // 3. Crea horarios
   await prisma.horario.createMany({
     data: [
       { day: 'monday', openTime: '08:00', closeTime: '16:00', clinicaId: clinica.id },
@@ -39,7 +39,7 @@ async function main() {
     ],
   });
 
-  // 4. Crear usuarios por rol
+  // 4. Crea usuarios por rol
   const roles = ['ADMIN', 'OWNER', 'SECRETARY', 'PROFESSIONAL', 'PATIENT'] as const;
 
   for (const role of roles) {
@@ -62,7 +62,7 @@ async function main() {
     }
   }
 
-  // 5. Crear profesionales
+  // 5. Crea profesionales
   const professionalUsers = await prisma.user.findMany({
     where: { role: 'PROFESSIONAL' },
   });
@@ -81,7 +81,7 @@ async function main() {
     });
   }
 
-  // 6. Crear turnos de prueba
+  // 6. Crea turnos de prueba
   await prisma.turno.createMany({
     data: [
       {

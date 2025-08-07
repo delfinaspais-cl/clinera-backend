@@ -70,21 +70,77 @@ export class PatientsService {
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdatePatientDto) {
-    const paciente = await this.prisma.patient.findUnique({ where: { id } });
-    if (!paciente) throw new NotFoundException('Paciente no encontrado');
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
 
     return this.prisma.patient.update({
       where: { id },
       data: dto,
-      include: { user: true },
     });
   }
 
-  async getMisTurnos(email: string) {
-  return this.prisma.turno.findMany({
-    where: { email },
-    orderBy: { fecha: 'desc' },
-  });
-}
+  async remove(clinicaUrl: string, id: string) {
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
 
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente pertenece a la clínica
+    const patient = await this.prisma.patient.findFirst({
+      where: { 
+        id,
+        user: {
+          clinicaId: clinica.id
+        }
+      },
+      include: {
+        user: true
+      }
+    });
+
+    if (!patient) {
+      throw new Error('Paciente no encontrado en esta clínica');
+    }
+
+    // Eliminar el paciente y su usuario asociado
+    await this.prisma.patient.delete({
+      where: { id },
+    });
+
+    await this.prisma.user.delete({
+      where: { id: patient.user.id },
+    });
+
+    return { message: 'Paciente eliminado correctamente' };
+  }
+
+  async getMisTurnos(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: {
+        patient: true,
+      },
+    });
+
+    if (!user || !user.patient) {
+      throw new Error('Paciente no encontrado');
+    }
+
+    return this.prisma.turno.findMany({
+      where: {
+        email: email,
+      },
+      orderBy: {
+        fecha: 'desc',
+      },
+    });
+  }
 }

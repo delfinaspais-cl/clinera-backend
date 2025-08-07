@@ -32,12 +32,45 @@ export class MensajesService {
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdateMensajeDto) {
-    const mensaje = await this.prisma.mensaje.findUnique({ where: { id } });
-    if (!mensaje) throw new NotFoundException('Mensaje no encontrado');
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
 
     return this.prisma.mensaje.update({
       where: { id },
       data: dto,
     });
+  }
+
+  async remove(clinicaUrl: string, id: string) {
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
+
+    // Verificar que el mensaje pertenece a la clínica
+    const mensaje = await this.prisma.mensaje.findFirst({
+      where: { 
+        id,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!mensaje) {
+      throw new Error('Mensaje no encontrado en esta clínica');
+    }
+
+    await this.prisma.mensaje.delete({
+      where: { id },
+    });
+
+    return { message: 'Mensaje eliminado correctamente' };
   }
 }

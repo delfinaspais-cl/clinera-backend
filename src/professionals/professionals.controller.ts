@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   Patch,
+  Delete,
   UseGuards,
 } from '@nestjs/common';
 import { ProfessionalsService } from './professionals.service';
@@ -42,5 +43,13 @@ export class ProfessionalsController {
     @Body() dto: UpdateProfessionalDto,
   ) {
     return this.professionalsService.update(clinicaUrl, id, dto);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+  ) {
+    return this.professionalsService.remove(clinicaUrl, id);
   }
 }

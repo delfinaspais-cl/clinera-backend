@@ -1,15 +1,34 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 
-export class GetTurnosFiltersDto {
+export enum TurnoEstado {
+  PENDIENTE = 'pendiente',
+  CONFIRMADO = 'confirmado',
+  CANCELADO = 'cancelado'
+}
+
+export class GetTurnosFiltersDto extends PaginationDto {
   @IsOptional()
-  @IsString()
-  fecha?: string; // formato: YYYY-MM-DD
+  @IsEnum(TurnoEstado)
+  estado?: TurnoEstado;
 
   @IsOptional()
-  @IsString()
-  estado?: string; // pendiente | confirmado | cancelado
-
-  @IsOptional()
-  @IsString()
   especialidad?: string;
+
+  @IsOptional()
+  doctor?: string;
+
+  @IsOptional()
+  @IsDateString()
+  fechaDesde?: string;
+
+  @IsOptional()
+  @IsDateString()
+  fechaHasta?: string;
+
+  @IsOptional()
+  paciente?: string;
+
+  @IsOptional()
+  email?: string;
 }

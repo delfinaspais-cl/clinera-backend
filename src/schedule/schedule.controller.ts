@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ScheduleService } from './schedule.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
@@ -21,6 +21,11 @@ export class ScheduleController {
   @Post()
   create(@Param('clinicaUrl') clinicaUrl: string, @Body() dto: CreateScheduleDto) {
     return this.ScheduleService.create(clinicaUrl, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
+    return this.ScheduleService.remove(clinicaUrl, id);
   }
 }
 export { ScheduleService };

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
+import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
@@ -13,41 +14,97 @@ import { CreateTurnoDto } from './dto/create-turno.dto';
 export class ClinicasService {
   constructor(private prisma: PrismaService) {}
 
-  async getUsuariosByClinicaUrl(clinicaUrl: string) {
+  async getUsuariosByClinicaUrl(clinicaUrl: string, filters: GetUsuariosFiltersDto = {}) {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl },
-        include: {
-          users: {
-            orderBy: {
-              createdAt: 'desc'
-            }
-          }
-        }
+        where: { url: clinicaUrl }
       });
 
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
       }
 
+      // Construir filtros
+      const where: any = {
+        clinicaId: clinica.id
+      };
+
+      if (filters.role) {
+        where.role = filters.role;
+      }
+
+      if (filters.estado) {
+        where.estado = filters.estado;
+      }
+
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } }
+        ];
+      }
+
+      // Construir ordenamiento
+      const orderBy: any = {};
+      if (filters.sortBy) {
+        orderBy[filters.sortBy] = filters.sortOrder || 'desc';
+      } else {
+        orderBy.createdAt = 'desc';
+      }
+
+      // Calcular paginación
+      const page = filters.page || 1;
+      const limit = filters.limit || 10;
+      const skip = (page - 1) * limit;
+
+      // Obtener usuarios con paginación
+      const [users, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit,
+          include: {
+            professional: true,
+            patient: true
+          }
+        }),
+        this.prisma.user.count({ where })
+      ]);
+
       // Transformar los datos para el formato requerido
-              const usuariosFormateados = clinica.users.map(user => ({
+      const usuariosFormateados = users.map(user => {
+        let especialidad = null;
+        if (user.professional && user.professional.specialties) {
+          especialidad = user.professional.specialties.join(', ');
+        }
+
+        return {
           id: user.id,
           nombre: user.name || 'Sin nombre',
           email: user.email,
           rol: user.role.toLowerCase(),
-          especialidad: null, // Por ahora null, se puede agregar después
+          especialidad,
           estado: user.estado || 'activo',
           fechaCreacion: user.createdAt.toISOString().split('T')[0],
           ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
-          turnos: 0, // Por ahora hardcodeado, se puede calcular después
-          pacientes: 0  // Por ahora hardcodeado, se puede calcular después
-        }));
+          turnos: 0, // Se puede calcular después si es necesario
+          pacientes: 0  // Se puede calcular después si es necesario
+        };
+      });
 
       return {
         success: true,
-        usuarios: usuariosFormateados
+        usuarios: usuariosFormateados,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -175,7 +232,7 @@ export class ClinicasService {
     }
   }
 
-  async getTurnosByClinicaUrl(clinicaUrl: string, filters: GetTurnosFiltersDto) {
+  async getTurnosByClinicaUrl(clinicaUrl: string, filters: GetTurnosFiltersDto = {}) {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
@@ -191,15 +248,15 @@ export class ClinicasService {
         clinicaId: clinica.id
       };
 
-      if (filters.fecha) {
-        const fecha = new Date(filters.fecha);
-        const fechaInicio = new Date(fecha.setHours(0, 0, 0, 0));
-        const fechaFin = new Date(fecha.setHours(23, 59, 59, 999));
-        
-        whereClause.fecha = {
-          gte: fechaInicio,
-          lte: fechaFin
-        };
+      // Filtro por rango de fechas
+      if (filters.fechaDesde || filters.fechaHasta) {
+        whereClause.fecha = {};
+        if (filters.fechaDesde) {
+          whereClause.fecha.gte = new Date(filters.fechaDesde);
+        }
+        if (filters.fechaHasta) {
+          whereClause.fecha.lte = new Date(filters.fechaHasta);
+        }
       }
 
       if (filters.estado) {
@@ -210,14 +267,51 @@ export class ClinicasService {
         whereClause.especialidad = filters.especialidad;
       }
 
-      // Obtener turnos con filtros
-      const turnos = await this.prisma.turno.findMany({
-        where: whereClause,
-        orderBy: [
-          { fecha: 'asc' },
-          { hora: 'asc' }
-        ]
-      });
+      if (filters.doctor) {
+        whereClause.doctor = { contains: filters.doctor, mode: 'insensitive' };
+      }
+
+      if (filters.paciente) {
+        whereClause.paciente = { contains: filters.paciente, mode: 'insensitive' };
+      }
+
+      if (filters.email) {
+        whereClause.email = { contains: filters.email, mode: 'insensitive' };
+      }
+
+      if (filters.search) {
+        whereClause.OR = [
+          { paciente: { contains: filters.search, mode: 'insensitive' } },
+          { doctor: { contains: filters.search, mode: 'insensitive' } },
+          { especialidad: { contains: filters.search, mode: 'insensitive' } },
+          { email: { contains: filters.search, mode: 'insensitive' } }
+        ];
+      }
+
+      // Construir ordenamiento
+      const orderBy: any = {};
+      if (filters.sortBy) {
+        orderBy[filters.sortBy] = filters.sortOrder || 'desc';
+      } else {
+        orderBy.fecha = 'desc';
+        orderBy.hora = 'asc';
+      }
+
+      // Calcular paginación
+      const page = filters.page || 1;
+      const limit = filters.limit || 10;
+      const skip = (page - 1) * limit;
+
+      // Obtener turnos con paginación
+      const [turnos, total] = await Promise.all([
+        this.prisma.turno.findMany({
+          where: whereClause,
+          orderBy,
+          skip,
+          take: limit
+        }),
+        this.prisma.turno.count({ where: whereClause })
+      ]);
 
       // Obtener estadísticas
       const stats = await this.prisma.turno.groupBy({
@@ -253,6 +347,14 @@ export class ClinicasService {
       return {
         success: true,
         turnos: turnosFormateados,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        },
         stats: statsFormateadas
       };
     } catch (error) {

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -46,6 +47,14 @@ export class PatientsController {
     @Body() dto: UpdatePatientDto,
   ) {
     return this.patientsService.update(clinicaUrl, id, dto);
+  }
+
+  @Delete(':id')
+  remove(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+  ) {
+    return this.patientsService.remove(clinicaUrl, id);
   }
 
   @Get('mis-turnos')

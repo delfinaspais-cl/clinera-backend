@@ -73,26 +73,64 @@ export class ProfessionalsService {
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdateProfessionalDto) {
-    const prof = await this.prisma.professional.findUnique({ where: { id } });
-    if (!prof) throw new NotFoundException('Profesional no encontrado');
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
 
     return this.prisma.professional.update({
-  where: { id },
-  data: {
-    specialties: dto.specialties,
-    notes: dto.notes,
-    defaultDurationMin: dto.defaultDurationMin,
-    bufferMin: dto.bufferMin,
-    user: {
-      update: {
-        name: dto.name,
-        phone: dto.phone,
-      },
-    },
-  },
-  include: { user: true },
-});
+      where: { id },
+      data: dto,
+    });
+  }
 
+  async remove(clinicaUrl: string, id: string) {
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
+
+    // Verificar que el profesional pertenece a la clínica
+    const professional = await this.prisma.professional.findFirst({
+      where: { 
+        id,
+        user: {
+          clinicaId: clinica.id
+        }
+      },
+      include: {
+        user: true,
+        agendas: true
+      }
+    });
+
+    if (!professional) {
+      throw new Error('Profesional no encontrado en esta clínica');
+    }
+
+    // Eliminar agendas asociadas
+    if (professional.agendas.length > 0) {
+      await this.prisma.agenda.deleteMany({
+        where: { professionalId: id },
+      });
+    }
+
+    // Eliminar el profesional y su usuario asociado
+    await this.prisma.professional.delete({
+      where: { id },
+    });
+
+    await this.prisma.user.delete({
+      where: { id: professional.user.id },
+    });
+
+    return { message: 'Profesional eliminado correctamente' };
   }
 }
 

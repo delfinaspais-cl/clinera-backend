@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
+import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
@@ -17,16 +18,17 @@ export class ClinicasController {
   @UseGuards(JwtAuthGuard)
   async getUsuariosByClinicaUrl(
     @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: GetUsuariosFiltersDto
   ) {
     // Verificar que el usuario tenga acceso a esta clínica
     // Si es ADMIN de la clínica o OWNER, puede acceder
     if (req.user.role === 'OWNER') {
       // OWNER puede acceder a cualquier clínica
-      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl);
+      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
     } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
       // ADMIN solo puede acceder a su propia clínica
-      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl);
+      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
     } else {
       throw new Error('Acceso denegado. No tienes permisos para acceder a esta clínica.');
     }

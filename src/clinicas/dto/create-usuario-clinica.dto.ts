@@ -1,25 +1,35 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, MinLength, IsEmail, Matches } from 'class-validator';
 
 export class CreateUsuarioClinicaDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'El nombre es requerido' })
+  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { 
+    message: 'El nombre solo puede contener letras y espacios' 
+  })
   nombre: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsEmail({}, { message: 'El email debe tener un formato válido' })
+  @IsNotEmpty({ message: 'El email es requerido' })
   email: string;
 
   @IsString()
-  @IsNotEmpty()
-  @IsIn(['profesional', 'secretario', 'administrador'])
+  @IsNotEmpty({ message: 'El rol es requerido' })
+  @IsIn(['profesional', 'secretario', 'administrador'], { 
+    message: 'El rol debe ser: profesional, secretario o administrador' 
+  })
   rol: string;
 
   @IsString()
   @IsOptional()
+  @MinLength(2, { message: 'La especialidad debe tener al menos 2 caracteres' })
   especialidad?: string;
 
   @IsString()
-  @IsNotEmpty()
-  @MinLength(6)
+  @IsNotEmpty({ message: 'La contraseña es requerida' })
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, { 
+    message: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número' 
+  })
   password: string;
 } 

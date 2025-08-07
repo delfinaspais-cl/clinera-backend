@@ -1,49 +1,68 @@
-import { IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
+import { IsOptional, IsString, IsArray, ValidateNested, IsEmail, Matches, MinLength, IsHexColor } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class HorarioDto {
-  @IsString()
+  @IsString({ message: 'El día es requerido' })
+  @Matches(/^(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)$/, {
+    message: 'El día debe ser: LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO o DOMINGO'
+  })
   day: string;
 
-  @IsString()
+  @IsString({ message: 'La hora de apertura es requerida' })
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { 
+    message: 'La hora debe tener formato HH:MM (24 horas)' 
+  })
   openTime: string;
 
-  @IsString()
+  @IsString({ message: 'La hora de cierre es requerida' })
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { 
+    message: 'La hora debe tener formato HH:MM (24 horas)' 
+  })
   closeTime: string;
 }
 
 export class UpdateClinicaDto {
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El nombre debe ser una cadena de texto' })
+  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, { 
+    message: 'El nombre solo puede contener letras, números, espacios, guiones y puntos' 
+  })
   nombre?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'La dirección debe ser una cadena de texto' })
+  @MinLength(10, { message: 'La dirección debe tener al menos 10 caracteres' })
   direccion?: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'El teléfono debe ser una cadena de texto' })
+  @Matches(/^\+?[\d\s\-\(\)]+$/, { 
+    message: 'El teléfono debe tener un formato válido' 
+  })
   telefono?: string;
 
   @IsOptional()
-  @IsString()
+  @IsEmail({}, { message: 'El email debe tener un formato válido' })
   email?: string;
 
   @IsOptional()
-  @IsString()
+  @IsHexColor({ message: 'El color primario debe ser un color hexadecimal válido' })
   colorPrimario?: string;
 
   @IsOptional()
-  @IsString()
+  @IsHexColor({ message: 'El color secundario debe ser un color hexadecimal válido' })
   colorSecundario?: string;
 
   @IsOptional()
-  @IsArray()
+  @IsArray({ message: 'Las especialidades deben ser un array' })
+  @IsString({ each: true, message: 'Cada especialidad debe ser una cadena de texto' })
+  @MinLength(2, { each: true, message: 'Cada especialidad debe tener al menos 2 caracteres' })
   especialidades?: string[];
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
+  @IsArray({ message: 'Los horarios deben ser un array' })
+  @ValidateNested({ each: true, message: 'Cada horario debe ser válido' })
   @Type(() => HorarioDto)
   horarios?: HorarioDto[];
 }

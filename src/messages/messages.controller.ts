@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { MensajesService } from './messages.service';
 import { CreateMensajeDto } from './dto/create-message.dto';
 import { UpdateMensajeDto } from './dto/update-message.dto';
@@ -22,5 +22,10 @@ export class MensajesController {
   @Patch(':mensajeId')
   update(@Param('clinicaUrl') clinicaUrl: string, @Param('mensajeId') id: string, @Body() dto: UpdateMensajeDto) {
     return this.mensajesService.update(clinicaUrl, id, dto);
+  }
+
+  @Delete(':mensajeId')
+  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('mensajeId') id: string) {
+    return this.mensajesService.remove(clinicaUrl, id);
   }
 }
