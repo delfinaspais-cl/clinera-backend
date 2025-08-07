@@ -25,7 +25,7 @@ export class OwnersController {
   @Get('clinicas')
   async getAllClinicas(@Request() req) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.getAllClinicas();
@@ -34,7 +34,7 @@ export class OwnersController {
   @Post('clinicas')
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.createClinica(dto);
@@ -48,7 +48,7 @@ export class OwnersController {
     @Body() dto: UpdateClinicaDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.updateClinica(clinicaId, dto);
@@ -62,7 +62,7 @@ export class OwnersController {
     @Body() dto: UpdateClinicaEstadoDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.updateClinica(clinicaId, {
@@ -77,7 +77,7 @@ export class OwnersController {
     @Body() dto: SendMensajeDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.sendMensaje(clinicaId, dto);

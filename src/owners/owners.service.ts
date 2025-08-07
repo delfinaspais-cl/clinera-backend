@@ -107,82 +107,81 @@ export class OwnersService {
 
 
   async updateClinica(clinicaId: string, dto: UpdateClinicaDto) {
-  try {
-    // Verificar si la clínica existe
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { id: clinicaId },
-    });
-
-    if (!clinica) {
-      throw new BadRequestException('Clínica no encontrada');
-    }
-
-    // Actualizar campos simples
-    await this.prisma.clinica.update({
-      where: { id: clinicaId },
-      data: {
-        name: dto.nombre,
-        address: dto.direccion,
-        phone: dto.telefono,
-        email: dto.email,
-        colorPrimario: dto.colorPrimario,
-        colorSecundario: dto.colorSecundario,
-      },
-    });
-
-    // Reemplazar especialidades si se envían
-    if (dto.especialidades) {
-      await this.prisma.especialidad.deleteMany({
-        where: { clinicaId },
+    try {
+      // Verificar si la clínica existe
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId },
       });
 
-      if (dto.especialidades.length > 0) {
-        await this.prisma.especialidad.createMany({
-          data: dto.especialidades.map((nombre) => ({
-            name: nombre,
-            clinicaId: clinicaId,
-          })),
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Actualizar campos simples
+      await this.prisma.clinica.update({
+        where: { id: clinicaId },
+        data: {
+          name: dto.nombre,
+          address: dto.direccion,
+          phone: dto.telefono,
+          email: dto.email,
+          colorPrimario: dto.colorPrimario,
+          colorSecundario: dto.colorSecundario,
+        },
+      });
+
+      // Reemplazar especialidades si se envían
+      if (dto.especialidades) {
+        await this.prisma.especialidad.deleteMany({
+          where: { clinicaId },
         });
-      }
-    }
 
-    // Reemplazar horarios si se envían
-    if (dto.horarios) {
-      await this.prisma.horario.deleteMany({
-        where: { clinicaId },
+        if (dto.especialidades.length > 0) {
+          await this.prisma.especialidad.createMany({
+            data: dto.especialidades.map((nombre) => ({
+              name: nombre,
+              clinicaId: clinicaId,
+            })),
+          });
+        }
+      }
+
+      // Reemplazar horarios si se envían
+      if (dto.horarios) {
+        await this.prisma.horario.deleteMany({
+          where: { clinicaId },
+        });
+
+        if (dto.horarios.length > 0) {
+          await this.prisma.horario.createMany({
+            data: dto.horarios.map((h) => ({
+              day: h.day,
+              openTime: h.openTime,
+              closeTime: h.closeTime,
+              clinicaId: clinicaId,
+            })),
+          });
+        }
+      }
+
+      // Devolver clínica actualizada con relaciones
+      const clinicaActualizada = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId },
+        include: {
+          especialidades: true,
+          horarios: true,
+        },
       });
 
-      if (dto.horarios.length > 0) {
-        await this.prisma.horario.createMany({
-  data: dto.horarios.map((h) => ({
-    day: h.day,
-    openTime: h.openTime,
-    closeTime: h.closeTime,
-    clinicaId: clinicaId,
-  })),
-});
-
-      }
+      return {
+        success: true,
+        clinica: clinicaActualizada,
+      };
+    } catch (error) {
+      console.error('Error al actualizar clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
     }
-
-    // Devolver clínica actualizada con relaciones
-    const clinicaActualizada = await this.prisma.clinica.findUnique({
-      where: { id: clinicaId },
-      include: {
-        especialidades: true,
-        horarios: true,
-      },
-    });
-
-    return {
-      success: true,
-      clinica: clinicaActualizada,
-    };
-  } catch (error) {
-    console.error('Error al actualizar clínica:', error);
-    throw new BadRequestException('Error interno del servidor');
   }
-}
 
 
   async sendMensaje(clinicaId: string, dto: SendMensajeDto) {
