@@ -14,10 +14,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log('All env vars:', Object.keys(process.env).filter(key => key.includes('JWT')));
     console.log('========================');
     
+    // Solución temporal: usar valor hardcodeado si la variable no está disponible
+    const jwtSecret = process.env.JWT_SECRET || 'supersecret123';
+    console.log('Using JWT secret:', jwtSecret);
+    
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET!
+      secretOrKey: jwtSecret
     });
   }
 
