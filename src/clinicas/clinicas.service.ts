@@ -75,7 +75,7 @@ export class ClinicasService {
 
       // Transformar los datos para el formato requerido
       const usuariosFormateados = users.map(user => {
-        let especialidad = null;
+        let especialidad = '';
         if (user.professional && user.professional.specialties) {
           especialidad = user.professional.specialties.join(', ');
         }
