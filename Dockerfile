@@ -19,21 +19,12 @@ RUN npx prisma generate
 # Construir la aplicación
 RUN npm run build
 
-# Crear una nueva imagen más pequeña solo con producción
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copiar solo los archivos necesarios para producción
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Copiar el build y Prisma
-COPY --from=0 /app/dist ./dist
-COPY --from=0 /app/node_modules/.prisma ./node_modules/.prisma
+# Verificar que el archivo existe (para debug)
+RUN ls -la dist/
+RUN ls -la dist/*.js || echo "No hay archivos .js en dist"
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación (usando main.js que es lo que genera NestJS)
+# Comando para ejecutar la aplicación
 CMD ["node", "dist/main.js"]
