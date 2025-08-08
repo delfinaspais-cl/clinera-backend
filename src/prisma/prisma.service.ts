@@ -11,8 +11,7 @@ export class PrismaService
       datasources: {
         db: {
           url:
-            process.env.DATABASE_URL ||
-            'postgresql://postgres:oHsQWcnWLBfDCPdzMrAjyhnXDvgwskcx@postgres.railway.internal:5432/railway',
+            process.env.DATABASE_URL
         },
       },
     });
