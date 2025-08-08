@@ -12,7 +12,7 @@ export class PrismaService
         db: {
           url:
             process.env.DATABASE_URL ||
-            'postgresql://postgres:jEOzyzhJOYOWjFyEyqDfMPuqbZSORIiC@postgres.railway.internal:5432/railway',
+            'postgresql://postgres:oHsQWcnWLBfDCPdzMrAjyhnXDvgwskcx@postgres.railway.internal:5432/railway',
         },
       },
     });
