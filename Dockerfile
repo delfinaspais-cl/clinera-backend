@@ -35,5 +35,5 @@ COPY --from=0 /app/node_modules/.prisma ./node_modules/.prisma
 # Exponer puerto
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación
-CMD ["npm", "run", "start:prod"]
+# Comando para ejecutar la aplicación (usando main.js que es lo que genera NestJS)
+CMD ["node", "dist/main.js"]
