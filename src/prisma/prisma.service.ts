@@ -4,21 +4,31 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    // Solución temporal: usar valor hardcodeado si la variable no está disponible
-    const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:iKoiMmWbtINyXaQyMAiLVAsnCKtIiqWg@switchyard.proxy.rlwy.net:20444/railway';
-    console.log('Using DATABASE_URL:', databaseUrl);
+    // Debug: Verificar variables de entorno
+    console.log('PrismaService constructor - Environment variables:');
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    if (process.env.DATABASE_URL) {
+      console.log('DATABASE_URL starts with:', process.env.DATABASE_URL.substring(0, 30) + '...');
+    }
     
     super({
       datasources: {
         db: {
-          url: databaseUrl,
+          url: process.env.DATABASE_URL,
         },
       },
     });
   }
 
   async onModuleInit() {
-    await this.$connect();
+    console.log('PrismaService onModuleInit - attempting to connect...');
+    try {
+      await this.$connect();
+      console.log('PrismaService connected successfully');
+    } catch (error) {
+      console.error('PrismaService connection failed:', error.message);
+      throw error;
+    }
   }
 
   async enableShutdownHooks() {
