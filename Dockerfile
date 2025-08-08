@@ -13,17 +13,11 @@ RUN npm ci
 # Copiar el resto del código
 COPY . .
 
-# Generar Prisma client
-RUN npx prisma generate
-
 # Construir la aplicación
 RUN npm run build
-
-# Verificar que el archivo existe
-RUN ls -la dist/src/main.js
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación usando la ruta correcta
-CMD ["node", "dist/src/main.js"]
+# Comando para ejecutar la aplicación (generará Prisma client al inicio)
+CMD ["npm", "run", "start:prod"]
