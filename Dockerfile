@@ -19,6 +19,9 @@ RUN npx prisma generate
 # Construir la aplicación
 RUN npm run build
 
+# Verificar que el archivo existe
+RUN ls -la dist/src/main.js
+
 # Exponer puerto
 EXPOSE 3000
 
