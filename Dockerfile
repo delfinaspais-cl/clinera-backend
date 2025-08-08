@@ -20,11 +20,15 @@ RUN npx prisma generate
 RUN npm run build
 
 # Verificar que el archivo existe (para debug)
-RUN ls -la dist/
-RUN ls -la dist/*.js || echo "No hay archivos .js en dist"
+RUN echo "=== Contenido del directorio actual ==="
+RUN ls -la
+RUN echo "=== Contenido del directorio dist ==="
+RUN ls -la dist/ || echo "Directorio dist no existe"
+RUN echo "=== Buscando archivos .js en dist ==="
+RUN find dist/ -name "*.js" 2>/dev/null || echo "No se encontraron archivos .js"
 
 # Exponer puerto
 EXPOSE 3000
 
-# Comando para ejecutar la aplicación
-CMD ["node", "dist/main.js"]
+# Comando para ejecutar la aplicación usando nest start
+CMD ["npm", "run", "start:prod"]
