@@ -3,12 +3,30 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  console.log('Starting application...');
+  
+  // Debug: Verificar variables de entorno
+  console.log('Environment variables:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('PORT:', process.env.PORT);
+  console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+  if (process.env.DATABASE_URL) {
+    console.log('DATABASE_URL starts with:', process.env.DATABASE_URL.substring(0, 20) + '...');
+  }
+  
   const app = await NestFactory.create(AppModule);
+  console.log('NestJS app created successfully');
 
+  // CORS configuration for production
+  const allowedOrigins = process.env.NODE_ENV === 'development' 
+    ? ['https://tu-frontend-domain.com', 'http://localhost:3000'] // Ajusta según tu frontend
+    : ['http://localhost:3000'];
+    
   app.enableCors({
-    origin: 'http://localhost:3000', 
+    origin: allowedOrigins,
     credentials: true,              
   });
+  console.log('CORS configured');
 
   // Swagger config
   const config = new DocumentBuilder()
@@ -19,8 +37,13 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
+  console.log('Swagger configured');
 
-  await app.listen(3001);
+  const port = process.env.PORT || 3000;
+  console.log(`Attempting to listen on port ${port}...`);
+  
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
+  console.log(`Swagger docs available at: http://localhost:${port}/docs`);
 }
 bootstrap();
-
