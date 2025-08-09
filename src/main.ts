@@ -17,15 +17,24 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   console.log('NestJS app created successfully');
 
-  // CORS configuration for production
-  const allowedOrigins = process.env.NODE_ENV === 'production' 
-    ? ['https://tu-frontend-domain.com', 'http://localhost:3000'] // Ajusta según tu frontend
-    : ['http://localhost:3000'];
-    
+  let allowedOrigins: string[];
+
+  switch (process.env.NODE_ENV) {
+    case 'production':
+      allowedOrigins = ['https://tu-frontend-domain.com', 'http://localhost:3000'];
+      break;
+    case 'develop':
+      allowedOrigins = ['https://tu-frontend-develop.com', 'http://localhost:3000'];
+      break;
+    default:
+      allowedOrigins = ['http://localhost:3000'];
+  }
+
   app.enableCors({
     origin: allowedOrigins,
-    credentials: true,              
+    credentials: true,
   });
+
   console.log('CORS configured');
 
   // Swagger config
