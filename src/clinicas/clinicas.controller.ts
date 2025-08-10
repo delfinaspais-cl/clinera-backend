@@ -225,6 +225,22 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/analytics')
+  @UseGuards(JwtAuthGuard)
+  async getClinicaAnalytics(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getClinicaAnalytics(clinicaUrl);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      return this.clinicasService.getClinicaAnalytics(clinicaUrl);
+    } else {
+      throw new BadRequestException('Acceso denegado. No tienes permisos para acceder a los analytics de esta clínica.');
+    }
+  }
+
 @Post(':clinicaUrl/turnos')
 @UseGuards(JwtAuthGuard)
 async createTurno(

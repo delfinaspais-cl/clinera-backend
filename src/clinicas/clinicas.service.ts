@@ -1053,4 +1053,191 @@ export class ClinicasService {
 //   });
 // }
 
+  async getClinicaAnalytics(clinicaUrl: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Obtener datos de los últimos 12 meses
+      const fechaInicio = new Date();
+      fechaInicio.setMonth(fechaInicio.getMonth() - 12);
+
+      // Analytics de turnos por mes
+      const turnosPorMes = await this.prisma.turno.groupBy({
+        by: ['estado'],
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          estado: true
+        }
+      });
+
+      // Analytics de pacientes únicos por mes
+      const pacientesPorMes = await this.prisma.turno.groupBy({
+        by: ['email'],
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          email: true
+        }
+      });
+
+      // Analytics de especialidades más solicitadas
+      const especialidadesPopulares = await this.prisma.turno.groupBy({
+        by: ['especialidad'],
+        where: {
+          clinicaId: clinica.id
+        },
+        _count: {
+          especialidad: true
+        },
+        orderBy: {
+          _count: {
+            especialidad: 'desc'
+          }
+        },
+        take: 5
+      });
+
+      // Analytics de doctores más solicitados
+      const doctoresPopulares = await this.prisma.turno.groupBy({
+        by: ['doctor'],
+        where: {
+          clinicaId: clinica.id
+        },
+        _count: {
+          doctor: true
+        },
+        orderBy: {
+          _count: {
+            doctor: 'desc'
+          }
+        },
+        take: 5
+      });
+
+      // Analytics de tendencias de crecimiento
+      const ultimos6Meses = [];
+      for (let i = 5; i >= 0; i--) {
+        const fecha = new Date();
+        fecha.setMonth(fecha.getMonth() - i);
+        const mes = fecha.getMonth();
+        const año = fecha.getFullYear();
+
+        const turnosMes = await this.prisma.turno.count({
+          where: {
+            clinicaId: clinica.id,
+            fecha: {
+              gte: new Date(año, mes, 1),
+              lt: new Date(año, mes + 1, 1)
+            }
+          }
+        });
+
+        const pacientesMes = await this.prisma.turno.groupBy({
+          by: ['email'],
+          where: {
+            clinicaId: clinica.id,
+            fecha: {
+              gte: new Date(año, mes, 1),
+              lt: new Date(año, mes + 1, 1)
+            }
+          },
+          _count: {
+            email: true
+          }
+        });
+
+        ultimos6Meses.push({
+          mes: fecha.toLocaleString('es-ES', { month: 'long', year: 'numeric' }),
+          turnos: turnosMes,
+          pacientesUnicos: pacientesMes.length
+        });
+      }
+
+      // Analytics de rendimiento por día de la semana
+      const rendimientoPorDia = await this.prisma.turno.groupBy({
+        by: ['fecha'],
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          fecha: true
+        }
+      });
+
+      // Calcular días más ocupados
+      const diasOcupados = {};
+      rendimientoPorDia.forEach(item => {
+        const dia = new Date(item.fecha).toLocaleDateString('es-ES', { weekday: 'long' });
+        diasOcupados[dia] = (diasOcupados[dia] || 0) + item._count.fecha;
+      });
+
+      // Analytics de tasa de confirmación
+      const totalTurnos = turnosPorMes.reduce((acc, stat) => acc + stat._count.estado, 0);
+      const turnosConfirmados = turnosPorMes.find(s => s.estado === 'confirmado')?._count.estado || 0;
+      const tasaConfirmacion = totalTurnos > 0 ? (turnosConfirmados / totalTurnos) * 100 : 0;
+
+      // Analytics de ingresos estimados
+      const ingresosEstimados = turnosConfirmados * 180; // $180 por turno confirmado
+
+      return {
+        success: true,
+        analytics: {
+          resumen: {
+            totalTurnos,
+            turnosConfirmados,
+            tasaConfirmacion: Math.round(tasaConfirmacion * 100) / 100,
+            pacientesUnicos: pacientesPorMes.length,
+            ingresosEstimados
+          },
+          especialidadesPopulares: especialidadesPopulares.map(stat => ({
+            especialidad: stat.especialidad,
+            cantidad: stat._count.especialidad
+          })),
+          doctoresPopulares: doctoresPopulares.map(stat => ({
+            doctor: stat.doctor,
+            cantidad: stat._count.doctor
+          })),
+          tendencias: {
+            ultimos6Meses,
+            diasOcupados: Object.entries(diasOcupados).map(([dia, cantidad]) => ({
+              dia,
+              cantidad
+            }))
+          },
+          rendimiento: {
+            promedioTurnosPorMes: Math.round(totalTurnos / 12),
+            promedioPacientesPorMes: Math.round(pacientesPorMes.length / 12),
+            tasaCrecimiento: ultimos6Meses.length > 1 ? 
+              ((ultimos6Meses[ultimos6Meses.length - 1].turnos - ultimos6Meses[0].turnos) / ultimos6Meses[0].turnos * 100) : 0
+          }
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener analytics de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
 } 
