@@ -879,6 +879,157 @@ export class ClinicasService {
   };
 }  
 
+  async updateTurno(clinicaUrl: string, turnoId: string, dto: CreateTurnoDto) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el turno y verificar que pertenece a la clínica
+      const turnoExistente = await this.prisma.turno.findFirst({
+        where: {
+          id: turnoId,
+          clinicaId: clinica.id
+        }
+      });
+
+      if (!turnoExistente) {
+        throw new BadRequestException('Turno no encontrado');
+      }
+
+      // Actualizar el turno
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turnoId },
+        data: {
+          paciente: dto.paciente,
+          email: dto.email,
+          telefono: dto.telefono,
+          especialidad: dto.especialidad,
+          doctor: dto.doctor,
+          fecha: new Date(dto.fecha),
+          hora: dto.hora,
+          motivo: dto.motivo,
+          updatedAt: new Date()
+        }
+      });
+
+      return {
+        success: true,
+        turno: {
+          id: turnoActualizado.id,
+          paciente: turnoActualizado.paciente,
+          email: turnoActualizado.email,
+          telefono: turnoActualizado.telefono,
+          especialidad: turnoActualizado.especialidad,
+          doctor: turnoActualizado.doctor,
+          fecha: turnoActualizado.fecha.toISOString().split('T')[0],
+          hora: turnoActualizado.hora,
+          estado: turnoActualizado.estado,
+          motivo: turnoActualizado.motivo
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar turno:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getTurnosStats(clinicaUrl: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Obtener estadísticas por estado
+      const statsPorEstado = await this.prisma.turno.groupBy({
+        by: ['estado'],
+        where: { clinicaId: clinica.id },
+        _count: {
+          estado: true
+        }
+      });
+
+      // Obtener estadísticas por especialidad
+      const statsPorEspecialidad = await this.prisma.turno.groupBy({
+        by: ['especialidad'],
+        where: { clinicaId: clinica.id },
+        _count: {
+          especialidad: true
+        }
+      });
+
+      // Obtener estadísticas por mes (últimos 6 meses)
+      const fechaInicio = new Date();
+      fechaInicio.setMonth(fechaInicio.getMonth() - 6);
+
+      const statsPorMes = await this.prisma.turno.groupBy({
+        by: ['estado'],
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          estado: true
+        }
+      });
+
+      // Calcular totales
+      const totalTurnos = statsPorEstado.reduce((acc, stat) => acc + stat._count.estado, 0);
+      const turnosConfirmados = statsPorEstado.find(s => s.estado === 'confirmado')?._count.estado || 0;
+      const turnosPendientes = statsPorEstado.find(s => s.estado === 'pendiente')?._count.estado || 0;
+      const turnosCancelados = statsPorEstado.find(s => s.estado === 'cancelado')?._count.estado || 0;
+
+      // Calcular porcentajes
+      const porcentajeConfirmados = totalTurnos > 0 ? (turnosConfirmados / totalTurnos) * 100 : 0;
+      const porcentajePendientes = totalTurnos > 0 ? (turnosPendientes / totalTurnos) * 100 : 0;
+      const porcentajeCancelados = totalTurnos > 0 ? (turnosCancelados / totalTurnos) * 100 : 0;
+
+      return {
+        success: true,
+        stats: {
+          total: totalTurnos,
+          confirmados: turnosConfirmados,
+          pendientes: turnosPendientes,
+          cancelados: turnosCancelados,
+          porcentajes: {
+            confirmados: Math.round(porcentajeConfirmados * 100) / 100,
+            pendientes: Math.round(porcentajePendientes * 100) / 100,
+            cancelados: Math.round(porcentajeCancelados * 100) / 100
+          },
+          porEspecialidad: statsPorEspecialidad.map(stat => ({
+            especialidad: stat.especialidad,
+            cantidad: stat._count.especialidad
+          })),
+          ultimos6Meses: statsPorMes.map(stat => ({
+            estado: stat.estado,
+            cantidad: stat._count.estado
+          }))
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener estadísticas de turnos:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
 // async getTurnosByClinicaUrl(clinicaUrl: string, filters: GetTurnosFiltersDto) {
 //   const clinica = await this.prisma.clinica.findUnique({
 //     where: { url: clinicaUrl },

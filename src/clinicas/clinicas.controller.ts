@@ -116,6 +116,24 @@ export class ClinicasController {
     }
   }
 
+  @Put(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
+  async updateTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+    @Body() dto: CreateTurnoDto
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+    } else {
+      throw new Error('Acceso denegado. No tienes permisos para actualizar turnos en esta clínica.');
+    }
+  }
+
   @Delete(':clinicaUrl/turnos/:turnoId')
   @UseGuards(JwtAuthGuard)
   async deleteTurno(
@@ -124,15 +142,28 @@ export class ClinicasController {
     @Param('turnoId') turnoId: string
   ) {
     // Verificar que el usuario tenga acceso a esta clínica
-    // Si es ADMIN de la clínica o OWNER, puede acceder
     if (req.user.role === 'OWNER') {
-      // OWNER puede acceder a cualquier clínica
       return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
     } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
-      // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
     } else {
       throw new Error('Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.');
+    }
+  }
+
+  @Get(':clinicaUrl/turnos/stats')
+  @UseGuards(JwtAuthGuard)
+  async getTurnosStats(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getTurnosStats(clinicaUrl);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      return this.clinicasService.getTurnosStats(clinicaUrl);
+    } else {
+      throw new Error('Acceso denegado. No tienes permisos para ver estadísticas de esta clínica.');
     }
   }
 

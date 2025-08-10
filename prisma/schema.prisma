@@ -40,6 +40,7 @@ model Clinica {
 
   users          User[]
   mensajes       Mensaje[]
+  notificaciones Notificacion[]
   turnos         Turno[]
   horarios       Horario[]
   especialidades Especialidad[]
@@ -58,6 +59,23 @@ model Mensaje {
   clinica Clinica @relation(fields: [clinicaId], references: [id])
 }
 
+model Notificacion {
+  id              String    @id @default(cuid())
+  titulo          String
+  mensaje         String
+  tipo            String    @default("info") // "info" | "warning" | "error" | "success"
+  prioridad       String    @default("media") // "baja" | "media" | "alta"
+  leida           Boolean   @default(false)
+  clinicaId       String
+  destinatarioId  String?   // Si es null, es para todos los usuarios de la clínica
+  fechaVencimiento DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clinica      Clinica? @relation(fields: [clinicaId], references: [id])
+  destinatario User?    @relation("UserNotifications", fields: [destinatarioId], references: [id])
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -72,9 +90,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clinica      Clinica?      @relation(fields: [clinicaId], references: [id])
-  patient      Patient?
-  professional Professional?
+  clinica         Clinica?         @relation(fields: [clinicaId], references: [id])
+  patient         Patient?
+  professional    Professional?
+  notificaciones  Notificacion[]   @relation("UserNotifications")
 }
 
 model Turno {

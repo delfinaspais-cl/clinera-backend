@@ -10,6 +10,7 @@ import { PublicModule } from './public/public.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { ReportsModule } from './reports/reports.module';
 import { MensajesModule } from './messages/messages.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { EspecialidadesModule } from './especialidades/especialidades.module';
 import { ConfigModule } from '@nestjs/config';
@@ -31,6 +32,7 @@ import { ConfigModule } from '@nestjs/config';
     ScheduleModule,
     ReportsModule,
     MensajesModule,
+    NotificationsModule,
     HorariosModule,
     EspecialidadesModule
     // otros módulos
