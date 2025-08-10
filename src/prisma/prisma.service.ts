@@ -4,15 +4,15 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor(private config: ConfigService) {
-    super({
-      datasources: {
-        db: {
-          url: config.get('DATABASE_URL'),
-        },
-      },
-    });
+  constructor(private readonly config: ConfigService) {
+    const url = config.get<string>('DATABASE_URL') ?? process.env.DATABASE_URL;
+    console.log('DB URL present?', !!(process.env.DATABASE_URL));
+
+
+    // Si no hay URL, no pases datasources para no inyectar "undefined"
+    super(url ? { datasources: { db: { url } } } : {});
   }
+  
 
   async onModuleInit() {
     await this.$connect();
