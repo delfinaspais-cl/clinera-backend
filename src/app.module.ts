@@ -12,9 +12,11 @@ import { ReportsModule } from './reports/reports.module';
 import { MensajesModule } from './messages/messages.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { EspecialidadesModule } from './especialidades/especialidades.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     PrismaModule,
     AuthModule,
     ProfessionalsModule,
