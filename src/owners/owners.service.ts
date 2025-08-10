@@ -270,4 +270,255 @@ export class OwnersService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  async getOwnerMessages() {
+    try {
+      const mensajes = await this.prisma.mensaje.findMany({
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      return {
+        success: true,
+        mensajes: mensajes.map(mensaje => ({
+          id: mensaje.id,
+          asunto: mensaje.asunto,
+          mensaje: mensaje.mensaje,
+          tipo: mensaje.tipo,
+          leido: mensaje.leido,
+          clinica: mensaje.clinica,
+          createdAt: mensaje.createdAt.toISOString()
+        }))
+      };
+    } catch (error) {
+      console.error('Error al obtener mensajes del propietario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async createOwnerMessage(dto: SendMensajeDto) {
+    try {
+      // Si se especifica una clínica, verificar que existe
+      if (dto.clinicaId) {
+        const clinica = await this.prisma.clinica.findUnique({
+          where: { id: dto.clinicaId }
+        });
+
+        if (!clinica) {
+          throw new BadRequestException('Clínica no encontrada');
+        }
+      }
+
+      // Crear el mensaje
+      const mensaje = await this.prisma.mensaje.create({
+        data: {
+          asunto: dto.asunto,
+          mensaje: dto.mensaje,
+          tipo: dto.tipo || 'general',
+          clinicaId: dto.clinicaId || null // Si no se especifica, es un mensaje general
+        },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true
+            }
+          }
+        }
+      });
+
+      return {
+        success: true,
+        mensaje: {
+          id: mensaje.id,
+          asunto: mensaje.asunto,
+          mensaje: mensaje.mensaje,
+          tipo: mensaje.tipo,
+          leido: mensaje.leido,
+          clinica: mensaje.clinica,
+          createdAt: mensaje.createdAt.toISOString()
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al crear mensaje del propietario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getOwnerAnalytics() {
+    try {
+      // Obtener datos de los últimos 12 meses
+      const fechaInicio = new Date();
+      fechaInicio.setMonth(fechaInicio.getMonth() - 12);
+
+      // Analytics de clínicas por mes
+      const clinicasPorMes = await this.prisma.clinica.groupBy({
+        by: ['estado'],
+        where: {
+          createdAt: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          estado: true
+        }
+      });
+
+      // Analytics de usuarios por rol
+      const usuariosPorRol = await this.prisma.user.groupBy({
+        by: ['role'],
+        where: {
+          role: {
+            in: ['ADMIN', 'PROFESSIONAL', 'SECRETARY']
+          }
+        },
+        _count: {
+          role: true
+        }
+      });
+
+      // Analytics de turnos por mes
+      const turnosPorMes = await this.prisma.turno.groupBy({
+        by: ['estado'],
+        where: {
+          createdAt: {
+            gte: fechaInicio
+          }
+        },
+        _count: {
+          estado: true
+        }
+      });
+
+      // Analytics de crecimiento de clínicas
+      const ultimos6Meses = [];
+      for (let i = 5; i >= 0; i--) {
+        const fecha = new Date();
+        fecha.setMonth(fecha.getMonth() - i);
+        const mes = fecha.getMonth();
+        const año = fecha.getFullYear();
+
+        const clinicasMes = await this.prisma.clinica.count({
+          where: {
+            createdAt: {
+              gte: new Date(año, mes, 1),
+              lt: new Date(año, mes + 1, 1)
+            }
+          }
+        });
+
+        const turnosMes = await this.prisma.turno.count({
+          where: {
+            createdAt: {
+              gte: new Date(año, mes, 1),
+              lt: new Date(año, mes + 1, 1)
+            }
+          }
+        });
+
+        ultimos6Meses.push({
+          mes: fecha.toLocaleString('es-ES', { month: 'long', year: 'numeric' }),
+          clinicas: clinicasMes,
+          turnos: turnosMes
+        });
+      }
+
+      // Calcular métricas de rendimiento
+      const totalClinicas = clinicasPorMes.reduce((acc, stat) => acc + stat._count.estado, 0);
+      const clinicasActivas = clinicasPorMes.find(s => s.estado === 'activa')?._count.estado || 0;
+      const tasaActivacion = totalClinicas > 0 ? (clinicasActivas / totalClinicas) * 100 : 0;
+
+      const totalTurnos = turnosPorMes.reduce((acc, stat) => acc + stat._count.estado, 0);
+      const turnosConfirmados = turnosPorMes.find(s => s.estado === 'confirmado')?._count.estado || 0;
+      const tasaConfirmacion = totalTurnos > 0 ? (turnosConfirmados / totalTurnos) * 100 : 0;
+
+      return {
+        success: true,
+        analytics: {
+          resumen: {
+            totalClinicas,
+            clinicasActivas,
+            tasaActivacion: Math.round(tasaActivacion * 100) / 100,
+            totalTurnos,
+            turnosConfirmados,
+            tasaConfirmacion: Math.round(tasaConfirmacion * 100) / 100
+          },
+          usuariosPorRol: usuariosPorRol.map(stat => ({
+            rol: stat.role,
+            cantidad: stat._count.role
+          })),
+          tendencias: {
+            ultimos6Meses,
+            crecimientoClinicas: ultimos6Meses.length > 1 ? 
+              ((ultimos6Meses[ultimos6Meses.length - 1].clinicas - ultimos6Meses[0].clinicas) / ultimos6Meses[0].clinicas * 100) : 0,
+            crecimientoTurnos: ultimos6Meses.length > 1 ? 
+              ((ultimos6Meses[ultimos6Meses.length - 1].turnos - ultimos6Meses[0].turnos) / ultimos6Meses[0].turnos * 100) : 0
+          },
+          rendimiento: {
+            promedioClinicasPorMes: Math.round(totalClinicas / 12),
+            promedioTurnosPorMes: Math.round(totalTurnos / 12),
+            ingresosEstimados: clinicasActivas * 12500 // $12,500 por clínica activa
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error al obtener analytics del propietario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getOwnerNotifications() {
+    try {
+      const notificaciones = await this.prisma.notificacion.findMany({
+        where: {
+          destinatarioId: null // Notificaciones generales para el propietario
+        },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      return {
+        success: true,
+        notificaciones: notificaciones.map(notif => ({
+          id: notif.id,
+          titulo: notif.titulo,
+          mensaje: notif.mensaje,
+          tipo: notif.tipo,
+          prioridad: notif.prioridad,
+          leida: notif.leida,
+          clinica: notif.clinica,
+          fechaVencimiento: notif.fechaVencimiento?.toISOString(),
+          createdAt: notif.createdAt.toISOString()
+        }))
+      };
+    } catch (error) {
+      console.error('Error al obtener notificaciones del propietario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
 } 

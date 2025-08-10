@@ -93,4 +93,49 @@ export class OwnersController {
 
     return this.ownersService.getOwnerStats();
   }
+
+  @Get('messages')
+  async getOwnerMessages(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden acceder a los mensajes.'
+      );
+    }
+
+    return this.ownersService.getOwnerMessages();
+  }
+
+  @Post('messages')
+  async createOwnerMessage(@Request() req, @Body() dto: SendMensajeDto) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden crear mensajes.'
+      );
+    }
+
+    return this.ownersService.createOwnerMessage(dto);
+  }
+
+  @Get('analytics')
+  async getOwnerAnalytics(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden acceder a los analytics.'
+      );
+    }
+
+    return this.ownersService.getOwnerAnalytics();
+  }
+
+  @Get('notifications')
+  async getOwnerNotifications(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden acceder a las notificaciones.'
+      );
+    }
+
+    return this.ownersService.getOwnerNotifications();
+  }
+
 }
