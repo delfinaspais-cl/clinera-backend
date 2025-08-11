@@ -52,11 +52,11 @@ model Mensaje {
   mensaje   String
   tipo      String // "pago" | "soporte" | "general"
   leido     Boolean  @default(false)
-  clinicaId String
+  clinicaId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clinica Clinica @relation(fields: [clinicaId], references: [id])
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
 }
 
 model Notificacion {

@@ -1131,7 +1131,7 @@ export class ClinicasService {
       });
 
       // Analytics de tendencias de crecimiento
-      const ultimos6Meses = [];
+      const ultimos6Meses: Array<{mes: string; turnos: number; pacientesUnicos: number}> = [];
       for (let i = 5; i >= 0; i--) {
         const fecha = new Date();
         fecha.setMonth(fecha.getMonth() - i);

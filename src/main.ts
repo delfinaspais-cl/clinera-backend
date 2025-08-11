@@ -11,7 +11,7 @@ async function bootstrap() {
   const corsOptions = {
     origin: config.get<string>('NODE_ENV') === 'production'
       ? [config.get<string>('ALLOWED_ORIGIN')]
-      : ['http://localhost:3000'],
+      : ['http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
   };
 

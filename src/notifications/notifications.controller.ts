@@ -11,8 +11,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import type { CreateNotificationDto } from './dto/create-notification.dto';
+import type { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/notifications')

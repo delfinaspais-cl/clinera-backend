@@ -81,6 +81,8 @@ export class AuthService {
 
   async ownerLogin(dto: OwnerLoginDto) {
     try {
+      console.log('Owner login DTO:', dto); // Debug log
+      
       // Buscar usuario por username (que será el email para owners)
       const user = await this.prisma.user.findUnique({ 
         where: { email: dto.username } 

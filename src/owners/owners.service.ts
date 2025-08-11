@@ -325,7 +325,7 @@ export class OwnersService {
           asunto: dto.asunto,
           mensaje: dto.mensaje,
           tipo: dto.tipo || 'general',
-          clinicaId: dto.clinicaId || null // Si no se especifica, es un mensaje general
+          clinicaId: dto.clinicaId || undefined // Si no se especifica, es un mensaje general
         },
         include: {
           clinica: {
@@ -405,7 +405,7 @@ export class OwnersService {
       });
 
       // Analytics de crecimiento de clínicas
-      const ultimos6Meses = [];
+      const ultimos6Meses: Array<{mes: string; clinicas: number; turnos: number}> = [];
       for (let i = 5; i >= 0; i--) {
         const fecha = new Date();
         fecha.setMonth(fecha.getMonth() - i);

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsIn } from 'class-validator';
+import { IsString, IsNotEmpty, IsIn, IsOptional } from 'class-validator';
 
 export class SendMensajeDto {
   @IsString()
@@ -13,4 +13,8 @@ export class SendMensajeDto {
   @IsNotEmpty()
   @IsIn(['pago', 'soporte', 'general'])
   tipo: string;
+
+  @IsString()
+  @IsOptional()
+  clinicaId?: string;
 } 
