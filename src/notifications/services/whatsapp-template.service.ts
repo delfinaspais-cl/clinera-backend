@@ -162,3 +162,4 @@ export class WhatsAppTemplateService {
     return Object.keys(this.defaultTemplates);
   }
 }
+

@@ -28,3 +28,4 @@ CREATE INDEX "Notificacion_createdAt_idx" ON "public"."Notificacion"("createdAt"
 CREATE INDEX "Mensaje_clinicaId_idx" ON "public"."Mensaje"("clinicaId");
 CREATE INDEX "Mensaje_leido_idx" ON "public"."Mensaje"("leido");
 CREATE INDEX "Mensaje_createdAt_idx" ON "public"."Mensaje"("createdAt");
+

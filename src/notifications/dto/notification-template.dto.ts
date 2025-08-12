@@ -21,3 +21,4 @@ export class NotificationTemplateDto {
   @IsObject()
   metadata?: Record<string, any>;
 }
+
