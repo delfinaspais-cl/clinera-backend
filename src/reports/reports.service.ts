@@ -61,4 +61,98 @@ export class ReportsService {
 
     return conteo;
   }
+
+  // Métodos para exportación
+  async getClinicaInfo(clinicaUrl: string) {
+    const clinica = await this.prisma.clinica.findUnique({ 
+      where: { url: clinicaUrl },
+      select: { id: true, name: true }
+    });
+    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    return clinica;
+  }
+
+  async getTurnosForExport(clinicaUrl: string, filters: {
+    fechaDesde?: string;
+    fechaHasta?: string;
+    estado?: string;
+  }) {
+    const clinica = await this.getClinicaInfo(clinicaUrl);
+    
+    const where: any = { clinicaId: clinica.id };
+    
+    // Aplicar filtros
+    if (filters.fechaDesde || filters.fechaHasta) {
+      where.fecha = {};
+      if (filters.fechaDesde) {
+        where.fecha.gte = new Date(filters.fechaDesde);
+      }
+      if (filters.fechaHasta) {
+        where.fecha.lte = new Date(filters.fechaHasta);
+      }
+    }
+    
+    if (filters.estado) {
+      where.estado = filters.estado;
+    }
+
+    const turnos = await this.prisma.turno.findMany({
+      where,
+      orderBy: { fecha: 'desc' }
+    });
+
+    return turnos.map(turno => ({
+      paciente: turno.paciente,
+      email: turno.email,
+      telefono: turno.telefono,
+      doctor: turno.doctor,
+      especialidad: turno.especialidad,
+      fecha: turno.fecha.toISOString().split('T')[0],
+      hora: turno.hora,
+      estado: turno.estado,
+      motivo: turno.motivo
+    }));
+  }
+
+  async getPacientesForExport(clinicaUrl: string, filters: {
+    estado?: string;
+  }) {
+    const clinica = await this.getClinicaInfo(clinicaUrl);
+    
+    const where: any = {
+      user: {
+        clinicaId: clinica.id,
+        role: 'PATIENT'
+      }
+    };
+    
+    if (filters.estado) {
+      where.user.estado = filters.estado;
+    }
+
+    const pacientes = await this.prisma.patient.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            email: true,
+            phone: true,
+            location: true,
+            estado: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    return pacientes.map(paciente => ({
+      nombre: paciente.name,
+      email: paciente.user.email,
+      telefono: paciente.phone || paciente.user.phone,
+      ubicacion: paciente.user.location,
+      estado: paciente.user.estado,
+      fechaNacimiento: paciente.birthDate ? paciente.birthDate.toISOString().split('T')[0] : null,
+      notas: paciente.notes
+    }));
+  }
 }
