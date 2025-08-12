@@ -6,12 +6,17 @@ import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { OwnerLoginDto } from './dto/owner-login.dto';
 import { ClinicaLoginDto } from './dto/clinica-login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EmailService } from './services/email.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -208,5 +213,141 @@ export class AuthService {
     return { success: true };
   }
 
+  // Métodos de recuperación de contraseña
+  async forgotPassword(dto: ForgotPasswordDto) {
+    try {
+      // Buscar usuario por email
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email }
+      });
+
+      if (!user) {
+        // Por seguridad, no revelamos si el email existe o no
+        return {
+          success: true,
+          message: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña'
+        };
+      }
+
+      // Generar token único
+      const resetToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      // Guardar token en base de datos
+      await this.prisma.passwordResetToken.create({
+        data: {
+          email: dto.email,
+          token: resetToken,
+          expiresAt,
+          used: false
+        }
+      });
+
+      // Enviar email
+      const emailSent = await this.emailService.sendPasswordResetEmail(
+        dto.email,
+        resetToken,
+        user.name || 'Usuario'
+      );
+
+      if (!emailSent) {
+        throw new BadRequestException('Error al enviar el email de recuperación');
+      }
+
+      return {
+        success: true,
+        message: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña'
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en forgotPassword:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+      // Buscar token válido
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token: dto.token,
+          used: false,
+          expiresAt: {
+            gt: new Date()
+          }
+        }
+      });
+
+      if (!resetToken) {
+        throw new BadRequestException('Token inválido o expirado');
+      }
+
+      // Buscar usuario
+      const user = await this.prisma.user.findUnique({
+        where: { email: resetToken.email }
+      });
+
+      if (!user) {
+        throw new BadRequestException('Usuario no encontrado');
+      }
+
+      // Actualizar contraseña
+      const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword }
+      });
+
+      // Marcar token como usado
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true }
+      });
+
+      // Enviar email de confirmación
+      await this.emailService.sendPasswordChangedEmail(
+        user.email,
+        user.name || 'Usuario'
+      );
+
+      return {
+        success: true,
+        message: 'Contraseña actualizada exitosamente'
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en resetPassword:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async validateResetToken(token: string) {
+    try {
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token,
+          used: false,
+          expiresAt: {
+            gt: new Date()
+          }
+        }
+      });
+
+      return {
+        valid: !!resetToken,
+        message: resetToken ? 'Token válido' : 'Token inválido o expirado'
+      };
+    } catch (error) {
+      console.error('Error al validar token:', error);
+      return {
+        valid: false,
+        message: 'Error al validar token'
+      };
+    }
+  }
 }
 

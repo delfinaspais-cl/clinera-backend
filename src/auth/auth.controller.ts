@@ -1,8 +1,10 @@
-import { Body, Controller, Post, Headers, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Headers, UseGuards, Get, Param } from '@nestjs/common';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { OwnerLoginDto } from './dto/owner-login.dto';
 import { ClinicaLoginDto } from './dto/clinica-login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.auth.guard';
 
@@ -42,6 +44,22 @@ export class AuthController {
   clinicaLogout(@Headers('authorization') auth: string) {
     const token = auth.replace('Bearer ', '');
     return this.authService.clinicaLogout(token);
+  }
+
+  // Endpoints de recuperación de contraseña
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @Get('validate-reset-token/:token')
+  validateResetToken(@Param('token') token: string) {
+    return this.authService.validateResetToken(token);
   }
 }
 
