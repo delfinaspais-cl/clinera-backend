@@ -8,6 +8,7 @@ import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
+import { SearchTurnosDto } from './dto/search-turnos.dto';
 
 
 @Controller('clinica')
@@ -164,6 +165,23 @@ export class ClinicasController {
       return this.clinicasService.getTurnosStats(clinicaUrl);
     } else {
       throw new Error('Acceso denegado. No tienes permisos para ver estadísticas de esta clínica.');
+    }
+  }
+
+  @Get(':clinicaUrl/turnos/search')
+  @UseGuards(JwtAuthGuard)
+  async searchTurnos(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() searchDto: SearchTurnosDto
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.searchTurnos(clinicaUrl, searchDto);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      return this.clinicasService.searchTurnos(clinicaUrl, searchDto);
+    } else {
+      throw new Error('Acceso denegado. No tienes permisos para buscar turnos en esta clínica.');
     }
   }
 

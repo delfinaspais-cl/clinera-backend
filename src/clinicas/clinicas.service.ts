@@ -9,6 +9,7 @@ import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracio
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
 import * as bcrypt from 'bcrypt';
 import { CreateTurnoDto } from './dto/create-turno.dto';
+import { SearchTurnosDto } from './dto/search-turnos.dto';
 
 @Injectable()
 export class ClinicasService {
@@ -1236,6 +1237,123 @@ export class ClinicasService {
         throw error;
       }
       console.error('Error al obtener analytics de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Método de búsqueda avanzada de turnos
+  async searchTurnos(clinicaUrl: string, searchDto: SearchTurnosDto) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros de búsqueda
+      const where: any = {
+        clinicaId: clinica.id
+      };
+
+      // Filtro por paciente
+      if (searchDto.paciente) {
+        where.OR = [
+          { paciente: { contains: searchDto.paciente, mode: 'insensitive' } },
+          { email: { contains: searchDto.paciente, mode: 'insensitive' } }
+        ];
+      }
+
+      // Filtro por profesional
+      if (searchDto.profesional) {
+        where.doctor = { contains: searchDto.profesional, mode: 'insensitive' };
+      }
+
+      // Filtro por especialidad
+      if (searchDto.especialidad) {
+        where.especialidad = { contains: searchDto.especialidad, mode: 'insensitive' };
+      }
+
+      // Filtro por estado
+      if (searchDto.estado) {
+        where.estado = searchDto.estado;
+      }
+
+      // Filtro por fecha
+      if (searchDto.fechaDesde || searchDto.fechaHasta) {
+        where.fecha = {};
+        if (searchDto.fechaDesde) {
+          where.fecha.gte = new Date(searchDto.fechaDesde);
+        }
+        if (searchDto.fechaHasta) {
+          where.fecha.lte = new Date(searchDto.fechaHasta);
+        }
+      }
+
+      // Construir ordenamiento
+      const orderBy: any = {};
+      if (searchDto.sortBy) {
+        orderBy[searchDto.sortBy] = searchDto.sortOrder || 'asc';
+      } else {
+        orderBy.fecha = 'asc';
+      }
+
+      // Calcular paginación
+      const page = searchDto.page || 1;
+      const limit = searchDto.limit || 10;
+      const skip = (page - 1) * limit;
+
+      // Obtener turnos con paginación
+      const [turnos, total] = await Promise.all([
+        this.prisma.turno.findMany({
+          where,
+          orderBy,
+          skip,
+          take: limit
+        }),
+        this.prisma.turno.count({ where })
+      ]);
+
+      // Transformar los datos para el formato requerido
+      const turnosFormateados = turnos.map(turno => ({
+        id: turno.id,
+        paciente: turno.paciente,
+        email: turno.email,
+        telefono: turno.telefono,
+        doctor: turno.doctor,
+        especialidad: turno.especialidad,
+        fecha: turno.fecha.toISOString().split('T')[0],
+        hora: turno.hora,
+        estado: turno.estado,
+        motivo: turno.motivo || '',
+        createdAt: turno.createdAt.toISOString()
+      }));
+
+      return {
+        success: true,
+        turnos: turnosFormateados,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        },
+        filters: {
+          paciente: searchDto.paciente,
+          profesional: searchDto.profesional,
+          especialidad: searchDto.especialidad,
+          estado: searchDto.estado,
+          fechaDesde: searchDto.fechaDesde,
+          fechaHasta: searchDto.fechaHasta
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al buscar turnos:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
