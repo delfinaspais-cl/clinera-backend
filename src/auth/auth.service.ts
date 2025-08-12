@@ -349,5 +349,66 @@ export class AuthService {
       };
     }
   }
+
+  async validateEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email }
+    });
+    return { available: !user };
+  }
+
+  async createOwnerForRailway() {
+    try {
+      // Verificar si ya existe un OWNER para Railway
+      const existingOwner = await this.prisma.user.findFirst({
+        where: { 
+          email: 'railway-owner@clinera.io',
+          role: 'OWNER'
+        }
+      });
+
+      if (existingOwner) {
+        return {
+          success: true,
+          message: 'OWNER para Railway ya existe',
+          credentials: {
+            email: 'railway-owner@clinera.io',
+            password: '123456'
+          }
+        };
+      }
+
+      // Crear nuevo OWNER para Railway
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      const owner = await this.prisma.user.create({
+        data: {
+          email: 'railway-owner@clinera.io',
+          password: hashedPassword,
+          name: 'Railway Owner',
+          role: 'OWNER',
+          clinicaId: null, // Los OWNER no tienen clínica específica
+          estado: 'activo'
+        }
+      });
+
+      return {
+        success: true,
+        message: 'OWNER creado exitosamente para Railway',
+        credentials: {
+          email: 'railway-owner@clinera.io',
+          password: '123456'
+        },
+        user: {
+          id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          role: owner.role
+        }
+      };
+    } catch (error) {
+      console.error('Error creando OWNER para Railway:', error);
+      throw new BadRequestException('Error creando usuario OWNER');
+    }
+  }
 }
 

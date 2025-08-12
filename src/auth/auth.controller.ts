@@ -19,6 +19,13 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @ApiOperation({ summary: 'Crear usuario OWNER temporal para Railway' })
+  @ApiResponse({ status: 201, description: 'OWNER creado exitosamente' })
+  @Post('create-owner')
+  createOwner() {
+    return this.authService.createOwnerForRailway();
+  }
+
   @ApiOperation({ summary: 'Iniciar sesión de usuario' })
   @ApiResponse({ 
     status: 200, 
@@ -60,19 +67,6 @@ export class AuthController {
     return this.authService.clinicaLogout(token);
   }
 
-  // Endpoints de recuperación de contraseña
-  @ApiOperation({ summary: 'Solicitar recuperación de contraseña' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Email de recuperación enviado (si el email existe)',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña' }
-      }
-    }
-  })
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
@@ -83,9 +77,9 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
-  @Get('validate-reset-token/:token')
-  validateResetToken(@Param('token') token: string) {
-    return this.authService.validateResetToken(token);
+  @Get('validate/email/:email')
+  validateEmail(@Param('email') email: string) {
+    return this.authService.validateEmail(email);
   }
 }
 
