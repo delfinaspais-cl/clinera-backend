@@ -16,11 +16,17 @@ import { CreateClinicaDto } from './dto/create-clinica.dto';
 import { UpdateClinicaEstadoDto } from './dto/update-clinica-estado.dto';
 import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
+import { AuthService } from '../auth/auth.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('owner')
 @UseGuards(JwtAuthGuard)
 export class OwnersController {
-  constructor(private ownersService: OwnersService) {}
+  constructor(
+    private ownersService: OwnersService,
+    private authService: AuthService,
+    private prisma: PrismaService
+  ) {}
 
   @Get('clinicas')
   async getAllClinicas(@Request() req) {
@@ -136,6 +142,67 @@ export class OwnersController {
     }
 
     return this.ownersService.getOwnerNotifications();
+  }
+
+  @Post('register-complete')
+  async registerComplete(@Body() body: any) {
+    // Endpoint para registro completo: admin + clínica + plan
+    const { admin, clinica, planId, simulatePayment } = body;
+    
+    // Validar datos requeridos
+    if (!admin || !clinica) {
+      throw new BadRequestException('Datos de admin y clínica son requeridos');
+    }
+
+    // Crear la clínica
+    const clinicaData = {
+      nombre: clinica.nombre,
+      url: clinica.url,
+      colorPrimario: clinica.color_primario || '#3B82F6',
+      colorSecundario: clinica.color_secundario || '#1E40AF',
+      direccion: clinica.direccion,
+      telefono: clinica.telefono,
+      email: clinica.email
+    };
+
+    const clinicaCreada = await this.ownersService.createClinica(clinicaData);
+
+    if (!clinicaCreada.clinica) {
+      throw new BadRequestException('Error al crear la clínica');
+    }
+
+    // Crear el usuario admin
+    const adminData = {
+      email: admin.email,
+      password: admin.password,
+      name: admin.nombre,
+      role: 'ADMIN' as const,
+      clinicaId: clinicaCreada.clinica.id
+    };
+
+    // Crear el usuario admin usando AuthService
+    const adminUser = await this.authService.register({
+      email: admin.email,
+      password: admin.password,
+      name: admin.nombre,
+      role: 'ADMIN'
+    });
+
+    // Actualizar el usuario con la clínica
+    await this.prisma.user.update({
+      where: { email: admin.email },
+      data: { clinicaId: clinicaCreada.clinica.id }
+    });
+
+    return {
+      success: true,
+      message: 'Registro completo exitoso',
+      clinica: clinicaCreada.clinica,
+      plan: planId,
+      paymentSimulated: simulatePayment,
+      adminCreated: true,
+      adminToken: adminUser.access_token
+    };
   }
 
   // Endpoints de validación

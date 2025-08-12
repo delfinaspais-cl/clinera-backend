@@ -11,6 +11,6 @@ export class RegisterAuthDto {
   @IsNotEmpty()
   name: string;
 
-  @IsIn(['ADMIN', 'PROFESSIONAL', 'PATIENT'])
+  @IsIn(['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'])
   role: string;
 }
