@@ -1,9 +1,11 @@
 import { Controller, Get, Param, UseGuards, Res, Query } from '@nestjs/common';
 import type { Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { ExportService } from './services/export.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
+@ApiTags('Reportes y Exportación')
 @UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/reportes')
 export class ReportsController {
@@ -28,6 +30,18 @@ export class ReportsController {
   }
 
   // Endpoints de exportación
+  @ApiOperation({ summary: 'Exportar turnos a PDF' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Archivo PDF descargado',
+    content: {
+      'application/pdf': {
+        schema: { type: 'string', format: 'binary' }
+      }
+    }
+  })
+  @ApiBearerAuth()
   @Get('export/turnos/pdf')
   async exportTurnosPDF(
     @Param('clinicaUrl') clinicaUrl: string,

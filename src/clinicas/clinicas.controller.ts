@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Put, Delete, Param, Body, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ClinicasService } from './clinicas.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
@@ -11,6 +12,7 @@ import { CreateTurnoDto } from './dto/create-turno.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 
 
+@ApiTags('Gestión de Clínicas')
 @Controller('clinica')
 export class ClinicasController {
   constructor(private clinicasService: ClinicasService) {}
@@ -168,6 +170,22 @@ export class ClinicasController {
     }
   }
 
+  @ApiOperation({ summary: 'Búsqueda avanzada de turnos con filtros' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Lista de turnos filtrados con paginación',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        turnos: { type: 'array' },
+        pagination: { type: 'object' },
+        filters: { type: 'object' }
+      }
+    }
+  })
+  @ApiBearerAuth()
   @Get(':clinicaUrl/turnos/search')
   @UseGuards(JwtAuthGuard)
   async searchTurnos(

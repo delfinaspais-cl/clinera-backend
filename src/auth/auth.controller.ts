@@ -1,4 +1,5 @@
 import { Body, Controller, Post, Headers, UseGuards, Get, Param } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { OwnerLoginDto } from './dto/owner-login.dto';
@@ -8,6 +9,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.auth.guard';
 
+@ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -17,6 +19,18 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
+  @ApiOperation({ summary: 'Iniciar sesión de usuario' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Login exitoso',
+    schema: {
+      type: 'object',
+      properties: {
+        access_token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   @Post('login')
   login(@Body() dto: LoginAuthDto) {
     return this.authService.loginWithDto(dto);
@@ -47,6 +61,18 @@ export class AuthController {
   }
 
   // Endpoints de recuperación de contraseña
+  @ApiOperation({ summary: 'Solicitar recuperación de contraseña' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Email de recuperación enviado (si el email existe)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña' }
+      }
+    }
+  })
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
