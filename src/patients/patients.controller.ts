@@ -7,12 +7,14 @@ import {
   Param,
   Body,
   UseGuards,
-  Request
+  Request,
+  Query
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PatientsService } from './patients.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-client.dto';
+import { SearchPatientsDto } from './dto/search-patients.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/pacientes')
@@ -58,7 +60,25 @@ export class PatientsController {
   }
 
   @Get('mis-turnos')
-async getMisTurnos(@Request() req) {
-  return this.patientsService.getMisTurnos(req.user.email);
-}
+  async getMisTurnos(@Request() req) {
+    return this.patientsService.getMisTurnos(req.user.email);
+  }
+
+  @Get('search')
+  async searchPatients(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() searchDto: SearchPatientsDto
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.patientsService.searchPatients(clinicaUrl, searchDto);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      return this.patientsService.searchPatients(clinicaUrl, searchDto);
+    } else if (req.user.role === 'SECRETARY' && req.user.clinicaUrl === clinicaUrl) {
+      return this.patientsService.searchPatients(clinicaUrl, searchDto);
+    } else {
+      throw new Error('Acceso denegado. No tienes permisos para buscar pacientes en esta clínica.');
+    }
+  }
 }

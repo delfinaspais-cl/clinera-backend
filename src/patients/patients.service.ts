@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-client.dto';
+import { SearchPatientsDto } from './dto/search-patients.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -142,5 +143,180 @@ export class PatientsService {
         fecha: 'desc',
       },
     });
+  }
+
+  // Método de búsqueda avanzada de pacientes
+  async searchPatients(clinicaUrl: string, searchDto: SearchPatientsDto) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros de búsqueda
+      const where: any = {
+        user: {
+          clinicaId: clinica.id,
+          role: 'PATIENT'
+        }
+      };
+
+      // Filtro por nombre
+      if (searchDto.nombre) {
+        where.OR = [
+          { name: { contains: searchDto.nombre, mode: 'insensitive' } },
+          { user: { name: { contains: searchDto.nombre, mode: 'insensitive' } } }
+        ];
+      }
+
+      // Filtro por email
+      if (searchDto.email) {
+        where.user = {
+          ...where.user,
+          email: { contains: searchDto.email, mode: 'insensitive' }
+        };
+      }
+
+      // Filtro por teléfono
+      if (searchDto.telefono) {
+        where.OR = [
+          { phone: { contains: searchDto.telefono, mode: 'insensitive' } },
+          { user: { phone: { contains: searchDto.telefono, mode: 'insensitive' } } }
+        ];
+      }
+
+      // Filtro por ubicación
+      if (searchDto.ubicacion) {
+        where.user = {
+          ...where.user,
+          location: { contains: searchDto.ubicacion, mode: 'insensitive' }
+        };
+      }
+
+      // Filtro por fecha de nacimiento
+      if (searchDto.fechaNacimientoDesde || searchDto.fechaNacimientoHasta) {
+        where.birthDate = {};
+        if (searchDto.fechaNacimientoDesde) {
+          where.birthDate.gte = new Date(searchDto.fechaNacimientoDesde);
+        }
+        if (searchDto.fechaNacimientoHasta) {
+          where.birthDate.lte = new Date(searchDto.fechaNacimientoHasta);
+        }
+      }
+
+      // Filtro por fecha de creación
+      if (searchDto.fechaCreacionDesde || searchDto.fechaCreacionHasta) {
+        where.user = {
+          ...where.user,
+          createdAt: {}
+        };
+        if (searchDto.fechaCreacionDesde) {
+          where.user.createdAt.gte = new Date(searchDto.fechaCreacionDesde);
+        }
+        if (searchDto.fechaCreacionHasta) {
+          where.user.createdAt.lte = new Date(searchDto.fechaCreacionHasta);
+        }
+      }
+
+      // Filtro por estado
+      if (searchDto.estado) {
+        where.user = {
+          ...where.user,
+          estado: searchDto.estado
+        };
+      }
+
+      // Construir ordenamiento
+      const orderBy: any = {};
+      if (searchDto.sortBy) {
+        if (searchDto.sortBy === 'name') {
+          orderBy.name = searchDto.sortOrder || 'asc';
+        } else if (searchDto.sortBy === 'email') {
+          orderBy.user = { email: searchDto.sortOrder || 'asc' };
+        } else if (searchDto.sortBy === 'createdAt') {
+          orderBy.user = { createdAt: searchDto.sortOrder || 'asc' };
+        } else {
+          orderBy[searchDto.sortBy] = searchDto.sortOrder || 'asc';
+        }
+      } else {
+        orderBy.name = 'asc';
+      }
+
+      // Calcular paginación
+      const page = searchDto.page || 1;
+      const limit = searchDto.limit || 10;
+      const skip = (page - 1) * limit;
+
+      // Obtener pacientes con paginación
+      const [pacientes, total] = await Promise.all([
+        this.prisma.patient.findMany({
+          where,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+                location: true,
+                estado: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            }
+          },
+          orderBy,
+          skip,
+          take: limit
+        }),
+        this.prisma.patient.count({ where })
+      ]);
+
+      // Transformar los datos para el formato requerido
+      const pacientesFormateados = pacientes.map(paciente => ({
+        id: paciente.id,
+        nombre: paciente.name,
+        email: paciente.user.email,
+        telefono: paciente.phone || paciente.user.phone,
+        ubicacion: paciente.user.location,
+        fechaNacimiento: paciente.birthDate ? paciente.birthDate.toISOString().split('T')[0] : null,
+        notas: paciente.notes,
+        estado: paciente.user.estado,
+        fechaCreacion: paciente.user.createdAt.toISOString(),
+        fechaActualizacion: paciente.user.updatedAt.toISOString()
+      }));
+
+      return {
+        success: true,
+        pacientes: pacientesFormateados,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        },
+        filters: {
+          nombre: searchDto.nombre,
+          email: searchDto.email,
+          telefono: searchDto.telefono,
+          ubicacion: searchDto.ubicacion,
+          fechaNacimientoDesde: searchDto.fechaNacimientoDesde,
+          fechaNacimientoHasta: searchDto.fechaNacimientoHasta,
+          fechaCreacionDesde: searchDto.fechaCreacionDesde,
+          fechaCreacionHasta: searchDto.fechaCreacionHasta,
+          estado: searchDto.estado
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al buscar pacientes:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
   }
 }
