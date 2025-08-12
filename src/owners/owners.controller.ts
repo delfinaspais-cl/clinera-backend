@@ -138,4 +138,15 @@ export class OwnersController {
     return this.ownersService.getOwnerNotifications();
   }
 
+  // Endpoints de validación
+  @Get('validate/clinica-url/:url')
+  async validateClinicaUrl(@Param('url') url: string) {
+    return this.ownersService.validateClinicaUrl(url);
+  }
+
+  @Get('validate/email/:email')
+  async validateEmail(@Param('email') email: string) {
+    return this.ownersService.validateEmail(email);
+  }
+
 }

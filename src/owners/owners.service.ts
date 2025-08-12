@@ -521,4 +521,61 @@ export class OwnersService {
     }
   }
 
+  // Métodos de validación
+  async validateClinicaUrl(url: string) {
+    try {
+      // Validar formato de URL (solo letras, números, guiones y guiones bajos)
+      const urlRegex = /^[a-zA-Z0-9_-]+$/;
+      if (!urlRegex.test(url)) {
+        return {
+          success: false,
+          available: false,
+          message: 'La URL solo puede contener letras, números, guiones y guiones bajos'
+        };
+      }
+
+      // Verificar si la URL ya existe
+      const existingClinica = await this.prisma.clinica.findUnique({
+        where: { url }
+      });
+
+      return {
+        success: true,
+        available: !existingClinica,
+        message: existingClinica ? 'La URL ya está en uso' : 'La URL está disponible'
+      };
+    } catch (error) {
+      console.error('Error al validar URL de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async validateEmail(email: string) {
+    try {
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return {
+          success: false,
+          available: false,
+          message: 'Formato de email inválido'
+        };
+      }
+
+      // Verificar si el email ya existe
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email }
+      });
+
+      return {
+        success: true,
+        available: !existingUser,
+        message: existingUser ? 'El email ya está registrado' : 'El email está disponible'
+      };
+    } catch (error) {
+      console.error('Error al validar email:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
 } 
