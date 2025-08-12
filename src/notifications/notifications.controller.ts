@@ -15,7 +15,7 @@ import type { CreateNotificationDto } from './dto/create-notification.dto';
 import type { UpdateNotificationDto } from './dto/update-notification.dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller('clinica/:clinicaUrl/notifications')
+@Controller('clinica/:clinicaUrl/notificaciones')
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
