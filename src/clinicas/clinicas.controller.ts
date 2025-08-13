@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Put, Delete, Param, Body, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Param, Body, Query, UseGuards, Request, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ClinicasService } from './clinicas.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
@@ -53,7 +53,7 @@ export class ClinicasController {
       // ADMIN solo puede crear usuarios en su propia clínica
       return this.clinicasService.createUsuarioClinica(clinicaUrl, dto);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para crear usuarios en esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para crear usuarios en esta clínica.');
     }
   }
 
@@ -74,7 +74,7 @@ export class ClinicasController {
       // ADMIN solo puede actualizar usuarios en su propia clínica
       return this.clinicasService.updateUsuarioEstado(clinicaUrl, userId, dto);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para actualizar usuarios en esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para actualizar usuarios en esta clínica.');
     }
   }
 
@@ -94,7 +94,7 @@ export class ClinicasController {
       // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, filters);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para acceder a esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para acceder a esta clínica.');
     }
   }
 
@@ -115,7 +115,7 @@ export class ClinicasController {
       // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, dto);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para actualizar turnos en esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para actualizar turnos en esta clínica.');
     }
   }
 
@@ -150,7 +150,7 @@ export class ClinicasController {
     } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
       return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.');
     }
   }
 
@@ -166,7 +166,7 @@ export class ClinicasController {
     } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
       return this.clinicasService.getTurnosStats(clinicaUrl);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para ver estadísticas de esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para ver estadísticas de esta clínica.');
     }
   }
 
@@ -199,7 +199,7 @@ export class ClinicasController {
     } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
       return this.clinicasService.searchTurnos(clinicaUrl, searchDto);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para buscar turnos en esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para buscar turnos en esta clínica.');
     }
   }
 
@@ -218,7 +218,7 @@ export class ClinicasController {
       // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.getClinicaConfiguracion(clinicaUrl);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para acceder a esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para acceder a esta clínica.');
     }
   }
 
@@ -238,7 +238,7 @@ export class ClinicasController {
       // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.updateClinicaConfiguracion(clinicaUrl, dto);
     } else {
-      throw new Error('Acceso denegado. No tienes permisos para actualizar esta clínica.');
+      throw new UnauthorizedException('Acceso denegado. No tienes permisos para actualizar esta clínica.');
     }
   }
 
