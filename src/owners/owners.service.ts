@@ -69,7 +69,7 @@ export class OwnersService {
       email: dto.email,
       colorPrimario: dto.colorPrimario || '#3B82F6',
       colorSecundario: dto.colorSecundario || '#1E40AF',
-      estado: 'activa',
+      estado: dto.estado || 'activa',
       estadoPago: 'pagado',
       fechaCreacion: new Date(),
       ultimoPago: new Date(),
@@ -127,6 +127,7 @@ export class OwnersService {
         email: dto.email,
         colorPrimario: dto.colorPrimario,
         colorSecundario: dto.colorSecundario,
+        estado: dto.estado,
       },
     });
 

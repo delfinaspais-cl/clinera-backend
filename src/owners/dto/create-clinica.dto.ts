@@ -57,4 +57,8 @@ export class CreateClinicaDto {
   @IsArray()
   @IsOptional()
   especialidades?: string[];
+
+  @IsString()
+  @IsOptional()
+  estado?: string;
 }

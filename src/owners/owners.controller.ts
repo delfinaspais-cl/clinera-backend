@@ -73,7 +73,7 @@ export class OwnersController {
 
     return this.ownersService.updateClinica(clinicaId, {
       estado: dto.estado,
-    } as any); // ⚠️ Podés separar esta lógica si no querés castear
+    });
   }
 
   @Post('clinicas/:clinicaId/mensajes')

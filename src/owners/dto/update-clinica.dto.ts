@@ -65,4 +65,9 @@ export class UpdateClinicaDto {
   @ValidateNested({ each: true, message: 'Cada horario debe ser válido' })
   @Type(() => HorarioDto)
   horarios?: HorarioDto[];
+
+  @IsOptional()
+  @IsString({ message: 'El estado debe ser una cadena de texto' })
+  @Matches(/^(activa|inactiva)$/, { message: 'El estado debe ser "activa" o "inactiva"' })
+  estado?: string;
 }
