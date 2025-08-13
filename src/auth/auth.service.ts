@@ -9,6 +9,7 @@ import { ClinicaLoginDto } from './dto/clinica-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { EmailService } from './services/email.service';
+import { AuditService } from '../audit/audit.service';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private auditService: AuditService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -27,11 +29,31 @@ export class AuthService {
     return null;
   }
 
-  async loginWithDto(dto: LoginAuthDto) {
+  async loginWithDto(dto: LoginAuthDto, ipAddress?: string, userAgent?: string) {
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) {
+      // Registrar intento de login fallido
+      await this.auditService.logLogin(
+        'unknown',
+        user?.clinicaId || 'unknown',
+        false,
+        { email: dto.email, reason: 'Invalid credentials' },
+        ipAddress,
+        userAgent,
+      );
       throw new UnauthorizedException('Credenciales inválidas');
     }
+
+    // Registrar login exitoso
+    await this.auditService.logLogin(
+      user.id,
+      user.clinicaId || 'unknown',
+      true,
+      { email: dto.email, role: user.role },
+      ipAddress,
+      userAgent,
+    );
+
     return this.login(user);
   }
 
@@ -84,7 +106,7 @@ export class AuthService {
     }
   }
 
-  async ownerLogin(dto: OwnerLoginDto) {
+  async ownerLogin(dto: OwnerLoginDto, ipAddress?: string, userAgent?: string) {
     try {
       console.log('Owner login DTO:', dto); // Debug log
       
@@ -94,19 +116,56 @@ export class AuthService {
       });
 
       if (!user) {
+        // Registrar intento de login fallido
+        await this.auditService.logLogin(
+          'unknown',
+          'unknown',
+          false,
+          { username: dto.username, reason: 'User not found' },
+          ipAddress,
+          userAgent,
+        );
         throw new UnauthorizedException('Credenciales inválidas');
       }
 
       // Verificar que sea un OWNER
       if (user.role !== 'OWNER') {
+        // Registrar intento de login fallido por rol incorrecto
+        await this.auditService.logLogin(
+          user.id,
+          user.clinicaId || 'unknown',
+          false,
+          { username: dto.username, reason: 'Invalid role', userRole: user.role },
+          ipAddress,
+          userAgent,
+        );
         throw new UnauthorizedException('Acceso denegado. Solo propietarios pueden acceder.');
       }
 
       // Verificar contraseña
       const isValidPassword = await bcrypt.compare(dto.password, user.password);
       if (!isValidPassword) {
+        // Registrar intento de login fallido por contraseña incorrecta
+        await this.auditService.logLogin(
+          user.id,
+          user.clinicaId || 'unknown',
+          false,
+          { username: dto.username, reason: 'Invalid password' },
+          ipAddress,
+          userAgent,
+        );
         throw new UnauthorizedException('Credenciales inválidas');
       }
+
+      // Registrar login exitoso
+      await this.auditService.logLogin(
+        user.id,
+        user.clinicaId || 'unknown',
+        true,
+        { username: dto.username, role: user.role },
+        ipAddress,
+        userAgent,
+      );
 
       // Generar token
       const payload = { 

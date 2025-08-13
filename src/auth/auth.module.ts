@@ -6,11 +6,13 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from './services/email.service';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), // .env
     PrismaModule,
+    AuditModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

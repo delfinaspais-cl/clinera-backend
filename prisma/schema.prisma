@@ -46,6 +46,7 @@ model Clinica {
   especialidades Especialidad[]
   whatsappMessages WhatsAppMessage[]
   whatsappTemplates WhatsAppTemplate[]
+  auditLogs        AuditLog[] @relation("ClinicaAuditLogs")
 }
 
 model Mensaje {
@@ -98,6 +99,7 @@ model User {
   notificaciones  Notificacion[]   @relation("UserNotifications")
   pushTokens      PushNotificationToken[]
   whatsappMessages WhatsAppMessage[]
+  auditLogs       AuditLog[] @relation("UserAuditLogs")
 }
 
 model Turno {
@@ -260,6 +262,31 @@ model WhatsAppWebhook {
 
   @@index([eventType])
   @@index([processed])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?  // Usuario que realizó la acción
+  clinicaId   String?  // Clínica donde se realizó la acción
+  action      String   // "CREATE" | "UPDATE" | "DELETE" | "LOGIN_SUCCESS" | "LOGIN_FAILED" | "LOGOUT"
+  resource    String   // Recurso afectado (ej: "USER", "TURNO", "CLINICA", etc.)
+  resourceId  String?  // ID del recurso específico
+  oldValues   String?  // Valores anteriores en JSON
+  newValues   String?  // Valores nuevos en JSON
+  metadata    String?  // Metadatos adicionales en JSON
+  ipAddress   String?  // Dirección IP del usuario
+  userAgent   String?  // User Agent del navegador
+  createdAt   DateTime @default(now())
+
+  user    User?    @relation("UserAuditLogs", fields: [userId], references: [id])
+  clinica Clinica? @relation("ClinicaAuditLogs", fields: [clinicaId], references: [id])
+
+  @@index([userId])
+  @@index([clinicaId])
+  @@index([action])
+  @@index([resource])
+  @@index([resourceId])
+  @@index([createdAt])
 }
 
 // model Admin {
