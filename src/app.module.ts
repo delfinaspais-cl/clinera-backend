@@ -14,6 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { EspecialidadesModule } from './especialidades/especialidades.module';
 import { PushNotificationsModule } from './push-notifications/push-notifications.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -36,7 +37,8 @@ import { ConfigModule } from '@nestjs/config';
     NotificationsModule,
     HorariosModule,
     EspecialidadesModule,
-    PushNotificationsModule
+    PushNotificationsModule,
+    WhatsAppModule
     // otros módulos
   ],
 })

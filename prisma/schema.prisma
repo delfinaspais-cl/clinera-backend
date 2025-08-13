@@ -44,6 +44,8 @@ model Clinica {
   turnos         Turno[]
   horarios       Horario[]
   especialidades Especialidad[]
+  whatsappMessages WhatsAppMessage[]
+  whatsappTemplates WhatsAppTemplate[]
 }
 
 model Mensaje {
@@ -95,6 +97,7 @@ model User {
   professional    Professional?
   notificaciones  Notificacion[]   @relation("UserNotifications")
   pushTokens      PushNotificationToken[]
+  whatsappMessages WhatsAppMessage[]
 }
 
 model Turno {
@@ -196,6 +199,67 @@ model PushNotificationToken {
   @@index([userId])
   @@index([token])
   @@index([platform])
+}
+
+model WhatsAppMessage {
+  id              String   @id @default(cuid())
+  phoneNumberId   String   // ID del número de teléfono de WhatsApp Business
+  to              String   // Número de teléfono del destinatario
+  from            String   // Número de teléfono del remitente (WhatsApp Business)
+  messageType     String   // "text" | "template" | "image" | "document" | "audio" | "video"
+  messageText     String?  // Contenido del mensaje de texto
+  templateName    String?  // Nombre de la plantilla (si es template)
+  templateParams  String?  // Parámetros de la plantilla en JSON
+  mediaUrl        String?  // URL del archivo multimedia
+  mediaId         String?  // ID del archivo multimedia en WhatsApp
+  wamid           String?  // WhatsApp Message ID
+  status          String   @default("pending") // "pending" | "sent" | "delivered" | "read" | "failed"
+  errorCode       String?  // Código de error si falló
+  errorMessage    String?  // Mensaje de error si falló
+  clinicaId       String?
+  userId          String?  // Usuario que envió el mensaje
+  metadata        String?  // Datos adicionales en JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([to])
+  @@index([status])
+  @@index([clinicaId])
+  @@index([userId])
+  @@index([wamid])
+}
+
+model WhatsAppTemplate {
+  id          String   @id @default(cuid())
+  name        String   // Nombre de la plantilla
+  language    String   @default("es") // Código de idioma
+  category    String   // "marketing" | "utility" | "authentication"
+  status      String   @default("pending") // "pending" | "approved" | "rejected"
+  components  String   // Componentes de la plantilla en JSON
+  example     String?  // Ejemplo de uso
+  clinicaId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+
+  @@index([name])
+  @@index([status])
+  @@index([clinicaId])
+}
+
+model WhatsAppWebhook {
+  id        String   @id @default(cuid())
+  eventType String   // "message" | "message_status" | "template_status"
+  payload   String   // Payload completo del webhook en JSON
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([processed])
 }
 
 // model Admin {
