@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
 import { OwnersService } from './owners/owners.service';
@@ -71,7 +71,7 @@ export class AppController {
     }
   }
 
-  // Endpoint para clínicas del owner (dashboard)
+  // Endpoint para clínicas del owner (dashboard) - GET
   @Get('clinicas')
   @UseGuards(JwtAuthGuard)
   async getClinicas(@Request() req) {
@@ -87,6 +87,26 @@ export class AppController {
         throw error;
       }
       console.error('Error al obtener clínicas:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para crear clínicas del owner (dashboard) - POST
+  @Post('clinicas')
+  @UseGuards(JwtAuthGuard)
+  async createClinica(@Body() createClinicaDto: any, @Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden crear clínicas.');
+      }
+      
+      return await this.ownersService.createClinica(createClinicaDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al crear clínica:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
