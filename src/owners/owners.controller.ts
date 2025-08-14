@@ -4,6 +4,7 @@ import {
   Post,
   Patch,
   Put,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -67,6 +68,19 @@ export class OwnersController {
     return this.ownersService.updateClinica(clinicaId, {
       estado: dto.estado,
     });
+  }
+
+  // ✅ Nuevo endpoint para borrar clínicas
+  @Delete('clinicas/:clinicaId')
+  async deleteClinica(
+    @Request() req,
+    @Param('clinicaId') clinicaId: string
+  ) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden borrar clínicas.');
+    }
+
+    return this.ownersService.deleteClinica(clinicaId);
   }
 
   @Post('clinicas/:clinicaId/mensajes')

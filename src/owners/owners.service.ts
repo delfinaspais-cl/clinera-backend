@@ -720,4 +720,99 @@ export class OwnersService {
     }
   }
 
+  // Método para borrar clínica (soft delete)
+  async deleteClinica(clinicaId: string) {
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId },
+        include: {
+          _count: {
+            select: {
+              users: true,
+              turnos: true,
+              mensajes: true,
+              notifications: true
+            }
+          }
+        }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Verificar que la clínica no tenga datos importantes
+      if (clinica._count.users > 0) {
+        throw new BadRequestException('No se puede borrar una clínica que tiene usuarios registrados');
+      }
+
+      if (clinica._count.turnos > 0) {
+        throw new BadRequestException('No se puede borrar una clínica que tiene turnos registrados');
+      }
+
+      // Realizar borrado en cascada (soft delete)
+      // 1. Borrar notificaciones
+      await this.prisma.notification.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 2. Borrar mensajes
+      await this.prisma.mensaje.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 3. Borrar horarios
+      await this.prisma.horario.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 4. Borrar especialidades
+      await this.prisma.especialidad.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 5. Borrar schedules
+      await this.prisma.schedule.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 6. Borrar profesionales
+      await this.prisma.professional.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 7. Borrar pacientes
+      await this.prisma.patient.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 8. Borrar usuarios de la clínica
+      await this.prisma.user.deleteMany({
+        where: { clinicaId }
+      });
+
+      // 9. Finalmente, borrar la clínica
+      await this.prisma.clinica.delete({
+        where: { id: clinicaId }
+      });
+
+      return {
+        success: true,
+        message: 'Clínica borrada exitosamente',
+        deletedClinica: {
+          id: clinica.id,
+          name: clinica.name,
+          url: clinica.url
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al borrar clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
 } 

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
 import { OwnersService } from './owners/owners.service';
@@ -107,6 +107,26 @@ export class AppController {
         throw error;
       }
       console.error('Error al crear clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para borrar clínicas del owner (dashboard) - DELETE
+  @Delete('clinicas/:clinicaId')
+  @UseGuards(JwtAuthGuard)
+  async deleteClinica(@Param('clinicaId') clinicaId: string, @Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden borrar clínicas.');
+      }
+      
+      return await this.ownersService.deleteClinica(clinicaId);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al borrar clínica:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
