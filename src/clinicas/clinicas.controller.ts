@@ -131,15 +131,18 @@ export class ClinicasController {
         limit: 10
       };
 
+      console.log('Llamando a getTurnosByClinicaUrl con filtros:', filters);
       const result = await this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, filters);
-      console.log('Resultado obtenido:', !!result);
+      console.log('Resultado obtenido exitosamente');
       
       return result;
     } catch (error) {
       console.error('Error en turnos-simple:', error);
+      console.error('Stack trace:', error.stack);
       return {
         success: false,
         error: error.message,
+        stack: error.stack,
         turnos: [],
         pagination: {
           page: 1,
