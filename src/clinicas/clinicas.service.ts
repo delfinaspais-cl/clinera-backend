@@ -506,6 +506,27 @@ export class ClinicasService {
     }
   }
 
+  async getTurnosCount(clinicaUrl: string) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        return 0;
+      }
+
+      const count = await this.prisma.turno.count({
+        where: { clinicaId: clinica.id }
+      });
+
+      return count;
+    } catch (error) {
+      console.error('Error contando turnos:', error);
+      return 0;
+    }
+  }
+
   async getClinicaConfiguracion(clinicaUrl: string) {
   try {
     // Buscar la clínica por URL incluyendo relaciones

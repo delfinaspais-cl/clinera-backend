@@ -225,6 +225,55 @@ export class ClinicasController {
     };
   }
 
+  @Get(':clinicaUrl/debug-turnos-simple')
+  @UseGuards(JwtAuthGuard)
+  async debugTurnosSimple(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    try {
+      console.log('=== DEBUG TURNOS SIMPLE ===');
+      console.log('req.user:', req.user);
+      console.log('clinicaUrl:', clinicaUrl);
+      
+      // Verificar que el usuario tenga acceso a esta clínica
+      if (req.user.role === 'OWNER') {
+        console.log('Usuario es OWNER - permitido');
+      } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+        console.log('Usuario es ADMIN de esta clínica - permitido');
+      } else {
+        console.log('Usuario NO tiene permisos');
+        throw new UnauthorizedException('Acceso denegado.');
+      }
+
+      // Intentar obtener información básica de la clínica
+      const clinica = await this.clinicasService.getClinicaInfo(clinicaUrl);
+      console.log('Clínica encontrada:', !!clinica);
+
+      // Intentar contar turnos sin filtros complejos
+      const turnosCount = await this.clinicasService.getTurnosCount(clinicaUrl);
+      console.log('Cantidad de turnos:', turnosCount);
+
+      return {
+        success: true,
+        user: req.user,
+        clinicaUrl: clinicaUrl,
+        clinica: clinica,
+        turnosCount: turnosCount,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Error en debug-turnos-simple:', error);
+      return {
+        success: false,
+        error: error.message,
+        user: req.user,
+        clinicaUrl: clinicaUrl,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
   @Get(':clinicaUrl')
   @UseGuards(JwtAuthGuard)
   async getClinicaInfo(
