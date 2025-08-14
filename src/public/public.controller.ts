@@ -33,6 +33,45 @@ export class PublicController {
     return this.clinicasService.createTurnoFromLanding(clinicaUrl, dto);
   }
 
+  @Get('clinica/:clinicaUrl/debug-users')
+  async debugUsers(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        include: {
+          users: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+              estado: true,
+              createdAt: true
+            }
+          }
+        }
+      });
+
+      if (!clinica) {
+        return { success: false, message: 'Clínica no encontrada' };
+      }
+
+      return {
+        success: true,
+        clinica: {
+          id: clinica.id,
+          nombre: clinica.name,
+          url: clinica.url,
+          estado: clinica.estado
+        },
+        usuarios: clinica.users
+      };
+    } catch (error) {
+      console.error('Error en debug-users:', error);
+      return { success: false, message: 'Error interno del servidor' };
+    }
+  }
+
   // 🚨 ENDPOINT TEMPORAL - SOLO PARA PRUEBAS
   // ⚠️ REMOVER EN PRODUCCIÓN
   @Post('register-clinica-temp')
