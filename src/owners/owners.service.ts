@@ -720,7 +720,7 @@ export class OwnersService {
     }
   }
 
-  // Método para borrar clínica (sin validaciones por ahora)
+  // Método para borrar clínica (versión mínima para debug)
   async deleteClinica(clinicaId: string) {
     try {
       console.log('🔍 Iniciando borrado de clínica:', clinicaId);
@@ -736,50 +736,7 @@ export class OwnersService {
 
       console.log('✅ Clínica encontrada:', clinica.name);
 
-      // Realizar borrado en cascada (sin validaciones)
-      console.log('🗑️ Borrando datos relacionados...');
-
-      // 1. Borrar notificaciones
-      await this.prisma.notificacion.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 2. Borrar mensajes
-      await this.prisma.mensaje.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 3. Borrar horarios
-      await this.prisma.horario.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 4. Borrar especialidades
-      await this.prisma.especialidad.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 5. Borrar WhatsApp messages
-      await this.prisma.whatsAppMessage.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 6. Borrar WhatsApp templates
-      await this.prisma.whatsAppTemplate.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 7. Borrar turnos
-      await this.prisma.turno.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 8. Borrar usuarios de la clínica
-      await this.prisma.user.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 9. Finalmente, borrar la clínica
+      // Solo borrar la clínica directamente (sin cascada por ahora)
       await this.prisma.clinica.delete({
         where: { id: clinicaId }
       });
