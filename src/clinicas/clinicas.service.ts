@@ -315,8 +315,9 @@ export class ClinicasService {
 
       // Obtener turnos con paginación
       console.log('Ejecutando consulta de turnos...');
+      let turnos, total;
       try {
-        const [turnos, total] = await Promise.all([
+        [turnos, total] = await Promise.all([
           this.prisma.turno.findMany({
             where: whereClause,
             orderBy,
@@ -336,8 +337,9 @@ export class ClinicasService {
 
       // Obtener estadísticas de forma simplificada (sin groupBy)
       console.log('Ejecutando consultas de estadísticas...');
+      let confirmados, pendientes, cancelados;
       try {
-        const [confirmados, pendientes, cancelados] = await Promise.all([
+        [confirmados, pendientes, cancelados] = await Promise.all([
           this.prisma.turno.count({
             where: { 
               clinicaId: clinica.id,
@@ -374,8 +376,9 @@ export class ClinicasService {
 
       // Transformar los datos para el formato requerido
       console.log('Transformando datos de turnos...');
+      let turnosFormateados;
       try {
-        const turnosFormateados = turnos.map(turno => ({
+        turnosFormateados = turnos.map(turno => ({
           id: turno.id,
           paciente: turno.paciente,
           email: turno.email,
