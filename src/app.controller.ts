@@ -171,7 +171,7 @@ export class AppController {
     }
   }
 
-  // Endpoint para mensajes del owner (dashboard)
+  // Endpoint para mensajes del owner (dashboard) - GET
   @Get('messages')
   @UseGuards(JwtAuthGuard)
   async getMessages(@Request() req) {
@@ -187,6 +187,26 @@ export class AppController {
         throw error;
       }
       console.error('Error al obtener mensajes:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para enviar mensajes del owner (dashboard) - POST
+  @Post('messages')
+  @UseGuards(JwtAuthGuard)
+  async sendMessage(@Body() sendMensajeDto: any, @Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden enviar mensajes.');
+      }
+      
+      return await this.ownersService.createOwnerMessage(sendMensajeDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al enviar mensaje:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
