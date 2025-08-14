@@ -233,8 +233,12 @@ export class ClinicasService {
     }
   }
 
-  async getTurnosByClinicaUrl(clinicaUrl: string, filters: GetTurnosFiltersDto = {}) {
+  async getTurnosByClinicaUrl(clinicaUrl: string, filters: any = {}) {
     try {
+      console.log('=== GET TURNOS BY CLINICA URL ===');
+      console.log('clinicaUrl:', clinicaUrl);
+      console.log('filters:', filters);
+      
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl }
@@ -243,6 +247,8 @@ export class ClinicasService {
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
       }
+
+      console.log('Clínica encontrada:', clinica.id);
 
       // Construir filtros para la consulta
       const whereClause: any = {
@@ -289,6 +295,8 @@ export class ClinicasService {
         ];
       }
 
+      console.log('Where clause:', whereClause);
+
       // Construir ordenamiento
       const orderBy: any = {};
       if (filters.sortBy) {
@@ -303,6 +311,8 @@ export class ClinicasService {
       const limit = filters.limit || 10;
       const skip = (page - 1) * limit;
 
+      console.log('Paginación:', { page, limit, skip });
+
       // Obtener turnos con paginación
       const [turnos, total] = await Promise.all([
         this.prisma.turno.findMany({
@@ -314,6 +324,9 @@ export class ClinicasService {
         this.prisma.turno.count({ where: whereClause })
       ]);
 
+      console.log('Turnos encontrados:', turnos.length);
+      console.log('Total de turnos:', total);
+
       // Obtener estadísticas
       const stats = await this.prisma.turno.groupBy({
         by: ['estado'],
@@ -322,6 +335,8 @@ export class ClinicasService {
           estado: true
         }
       });
+
+      console.log('Stats obtenidas:', stats);
 
       // Transformar estadísticas
       const statsFormateadas = {
@@ -345,7 +360,7 @@ export class ClinicasService {
         motivo: turno.motivo
       }));
 
-      return {
+      const result = {
         success: true,
         turnos: turnosFormateados,
         pagination: {
@@ -358,11 +373,14 @@ export class ClinicasService {
         },
         stats: statsFormateadas
       };
+
+      console.log('Resultado final:', result);
+      return result;
     } catch (error) {
+      console.error('Error al obtener turnos de clínica:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
-      console.error('Error al obtener turnos de clínica:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
