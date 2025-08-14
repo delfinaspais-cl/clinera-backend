@@ -355,15 +355,25 @@ export class OwnersService {
 
   async createOwnerMessage(dto: SendMensajeDto) {
     try {
-      // Si se especifica una clínica, verificar que existe
+      // Si se especifica una clínica, verificar que existe (por ID o URL)
       if (dto.clinicaId) {
-        const clinica = await this.prisma.clinica.findUnique({
+        let clinica = await this.prisma.clinica.findUnique({
           where: { id: dto.clinicaId }
         });
 
+        // Si no se encuentra por ID, intentar buscar por URL
         if (!clinica) {
-          throw new BadRequestException('Clínica no encontrada');
+          clinica = await this.prisma.clinica.findUnique({
+            where: { url: dto.clinicaId }
+          });
         }
+
+        if (!clinica) {
+          throw new BadRequestException(`Clínica con ID o URL "${dto.clinicaId}" no encontrada. Verifique que sea correcto.`);
+        }
+
+        // Usar el ID real de la clínica encontrada
+        dto.clinicaId = clinica.id;
       }
 
       // Crear el mensaje
