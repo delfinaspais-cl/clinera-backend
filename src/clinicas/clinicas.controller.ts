@@ -203,6 +203,22 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/debug-user')
+  @UseGuards(JwtAuthGuard)
+  async debugUser(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    return {
+      user: req.user,
+      clinicaUrl: clinicaUrl,
+      userClinicaUrl: req.user?.clinicaUrl,
+      role: req.user?.role,
+      match: req.user?.clinicaUrl === clinicaUrl,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   @Get(':clinicaUrl')
   @UseGuards(JwtAuthGuard)
   async getClinicaInfo(
