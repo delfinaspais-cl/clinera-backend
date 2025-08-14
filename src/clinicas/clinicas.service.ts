@@ -315,44 +315,54 @@ export class ClinicasService {
 
       // Obtener turnos con paginación
       console.log('Ejecutando consulta de turnos...');
-      const [turnos, total] = await Promise.all([
-        this.prisma.turno.findMany({
-          where: whereClause,
-          orderBy,
-          skip,
-          take: limit
-        }),
-        this.prisma.turno.count({ where: whereClause })
-      ]);
+      try {
+        const [turnos, total] = await Promise.all([
+          this.prisma.turno.findMany({
+            where: whereClause,
+            orderBy,
+            skip,
+            take: limit
+          }),
+          this.prisma.turno.count({ where: whereClause })
+        ]);
 
-      console.log('Turnos encontrados:', turnos.length);
-      console.log('Total de turnos:', total);
-      console.log('Primer turno (si existe):', turnos[0] || 'No hay turnos');
+        console.log('Turnos encontrados:', turnos.length);
+        console.log('Total de turnos:', total);
+        console.log('Primer turno (si existe):', turnos[0] || 'No hay turnos');
+      } catch (dbError) {
+        console.error('Error en consulta de base de datos:', dbError);
+        throw new BadRequestException('Error en consulta de base de datos: ' + dbError.message);
+      }
 
       // Obtener estadísticas de forma simplificada (sin groupBy)
       console.log('Ejecutando consultas de estadísticas...');
-      const [confirmados, pendientes, cancelados] = await Promise.all([
-        this.prisma.turno.count({
-          where: { 
-            clinicaId: clinica.id,
-            estado: 'confirmado'
-          }
-        }),
-        this.prisma.turno.count({
-          where: { 
-            clinicaId: clinica.id,
-            estado: 'pendiente'
-          }
-        }),
-        this.prisma.turno.count({
-          where: { 
-            clinicaId: clinica.id,
-            estado: 'cancelado'
-          }
-        })
-      ]);
+      try {
+        const [confirmados, pendientes, cancelados] = await Promise.all([
+          this.prisma.turno.count({
+            where: { 
+              clinicaId: clinica.id,
+              estado: 'confirmado'
+            }
+          }),
+          this.prisma.turno.count({
+            where: { 
+              clinicaId: clinica.id,
+              estado: 'pendiente'
+            }
+          }),
+          this.prisma.turno.count({
+            where: { 
+              clinicaId: clinica.id,
+              estado: 'cancelado'
+            }
+          })
+        ]);
 
-      console.log('Stats obtenidas:', { confirmados, pendientes, cancelados });
+        console.log('Stats obtenidas:', { confirmados, pendientes, cancelados });
+      } catch (statsError) {
+        console.error('Error en consultas de estadísticas:', statsError);
+        throw new BadRequestException('Error en consultas de estadísticas: ' + statsError.message);
+      }
 
       // Transformar estadísticas
       const statsFormateadas = {
@@ -364,19 +374,24 @@ export class ClinicasService {
 
       // Transformar los datos para el formato requerido
       console.log('Transformando datos de turnos...');
-      const turnosFormateados = turnos.map(turno => ({
-        id: turno.id,
-        paciente: turno.paciente,
-        email: turno.email,
-        telefono: turno.telefono,
-        especialidad: turno.especialidad,
-        doctor: turno.doctor,
-        fecha: turno.fecha.toISOString().split('T')[0],
-        hora: turno.hora,
-        estado: turno.estado,
-        motivo: turno.motivo
-      }));
-      console.log('Datos transformados exitosamente');
+      try {
+        const turnosFormateados = turnos.map(turno => ({
+          id: turno.id,
+          paciente: turno.paciente,
+          email: turno.email,
+          telefono: turno.telefono,
+          especialidad: turno.especialidad,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toISOString().split('T')[0],
+          hora: turno.hora,
+          estado: turno.estado,
+          motivo: turno.motivo
+        }));
+        console.log('Datos transformados exitosamente');
+      } catch (transformError) {
+        console.error('Error transformando datos:', transformError);
+        throw new BadRequestException('Error transformando datos: ' + transformError.message);
+      }
 
       const result = {
         success: true,
