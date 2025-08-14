@@ -83,8 +83,14 @@ export class ClinicasController {
   async getTurnosByClinicaUrl(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
-    @Query() filters: GetTurnosFiltersDto
+    @Query() filters: any
   ) {
+    console.log('=== DEBUG TURNOS ===');
+    console.log('req.user:', req.user);
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('filters:', filters);
+    console.log('===================');
+    
     // Verificar que el usuario tenga acceso a esta clínica
     // Si es ADMIN de la clínica o OWNER, puede acceder
     if (req.user.role === 'OWNER') {
