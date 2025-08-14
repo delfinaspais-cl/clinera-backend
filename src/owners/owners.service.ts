@@ -730,7 +730,7 @@ export class OwnersService {
     }
   }
 
-  // Método para borrar clínica (versión simplificada que funciona)
+  // Método para borrar clínica (con manejo de errores mejorado)
   async deleteClinica(clinicaId: string) {
     try {
       console.log('🔍 Iniciando borrado de clínica:', clinicaId);
@@ -746,22 +746,63 @@ export class OwnersService {
 
       console.log('✅ Clínica encontrada:', clinica.name);
 
-      // Solo borrar la clínica directamente (sin cascada por ahora)
-      await this.prisma.clinica.delete({
-        where: { id: clinicaId }
-      });
-
-      console.log('✅ Clínica borrada exitosamente');
-
-      return {
-        success: true,
-        message: 'Clínica borrada exitosamente',
-        deletedClinica: {
-          id: clinica.id,
-          name: clinica.name,
-          url: clinica.url
+      // Intentar borrar la clínica directamente
+      try {
+        await this.prisma.clinica.delete({
+          where: { id: clinicaId }
+        });
+        
+        console.log('✅ Clínica borrada exitosamente');
+        
+        return {
+          success: true,
+          message: 'Clínica borrada exitosamente',
+          deletedClinica: {
+            id: clinica.id,
+            name: clinica.name,
+            url: clinica.url
+          }
+        };
+      } catch (deleteError) {
+        console.error('❌ Error al borrar clínica:', deleteError);
+        
+        // Si hay error de clave foránea, intentar borrado en cascada
+        if (deleteError.code === 'P2003' || deleteError.message.includes('foreign key')) {
+          console.log('🔄 Intentando borrado en cascada...');
+          
+          try {
+            // Borrar datos relacionados en orden específico
+            await this.prisma.notificacion.deleteMany({ where: { clinicaId } });
+            await this.prisma.mensaje.deleteMany({ where: { clinicaId } });
+            await this.prisma.horario.deleteMany({ where: { clinicaId } });
+            await this.prisma.especialidad.deleteMany({ where: { clinicaId } });
+            await this.prisma.whatsAppMessage.deleteMany({ where: { clinicaId } });
+            await this.prisma.whatsAppTemplate.deleteMany({ where: { clinicaId } });
+            await this.prisma.turno.deleteMany({ where: { clinicaId } });
+            await this.prisma.user.deleteMany({ where: { clinicaId } });
+            
+            // Ahora intentar borrar la clínica
+            await this.prisma.clinica.delete({ where: { id: clinicaId } });
+            
+            console.log('✅ Clínica borrada con cascada exitosamente');
+            
+            return {
+              success: true,
+              message: 'Clínica borrada exitosamente',
+              deletedClinica: {
+                id: clinica.id,
+                name: clinica.name,
+                url: clinica.url
+              }
+            };
+          } catch (cascadeError) {
+            console.error('❌ Error en borrado en cascada:', cascadeError);
+            throw new BadRequestException('No se puede borrar la clínica porque tiene datos relacionados. Elimine primero los datos asociados.');
+          }
+        } else {
+          throw new BadRequestException('Error interno del servidor');
         }
-      };
+      }
     } catch (error) {
       console.error('❌ Error al borrar clínica:', error);
       
