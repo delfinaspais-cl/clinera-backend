@@ -298,12 +298,14 @@ export class ClinicasService {
       console.log('Where clause:', whereClause);
 
       // Construir ordenamiento
-      const orderBy: any = {};
+      let orderBy: any;
       if (filters.sortBy) {
-        orderBy[filters.sortBy] = filters.sortOrder || 'desc';
+        orderBy = { [filters.sortBy]: filters.sortOrder || 'desc' };
       } else {
-        orderBy.fecha = 'desc';
-        orderBy.hora = 'asc';
+        orderBy = [
+          { fecha: 'desc' },
+          { hora: 'asc' }
+        ];
       }
 
       // Calcular paginación
