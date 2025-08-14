@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateClinicaDto } from './dto/create-clinica.dto';
 import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class OwnersService {
@@ -77,6 +78,34 @@ export class OwnersService {
     }
   });
 
+  // Crear usuario ADMIN automáticamente para la clínica
+  let adminUser: any = null;
+  if (dto.email) {
+    // Verificar si el email ya existe
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email }
+    });
+
+    if (!existingUser) {
+      // Generar contraseña temporal (el admin deberá cambiarla en su primer login)
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+      adminUser = await this.prisma.user.create({
+        data: {
+          name: `Administrador de ${dto.nombre}`,
+          email: dto.email,
+          password: hashedPassword,
+          role: 'ADMIN',
+          clinicaId: clinica.id,
+          estado: 'activo'
+        }
+      });
+
+      console.log(`Usuario ADMIN creado para clínica ${dto.nombre} con email: ${dto.email} y contraseña temporal: ${tempPassword}`);
+    }
+  }
+
   if (dto.especialidades?.length) {
     await this.prisma.especialidad.createMany({
       data: dto.especialidades.map(name => ({ name, clinicaId: clinica.id }))
@@ -101,7 +130,13 @@ export class OwnersService {
 
   return {
     success: true,
-    clinica: clinicaConRelaciones
+    clinica: clinicaConRelaciones,
+    adminUser: adminUser ? {
+      email: adminUser.email,
+      name: adminUser.name,
+      role: adminUser.role,
+      message: 'Usuario administrador creado automáticamente. Revisa los logs del servidor para la contraseña temporal.'
+    } : null
   };
 }
 
@@ -519,6 +554,101 @@ export class OwnersService {
     } catch (error) {
       console.error('Error al obtener notificaciones del propietario:', error);
       throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getAdminCredentials(clinicaId: string) {
+    try {
+      // Buscar la clínica
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el usuario admin de la clínica
+      const adminUser = await this.prisma.user.findFirst({
+        where: {
+          clinicaId: clinicaId,
+          role: 'ADMIN'
+        }
+      });
+
+      if (!adminUser) {
+        throw new BadRequestException('No se encontró un administrador para esta clínica');
+      }
+
+      return {
+        success: true,
+        adminCredentials: {
+          email: adminUser.email,
+          name: adminUser.name,
+          clinicaUrl: clinica.url,
+          clinicaName: clinica.name,
+          message: 'Para obtener la contraseña temporal, revisa los logs del servidor cuando se creó la clínica.'
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener credenciales de admin:', error);
+      throw new Error('Error interno del servidor');
+    }
+  }
+
+  async resetAdminPassword(clinicaId: string) {
+    try {
+      // Buscar la clínica
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el usuario admin de la clínica
+      const adminUser = await this.prisma.user.findFirst({
+        where: {
+          clinicaId: clinicaId,
+          role: 'ADMIN'
+        }
+      });
+
+      if (!adminUser) {
+        throw new BadRequestException('No se encontró un administrador para esta clínica');
+      }
+
+      // Generar nueva contraseña temporal
+      const tempPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+      // Actualizar la contraseña del admin
+      await this.prisma.user.update({
+        where: { id: adminUser.id },
+        data: { password: hashedPassword }
+      });
+
+      return {
+        success: true,
+        message: 'Contraseña de administrador reseteada exitosamente',
+        adminCredentials: {
+          email: adminUser.email,
+          name: adminUser.name,
+          clinicaUrl: clinica.url,
+          clinicaName: clinica.name,
+          tempPassword: tempPassword
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al resetear contraseña de admin:', error);
+      throw new Error('Error interno del servidor');
     }
   }
 

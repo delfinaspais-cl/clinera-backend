@@ -133,6 +133,28 @@ export class OwnersController {
     return this.ownersService.getOwnerAnalytics();
   }
 
+  @Get('clinicas/:clinicaId/admin-credentials')
+  async getAdminCredentials(@Request() req, @Param('clinicaId') clinicaId: string) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden acceder a las credenciales de administrador.'
+      );
+    }
+
+    return this.ownersService.getAdminCredentials(clinicaId);
+  }
+
+  @Post('clinicas/:clinicaId/reset-admin-password')
+  async resetAdminPassword(@Request() req, @Param('clinicaId') clinicaId: string) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden resetear contraseñas de administrador.'
+      );
+    }
+
+    return this.ownersService.resetAdminPassword(clinicaId);
+  }
+
   @Get('notifications')
   async getOwnerNotifications(@Request() req) {
     if (req.user.role !== 'OWNER') {
