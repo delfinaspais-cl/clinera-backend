@@ -720,7 +720,7 @@ export class OwnersService {
     }
   }
 
-  // Método para borrar clínica (versión mínima para debug)
+  // Método para borrar clínica (con borrado en cascada seguro)
   async deleteClinica(clinicaId: string) {
     try {
       console.log('🔍 Iniciando borrado de clínica:', clinicaId);
@@ -736,7 +736,64 @@ export class OwnersService {
 
       console.log('✅ Clínica encontrada:', clinica.name);
 
-      // Solo borrar la clínica directamente (sin cascada por ahora)
+      // Realizar borrado en cascada de forma segura
+      console.log('🗑️ Borrando datos relacionados...');
+
+      try {
+        // 1. Borrar notificaciones
+        await this.prisma.notificacion.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Notificaciones borradas');
+
+        // 2. Borrar mensajes
+        await this.prisma.mensaje.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Mensajes borrados');
+
+        // 3. Borrar horarios
+        await this.prisma.horario.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Horarios borrados');
+
+        // 4. Borrar especialidades
+        await this.prisma.especialidad.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Especialidades borradas');
+
+        // 5. Borrar WhatsApp messages
+        await this.prisma.whatsAppMessage.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ WhatsApp messages borrados');
+
+        // 6. Borrar WhatsApp templates
+        await this.prisma.whatsAppTemplate.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ WhatsApp templates borrados');
+
+        // 7. Borrar turnos
+        await this.prisma.turno.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Turnos borrados');
+
+        // 8. Borrar usuarios de la clínica
+        await this.prisma.user.deleteMany({
+          where: { clinicaId }
+        });
+        console.log('   ✅ Usuarios borrados');
+
+      } catch (cascadeError) {
+        console.error('⚠️ Error en borrado en cascada:', cascadeError);
+        // Continuar con el borrado de la clínica aunque falle el cascada
+      }
+
+      // 9. Finalmente, borrar la clínica
       await this.prisma.clinica.delete({
         where: { id: clinicaId }
       });
