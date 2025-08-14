@@ -25,6 +25,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     // @Request() como req.user
-    return { id: payload.sub, email: payload.email, role: payload.role };
+    return { 
+      id: payload.sub, 
+      email: payload.email, 
+      role: payload.role,
+      name: payload.name,
+      clinicaId: payload.clinicaId,
+      clinicaUrl: payload.clinicaUrl
+    };
   }
 }
