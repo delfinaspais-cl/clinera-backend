@@ -327,23 +327,36 @@ export class ClinicasService {
       console.log('Turnos encontrados:', turnos.length);
       console.log('Total de turnos:', total);
 
-      // Obtener estadísticas
-      const stats = await this.prisma.turno.groupBy({
-        by: ['estado'],
-        where: { clinicaId: clinica.id },
-        _count: {
-          estado: true
-        }
-      });
+      // Obtener estadísticas de forma simplificada (sin groupBy)
+      const [confirmados, pendientes, cancelados] = await Promise.all([
+        this.prisma.turno.count({
+          where: { 
+            clinicaId: clinica.id,
+            estado: 'confirmado'
+          }
+        }),
+        this.prisma.turno.count({
+          where: { 
+            clinicaId: clinica.id,
+            estado: 'pendiente'
+          }
+        }),
+        this.prisma.turno.count({
+          where: { 
+            clinicaId: clinica.id,
+            estado: 'cancelado'
+          }
+        })
+      ]);
 
-      console.log('Stats obtenidas:', stats);
+      console.log('Stats obtenidas:', { confirmados, pendientes, cancelados });
 
       // Transformar estadísticas
       const statsFormateadas = {
-        total: turnos.length,
-        confirmados: stats.find(s => s.estado === 'confirmado')?._count.estado || 0,
-        pendientes: stats.find(s => s.estado === 'pendiente')?._count.estado || 0,
-        cancelados: stats.find(s => s.estado === 'cancelado')?._count.estado || 0
+        total: total,
+        confirmados: confirmados,
+        pendientes: pendientes,
+        cancelados: cancelados
       };
 
       // Transformar los datos para el formato requerido
