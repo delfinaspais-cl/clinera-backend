@@ -30,17 +30,32 @@ export class UpdateClinicaDto {
   })
   nombre?: string;
 
+  // Alias para compatibilidad con frontend
+  @IsOptional()
+  @IsString({ message: 'El nombre debe ser una cadena de texto' })
+  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, { 
+    message: 'El nombre solo puede contener letras, números, espacios, guiones y puntos' 
+  })
+  name?: string;
+
   @IsOptional()
   @IsString({ message: 'La dirección debe ser una cadena de texto' })
-  @MinLength(10, { message: 'La dirección debe tener al menos 10 caracteres' })
   direccion?: string;
+
+  // Alias para compatibilidad con frontend
+  @IsOptional()
+  @IsString({ message: 'La dirección debe ser una cadena de texto' })
+  address?: string;
 
   @IsOptional()
   @IsString({ message: 'El teléfono debe ser una cadena de texto' })
-  @Matches(/^\+?[\d\s\-\(\)]+$/, { 
-    message: 'El teléfono debe tener un formato válido' 
-  })
   telefono?: string;
+
+  // Alias para compatibilidad con frontend
+  @IsOptional()
+  @IsString({ message: 'El teléfono debe ser una cadena de texto' })
+  phone?: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'El email debe tener un formato válido' })
@@ -70,4 +85,8 @@ export class UpdateClinicaDto {
   @IsString({ message: 'El estado debe ser una cadena de texto' })
   @Matches(/^(activa|inactiva)$/, { message: 'El estado debe ser "activa" o "inactiva"' })
   estado?: string;
+
+  @IsOptional()
+  @IsString({ message: 'La descripción debe ser una cadena de texto' })
+  descripcion?: string;
 }

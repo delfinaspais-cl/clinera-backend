@@ -28,19 +28,12 @@ export class OwnersController {
     private prisma: PrismaService
   ) {}
 
-  @Get('clinicas')
-  async getAllClinicas(@Request() req) {
-    if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
-    }
 
-    return this.ownersService.getAllClinicas();
-  }
 
   @Post('clinicas')
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.createClinica(dto);
@@ -54,7 +47,7 @@ export class OwnersController {
     @Body() dto: UpdateClinicaDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.updateClinica(clinicaId, dto);
@@ -68,7 +61,7 @@ export class OwnersController {
     @Body() dto: UpdateClinicaEstadoDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.updateClinica(clinicaId, {
@@ -83,7 +76,7 @@ export class OwnersController {
     @Body() dto: SendMensajeDto
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new Error('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
     }
 
     return this.ownersService.sendMensaje(clinicaId, dto);
@@ -100,16 +93,7 @@ export class OwnersController {
     return this.ownersService.getOwnerStats();
   }
 
-  @Get('messages')
-  async getOwnerMessages(@Request() req) {
-    if (req.user.role !== 'OWNER') {
-      throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden acceder a los mensajes.'
-      );
-    }
 
-    return this.ownersService.getOwnerMessages();
-  }
 
   @Post('messages')
   async createOwnerMessage(@Request() req, @Body() dto: SendMensajeDto) {

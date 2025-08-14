@@ -1,6 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
+import { OwnersService } from './owners/owners.service';
 import { JwtAuthGuard } from './auth/jwt.auth.guard';
 import { AppService } from './app.service';
 
@@ -9,6 +10,7 @@ export class AppController {
   constructor(
     private readonly clinicasService: ClinicasService,
     private readonly notificationsService: NotificationsService,
+    private readonly ownersService: OwnersService,
     private readonly appService: AppService,
   ) {}
 
@@ -66,6 +68,46 @@ export class AppController {
         throw error;
       }
       throw new BadRequestException(error.message || 'Error al obtener notificaciones');
+    }
+  }
+
+  // Endpoint para clínicas del owner (dashboard)
+  @Get('clinicas')
+  @UseGuards(JwtAuthGuard)
+  async getClinicas(@Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden acceder a las clínicas.');
+      }
+      
+      return await this.ownersService.getAllClinicas();
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al obtener clínicas:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para mensajes del owner (dashboard)
+  @Get('messages')
+  @UseGuards(JwtAuthGuard)
+  async getMessages(@Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden acceder a los mensajes.');
+      }
+      
+      return await this.ownersService.getOwnerMessages();
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al obtener mensajes:', error);
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 }

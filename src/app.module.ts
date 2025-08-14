@@ -18,6 +18,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { OwnersService } from './owners/owners.service';
 
 @Module({
   imports: [
@@ -44,7 +45,7 @@ import { AppService } from './app.service';
     // otros módulos
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, OwnersService],
 })
 export class AppModule {}
 

@@ -48,7 +48,7 @@ export class OwnersService {
       };
     } catch (error) {
       console.error('Error al obtener clínicas:', error);
-      throw new Error('Error interno del servidor');
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 
@@ -152,18 +152,29 @@ export class OwnersService {
       throw new BadRequestException('Clínica no encontrada');
     }
 
-    // Actualizar campos simples
+    // Debug: mostrar qué campos llegan en el DTO
+    console.log('DTO recibido:', JSON.stringify(dto, null, 2));
+    console.log('dto.address:', dto.address);
+    console.log('dto.phone:', dto.phone);
+    console.log('dto.descripcion:', dto.descripcion);
+
+    // Actualizar campos simples - versión de debug forzada
+    const updateData: any = {};
+    
+    // Forzar la actualización de todos los campos que llegan
+    updateData.address = dto.address || dto.direccion || '';
+    updateData.phone = dto.phone || dto.telefono || '';
+    updateData.descripcion = dto.descripcion || '';
+    updateData.name = dto.name || dto.nombre || clinica.name;
+    updateData.email = dto.email || clinica.email;
+    updateData.colorPrimario = dto.colorPrimario || clinica.colorPrimario;
+    updateData.colorSecundario = dto.colorSecundario || clinica.colorSecundario;
+
+    console.log('Datos a actualizar:', JSON.stringify(updateData, null, 2));
+
     await this.prisma.clinica.update({
       where: { id: clinicaId },
-      data: {
-        name: dto.nombre,
-        address: dto.direccion,
-        phone: dto.telefono,
-        email: dto.email,
-        colorPrimario: dto.colorPrimario,
-        colorSecundario: dto.colorSecundario,
-        estado: dto.estado,
-      },
+      data: updateData,
     });
 
     // Reemplazar especialidades si se envían
@@ -595,7 +606,7 @@ export class OwnersService {
         throw error;
       }
       console.error('Error al obtener credenciales de admin:', error);
-      throw new Error('Error interno del servidor');
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 
@@ -648,7 +659,7 @@ export class OwnersService {
         throw error;
       }
       console.error('Error al resetear contraseña de admin:', error);
-      throw new Error('Error interno del servidor');
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 
