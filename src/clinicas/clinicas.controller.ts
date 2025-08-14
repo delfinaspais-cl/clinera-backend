@@ -104,6 +104,59 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/turnos-simple')
+  @UseGuards(JwtAuthGuard)
+  async getTurnosSimple(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    try {
+      console.log('=== TURNOS SIMPLE ===');
+      console.log('req.user:', req.user);
+      console.log('clinicaUrl:', clinicaUrl);
+      
+      // Verificar que el usuario tenga acceso a esta clínica
+      if (req.user.role === 'OWNER') {
+        console.log('Usuario es OWNER - permitido');
+      } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+        console.log('Usuario es ADMIN de esta clínica - permitido');
+      } else {
+        console.log('Usuario NO tiene permisos');
+        throw new UnauthorizedException('Acceso denegado.');
+      }
+
+      // Usar filtros mínimos para evitar problemas de validación
+      const filters = {
+        page: 1,
+        limit: 10
+      };
+
+      const result = await this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, filters);
+      console.log('Resultado obtenido:', !!result);
+      
+      return result;
+    } catch (error) {
+      console.error('Error en turnos-simple:', error);
+      return {
+        success: false,
+        error: error.message,
+        turnos: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0
+        },
+        stats: {
+          total: 0,
+          confirmados: 0,
+          pendientes: 0,
+          cancelados: 0
+        }
+      };
+    }
+  }
+
   @Patch(':clinicaUrl/turnos/:turnoId/estado')
   @UseGuards(JwtAuthGuard)
   async updateTurnoEstado(
