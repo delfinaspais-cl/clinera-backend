@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
 import { OwnersService } from './owners/owners.service';
@@ -107,6 +107,46 @@ export class AppController {
         throw error;
       }
       console.error('Error al crear clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para actualizar clínicas del owner (dashboard) - PUT
+  @Put('clinicas/:clinicaId')
+  @UseGuards(JwtAuthGuard)
+  async updateClinica(@Param('clinicaId') clinicaId: string, @Body() updateClinicaDto: any, @Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden actualizar clínicas.');
+      }
+      
+      return await this.ownersService.updateClinica(clinicaId, updateClinicaDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al actualizar clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  // Endpoint para actualizar clínicas del owner (dashboard) - PATCH (para compatibilidad con frontend)
+  @Patch('clinicas/:clinicaId')
+  @UseGuards(JwtAuthGuard)
+  async patchClinica(@Param('clinicaId') clinicaId: string, @Body() updateClinicaDto: any, @Request() req) {
+    try {
+      // Verificar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden actualizar clínicas.');
+      }
+      
+      return await this.ownersService.updateClinica(clinicaId, updateClinicaDto);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('Error al actualizar clínica:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
