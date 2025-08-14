@@ -464,6 +464,48 @@ export class ClinicasService {
     }
   }
 
+  async getClinicaInfo(clinicaUrl: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Transformar los datos para el formato requerido
+      const clinicaFormateada = {
+        id: clinica.id,
+        nombre: clinica.name,
+        url: clinica.url,
+        colorPrimario: clinica.colorPrimario || '#3B82F6',
+        colorSecundario: clinica.colorSecundario || '#1E40AF',
+        direccion: clinica.address,
+        telefono: clinica.phone,
+        email: clinica.email,
+        logo: clinica.logo,
+        estado: clinica.estado || 'activa',
+        estadoPago: clinica.estadoPago || 'pagado',
+        fechaCreacion: clinica.fechaCreacion.toISOString(),
+        createdAt: clinica.createdAt.toISOString(),
+        updatedAt: clinica.updatedAt.toISOString()
+      };
+
+      return {
+        success: true,
+        clinica: clinicaFormateada
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener información de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
   async getClinicaConfiguracion(clinicaUrl: string) {
   try {
     // Buscar la clínica por URL incluyendo relaciones
@@ -562,6 +604,47 @@ export class ClinicasService {
       }
       console.error('Error al actualizar configuración de clínica:', error);
       throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async checkClinicaExists(clinicaUrl: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          estado: true
+        }
+      });
+
+      if (!clinica) {
+        return {
+          success: false,
+          exists: false,
+          message: 'Clínica no encontrada'
+        };
+      }
+
+      return {
+        success: true,
+        exists: true,
+        clinica: {
+          id: clinica.id,
+          nombre: clinica.name,
+          url: clinica.url,
+          estado: clinica.estado
+        }
+      };
+    } catch (error) {
+      console.error('Error al verificar existencia de clínica:', error);
+      return {
+        success: false,
+        exists: false,
+        message: 'Error interno del servidor'
+      };
     }
   }
 

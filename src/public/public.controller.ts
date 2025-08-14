@@ -18,6 +18,12 @@ export class PublicController {
     return this.clinicasService.getClinicaLanding(clinicaUrl);
   }
 
+  @Get('clinica/:clinicaUrl/exists')
+  async checkClinicaExists(@Param('clinicaUrl') clinicaUrl: string) {
+    // Este endpoint es público, no requiere autenticación
+    return this.clinicasService.checkClinicaExists(clinicaUrl);
+  }
+
   @Post('clinica/:clinicaUrl/landing/turnos')
   async createTurnoFromLanding(
     @Param('clinicaUrl') clinicaUrl: string,
