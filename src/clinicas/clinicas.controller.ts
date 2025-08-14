@@ -157,6 +157,75 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/turnos-basic')
+  @UseGuards(JwtAuthGuard)
+  async getTurnosBasic(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string
+  ) {
+    try {
+      console.log('=== TURNOS BASIC ===');
+      console.log('req.user:', req.user);
+      console.log('clinicaUrl:', clinicaUrl);
+      
+      // Verificar que el usuario tenga acceso a esta clínica
+      if (req.user.role === 'OWNER') {
+        console.log('Usuario es OWNER - permitido');
+      } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+        console.log('Usuario es ADMIN de esta clínica - permitido');
+      } else {
+        console.log('Usuario NO tiene permisos');
+        throw new UnauthorizedException('Acceso denegado.');
+      }
+
+      // Buscar la clínica directamente
+      const clinica = await this.clinicasService.getClinicaInfo(clinicaUrl);
+      console.log('Clínica encontrada:', !!clinica);
+
+      // Contar turnos directamente
+      const turnosCount = await this.clinicasService.getTurnosCount(clinicaUrl);
+      console.log('Cantidad de turnos:', turnosCount);
+
+      // Retornar respuesta básica
+      return {
+        success: true,
+        turnos: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: turnosCount,
+          totalPages: Math.ceil(turnosCount / 10)
+        },
+        stats: {
+          total: turnosCount,
+          confirmados: 0,
+          pendientes: 0,
+          cancelados: 0
+        },
+        message: 'Endpoint básico funcionando correctamente'
+      };
+    } catch (error) {
+      console.error('Error en turnos-basic:', error);
+      return {
+        success: false,
+        error: error.message,
+        turnos: [],
+        pagination: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 0
+        },
+        stats: {
+          total: 0,
+          confirmados: 0,
+          pendientes: 0,
+          cancelados: 0
+        }
+      };
+    }
+  }
+
   @Patch(':clinicaUrl/turnos/:turnoId/estado')
   @UseGuards(JwtAuthGuard)
   async updateTurnoEstado(
