@@ -732,7 +732,7 @@ export class OwnersService {
               users: true,
               turnos: true,
               mensajes: true,
-              notifications: true
+              notificaciones: true
             }
           }
         }
@@ -753,7 +753,7 @@ export class OwnersService {
 
       // Realizar borrado en cascada (soft delete)
       // 1. Borrar notificaciones
-      await this.prisma.notification.deleteMany({
+      await this.prisma.notificacion.deleteMany({
         where: { clinicaId }
       });
 
@@ -772,27 +772,22 @@ export class OwnersService {
         where: { clinicaId }
       });
 
-      // 5. Borrar schedules
-      await this.prisma.schedule.deleteMany({
+      // 5. Borrar WhatsApp messages
+      await this.prisma.whatsAppMessage.deleteMany({
         where: { clinicaId }
       });
 
-      // 6. Borrar profesionales
-      await this.prisma.professional.deleteMany({
+      // 6. Borrar WhatsApp templates
+      await this.prisma.whatsAppTemplate.deleteMany({
         where: { clinicaId }
       });
 
-      // 7. Borrar pacientes
-      await this.prisma.patient.deleteMany({
-        where: { clinicaId }
-      });
-
-      // 8. Borrar usuarios de la clínica
+      // 7. Borrar usuarios de la clínica (esto también borrará pacientes y profesionales por cascada)
       await this.prisma.user.deleteMany({
         where: { clinicaId }
       });
 
-      // 9. Finalmente, borrar la clínica
+      // 8. Finalmente, borrar la clínica
       await this.prisma.clinica.delete({
         where: { id: clinicaId }
       });
