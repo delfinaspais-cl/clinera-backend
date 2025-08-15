@@ -5,7 +5,7 @@ export class LoginAuthDto {
   @ApiProperty({
     description: 'Email del usuario',
     example: 'usuario@ejemplo.com',
-    type: String
+    type: String,
   })
   @IsEmail()
   email: string;
@@ -14,10 +14,9 @@ export class LoginAuthDto {
     description: 'Contraseña del usuario (mínimo 6 caracteres)',
     example: '123456',
     type: String,
-    minLength: 6
+    minLength: 6,
   })
   @IsString()
   @MinLength(6)
   password: string;
 }
-

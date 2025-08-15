@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsDateString, IsNumber, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
 
 export class SearchPatientsDto {
   @IsOptional()

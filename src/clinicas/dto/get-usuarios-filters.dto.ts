@@ -5,12 +5,12 @@ export enum UserRole {
   PATIENT = 'PATIENT',
   PROFESSIONAL = 'PROFESSIONAL',
   ADMIN = 'ADMIN',
-  SECRETARY = 'SECRETARY'
+  SECRETARY = 'SECRETARY',
 }
 
 export enum UserEstado {
   ACTIVO = 'activo',
-  INACTIVO = 'inactivo'
+  INACTIVO = 'inactivo',
 }
 
 export class GetUsuariosFiltersDto extends PaginationDto {
@@ -24,4 +24,4 @@ export class GetUsuariosFiltersDto extends PaginationDto {
 
   @IsOptional()
   especialidad?: string;
-} 
+}

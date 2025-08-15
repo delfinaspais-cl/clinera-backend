@@ -26,15 +26,15 @@ export class OwnersController {
   constructor(
     private ownersService: OwnersService,
     private authService: AuthService,
-    private prisma: PrismaService
+    private prisma: PrismaService,
   ) {}
-
-
 
   @Post('clinicas')
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
     if (req.user.role !== 'OWNER') {
-      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder.',
+      );
     }
 
     return this.ownersService.createClinica(dto);
@@ -45,10 +45,12 @@ export class OwnersController {
   async updateClinica(
     @Request() req,
     @Param('clinicaId') clinicaId: string,
-    @Body() dto: UpdateClinicaDto
+    @Body() dto: UpdateClinicaDto,
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder.',
+      );
     }
 
     return this.ownersService.updateClinica(clinicaId, dto);
@@ -59,10 +61,12 @@ export class OwnersController {
   async updateClinicaEstado(
     @Request() req,
     @Param('clinicaId') clinicaId: string,
-    @Body() dto: UpdateClinicaEstadoDto
+    @Body() dto: UpdateClinicaEstadoDto,
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder.',
+      );
     }
 
     return this.ownersService.updateClinica(clinicaId, {
@@ -72,12 +76,11 @@ export class OwnersController {
 
   // ✅ Nuevo endpoint para borrar clínicas
   @Delete('clinicas/:clinicaId')
-  async deleteClinica(
-    @Request() req,
-    @Param('clinicaId') clinicaId: string
-  ) {
+  async deleteClinica(@Request() req, @Param('clinicaId') clinicaId: string) {
     if (req.user.role !== 'OWNER') {
-      throw new BadRequestException('Acceso denegado. Solo propietarios pueden borrar clínicas.');
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden borrar clínicas.',
+      );
     }
 
     return this.ownersService.deleteClinica(clinicaId);
@@ -87,10 +90,12 @@ export class OwnersController {
   async sendMensaje(
     @Request() req,
     @Param('clinicaId') clinicaId: string,
-    @Body() dto: SendMensajeDto
+    @Body() dto: SendMensajeDto,
   ) {
     if (req.user.role !== 'OWNER') {
-      throw new BadRequestException('Acceso denegado. Solo propietarios pueden acceder.');
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder.',
+      );
     }
 
     return this.ownersService.sendMensaje(clinicaId, dto);
@@ -100,20 +105,18 @@ export class OwnersController {
   async getOwnerStats(@Request() req) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden acceder a las estadísticas.'
+        'Acceso denegado. Solo los propietarios pueden acceder a las estadísticas.',
       );
     }
 
     return this.ownersService.getOwnerStats();
   }
 
-
-
   @Post('messages')
   async createOwnerMessage(@Request() req, @Body() dto: SendMensajeDto) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden crear mensajes.'
+        'Acceso denegado. Solo los propietarios pueden crear mensajes.',
       );
     }
 
@@ -124,7 +127,7 @@ export class OwnersController {
   async getOwnerAnalytics(@Request() req) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden acceder a los analytics.'
+        'Acceso denegado. Solo los propietarios pueden acceder a los analytics.',
       );
     }
 
@@ -132,10 +135,13 @@ export class OwnersController {
   }
 
   @Get('clinicas/:clinicaId/admin-credentials')
-  async getAdminCredentials(@Request() req, @Param('clinicaId') clinicaId: string) {
+  async getAdminCredentials(
+    @Request() req,
+    @Param('clinicaId') clinicaId: string,
+  ) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden acceder a las credenciales de administrador.'
+        'Acceso denegado. Solo los propietarios pueden acceder a las credenciales de administrador.',
       );
     }
 
@@ -143,10 +149,13 @@ export class OwnersController {
   }
 
   @Post('clinicas/:clinicaId/reset-admin-password')
-  async resetAdminPassword(@Request() req, @Param('clinicaId') clinicaId: string) {
+  async resetAdminPassword(
+    @Request() req,
+    @Param('clinicaId') clinicaId: string,
+  ) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden resetear contraseñas de administrador.'
+        'Acceso denegado. Solo los propietarios pueden resetear contraseñas de administrador.',
       );
     }
 
@@ -157,7 +166,7 @@ export class OwnersController {
   async getOwnerNotifications(@Request() req) {
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
-        'Acceso denegado. Solo los propietarios pueden acceder a las notificaciones.'
+        'Acceso denegado. Solo los propietarios pueden acceder a las notificaciones.',
       );
     }
 
@@ -168,7 +177,7 @@ export class OwnersController {
   async registerComplete(@Body() body: any) {
     // Endpoint para registro completo: admin + clínica + plan
     const { admin, clinica, planId, simulatePayment } = body;
-    
+
     // Validar datos requeridos
     if (!admin || !clinica) {
       throw new BadRequestException('Datos de admin y clínica son requeridos');
@@ -182,7 +191,7 @@ export class OwnersController {
       colorSecundario: clinica.color_secundario || '#1E40AF',
       direccion: clinica.direccion,
       telefono: clinica.telefono,
-      email: clinica.email
+      email: clinica.email,
     };
 
     const clinicaCreada = await this.ownersService.createClinica(clinicaData);
@@ -197,7 +206,7 @@ export class OwnersController {
       password: admin.password,
       name: admin.nombre,
       role: 'ADMIN' as const,
-      clinicaId: clinicaCreada.clinica.id
+      clinicaId: clinicaCreada.clinica.id,
     };
 
     // Crear el usuario admin usando AuthService
@@ -205,13 +214,13 @@ export class OwnersController {
       email: admin.email,
       password: admin.password,
       name: admin.nombre,
-      role: 'ADMIN'
+      role: 'ADMIN',
     });
 
     // Actualizar el usuario con la clínica
     await this.prisma.user.update({
       where: { email: admin.email },
-      data: { clinicaId: clinicaCreada.clinica.id }
+      data: { clinicaId: clinicaCreada.clinica.id },
     });
 
     return {
@@ -221,7 +230,7 @@ export class OwnersController {
       plan: planId,
       paymentSimulated: simulatePayment,
       adminCreated: true,
-      adminToken: adminUser.access_token
+      adminToken: adminUser.access_token,
     };
   }
 
@@ -235,5 +244,4 @@ export class OwnersController {
   async validateEmail(@Param('email') email: string) {
     return this.ownersService.validateEmail(email);
   }
-
 }

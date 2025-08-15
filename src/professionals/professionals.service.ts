@@ -10,12 +10,12 @@ export class ProfessionalsService {
 
   async findAll(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-  where: { url: clinicaUrl },
-  include: {
-    especialidades: true,
-    horarios: true,
-  },
-});
+      where: { url: clinicaUrl },
+      include: {
+        especialidades: true,
+        horarios: true,
+      },
+    });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
@@ -27,12 +27,12 @@ export class ProfessionalsService {
 
   async create(clinicaUrl: string, dto: CreateProfessionalDto) {
     const clinica = await this.prisma.clinica.findUnique({
-  where: { url: clinicaUrl },
-  include: {
-    especialidades: true,
-    horarios: true,
-  },
-});
+      where: { url: clinicaUrl },
+      include: {
+        especialidades: true,
+        horarios: true,
+      },
+    });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
@@ -98,16 +98,16 @@ export class ProfessionalsService {
 
     // Verificar que el profesional pertenece a la clínica
     const professional = await this.prisma.professional.findFirst({
-      where: { 
+      where: {
         id,
         user: {
-          clinicaId: clinica.id
-        }
+          clinicaId: clinica.id,
+        },
       },
       include: {
         user: true,
-        agendas: true
-      }
+        agendas: true,
+      },
     });
 
     if (!professional) {
@@ -133,4 +133,3 @@ export class ProfessionalsService {
     return { message: 'Profesional eliminado correctamente' };
   }
 }
-

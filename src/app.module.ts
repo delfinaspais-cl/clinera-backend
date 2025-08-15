@@ -23,9 +23,9 @@ import { OwnersService } from './owners/owners.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
-  isGlobal: true,
-  ignoreEnvFile: process.env.NODE_ENV === 'production',
-}),
+      isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
+    }),
     PrismaModule,
     AuthModule,
     ProfessionalsModule,
@@ -41,11 +41,10 @@ import { OwnersService } from './owners/owners.service';
     HorariosModule,
     EspecialidadesModule,
     PushNotificationsModule,
-    WhatsAppModule
+    WhatsAppModule,
     // otros módulos
   ],
   controllers: [AppController],
   providers: [AppService, OwnersService],
 })
 export class AppModule {}
-

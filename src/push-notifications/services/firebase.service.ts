@@ -81,7 +81,7 @@ export class FirebaseService implements OnModuleInit {
       };
 
       const response = await this.firebaseApp.messaging().send(message);
-      
+
       return {
         success: true,
         messageId: response,
@@ -138,8 +138,10 @@ export class FirebaseService implements OnModuleInit {
     };
 
     try {
-      const response = await this.firebaseApp.messaging().sendEachForMulticast(message);
-      
+      const response = await this.firebaseApp
+        .messaging()
+        .sendEachForMulticast(message);
+
       return response.responses.map((resp, index) => ({
         success: resp.success,
         messageId: resp.messageId,
@@ -198,7 +200,7 @@ export class FirebaseService implements OnModuleInit {
       };
 
       const response = await this.firebaseApp.messaging().send(message);
-      
+
       return {
         success: true,
         messageId: response,

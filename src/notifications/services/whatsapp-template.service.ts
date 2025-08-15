@@ -11,28 +11,31 @@ export class WhatsAppTemplateService {
     appointment_confirmation: {
       name: 'Confirmación de Cita',
       type: 'whatsapp',
-      message: 'Hola {{nombre}}, tu cita ha sido confirmada para el {{fecha}} a las {{hora}} con {{doctor}} en {{clinica}}. Por favor confirma tu asistencia.',
-      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica']
+      message:
+        'Hola {{nombre}}, tu cita ha sido confirmada para el {{fecha}} a las {{hora}} con {{doctor}} en {{clinica}}. Por favor confirma tu asistencia.',
+      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica'],
     },
     appointment_reminder: {
       name: 'Recordatorio de Cita',
       type: 'whatsapp',
-      message: 'Hola {{nombre}}, te recordamos tu cita mañana {{fecha}} a las {{hora}} con {{doctor}} en {{clinica}}.',
-      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica']
+      message:
+        'Hola {{nombre}}, te recordamos tu cita mañana {{fecha}} a las {{hora}} con {{doctor}} en {{clinica}}.',
+      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica'],
     },
     appointment_cancellation: {
       name: 'Cancelación de Cita',
       type: 'whatsapp',
-      message: 'Hola {{nombre}}, tu cita del {{fecha}} a las {{hora}} con {{doctor}} ha sido cancelada. Contacta a {{clinica}} para reagendar.',
-      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica']
-    }
+      message:
+        'Hola {{nombre}}, tu cita del {{fecha}} a las {{hora}} con {{doctor}} ha sido cancelada. Contacta a {{clinica}} para reagendar.',
+      variables: ['nombre', 'fecha', 'hora', 'doctor', 'clinica'],
+    },
   };
 
   async getTemplates(clinicaId: string) {
     // Get clinic-specific templates or return defaults
     const clinicTemplates = await this.prisma.clinica.findUnique({
       where: { id: clinicaId },
-      select: { contacto: true }
+      select: { contacto: true },
     });
 
     if (clinicTemplates?.contacto) {
@@ -43,9 +46,13 @@ export class WhatsAppTemplateService {
     return this.defaultTemplates;
   }
 
-  async updateTemplate(clinicaId: string, templateName: string, template: NotificationTemplateDto) {
+  async updateTemplate(
+    clinicaId: string,
+    templateName: string,
+    template: NotificationTemplateDto,
+  ) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { id: clinicaId }
+      where: { id: clinicaId },
     });
 
     if (!clinica) {
@@ -54,7 +61,8 @@ export class WhatsAppTemplateService {
 
     // Get current contact data
     const currentContact = clinica.contacto ? JSON.parse(clinica.contacto) : {};
-    const currentTemplates = currentContact.whatsappTemplates || this.defaultTemplates;
+    const currentTemplates =
+      currentContact.whatsappTemplates || this.defaultTemplates;
 
     // Update specific template
     currentTemplates[templateName] = {
@@ -62,7 +70,7 @@ export class WhatsAppTemplateService {
       type: template.type,
       message: template.message,
       variables: template.variables,
-      metadata: template.metadata
+      metadata: template.metadata,
     };
 
     // Save updated templates
@@ -71,15 +79,19 @@ export class WhatsAppTemplateService {
       data: {
         contacto: JSON.stringify({
           ...currentContact,
-          whatsappTemplates: currentTemplates
-        })
-      }
+          whatsappTemplates: currentTemplates,
+        }),
+      },
     });
 
     return { success: true, template: currentTemplates[templateName] };
   }
 
-  async processTemplate(templateName: string, variables: Record<string, any>, clinicaId: string): Promise<string> {
+  async processTemplate(
+    templateName: string,
+    variables: Record<string, any>,
+    clinicaId: string,
+  ): Promise<string> {
     const templates = await this.getTemplates(clinicaId);
     const template = templates[templateName];
 
@@ -96,8 +108,8 @@ export class WhatsAppTemplateService {
     }
 
     // Validate that all required variables are provided
-    const missingVariables = template.variables.filter(variable => 
-      !variables.hasOwnProperty(variable)
+    const missingVariables = template.variables.filter(
+      (variable) => !variables.hasOwnProperty(variable),
     );
 
     if (missingVariables.length > 0) {
@@ -107,16 +119,20 @@ export class WhatsAppTemplateService {
     return message;
   }
 
-  async validateTemplate(template: NotificationTemplateDto): Promise<{ valid: boolean; errors: string[] }> {
+  async validateTemplate(
+    template: NotificationTemplateDto,
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     // Check for required variables in message
     const variableMatches = template.message.match(/\{\{(\w+)\}\}/g) || [];
-    const foundVariables = variableMatches.map(match => match.replace(/\{\{|\}\}/g, ''));
+    const foundVariables = variableMatches.map((match) =>
+      match.replace(/\{\{|\}\}/g, ''),
+    );
 
     // Check if all found variables are declared
-    const undeclaredVariables = foundVariables.filter(variable => 
-      !template.variables.includes(variable)
+    const undeclaredVariables = foundVariables.filter(
+      (variable) => !template.variables.includes(variable),
     );
 
     if (undeclaredVariables.length > 0) {
@@ -124,8 +140,8 @@ export class WhatsAppTemplateService {
     }
 
     // Check if all declared variables are used
-    const unusedVariables = template.variables.filter(variable => 
-      !foundVariables.includes(variable)
+    const unusedVariables = template.variables.filter(
+      (variable) => !foundVariables.includes(variable),
     );
 
     if (unusedVariables.length > 0) {
@@ -140,21 +156,23 @@ export class WhatsAppTemplateService {
     // Check for forbidden characters or patterns
     const forbiddenPatterns = [
       /\*\*/, // Bold markdown
-      /\*/,   // Italic markdown
-      /`/,    // Code markdown
-      /\[.*\]\(.*\)/ // Links
+      /\*/, // Italic markdown
+      /`/, // Code markdown
+      /\[.*\]\(.*\)/, // Links
     ];
 
     for (const pattern of forbiddenPatterns) {
       if (pattern.test(template.message)) {
-        errors.push('El mensaje contiene caracteres no permitidos por WhatsApp');
+        errors.push(
+          'El mensaje contiene caracteres no permitidos por WhatsApp',
+        );
         break;
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -162,4 +180,3 @@ export class WhatsAppTemplateService {
     return Object.keys(this.defaultTemplates);
   }
 }
-

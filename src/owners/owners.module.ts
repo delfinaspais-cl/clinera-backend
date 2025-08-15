@@ -10,4 +10,4 @@ import { AuthModule } from '../auth/auth.module';
   providers: [OwnersService],
   exports: [OwnersService],
 })
-export class OwnersModule {} 
+export class OwnersModule {}

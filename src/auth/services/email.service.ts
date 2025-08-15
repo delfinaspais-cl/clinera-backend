@@ -19,10 +19,14 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string, userName: string): Promise<boolean> {
+  async sendPasswordResetEmail(
+    email: string,
+    resetToken: string,
+    userName: string,
+  ): Promise<boolean> {
     try {
       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-      
+
       const mailOptions = {
         from: process.env.SMTP_FROM || '"Clinera" <noreply@clinera.com>',
         to: email,
@@ -58,7 +62,10 @@ export class EmailService {
     }
   }
 
-  async sendPasswordChangedEmail(email: string, userName: string): Promise<boolean> {
+  async sendPasswordChangedEmail(
+    email: string,
+    userName: string,
+  ): Promise<boolean> {
     try {
       const mailOptions = {
         from: process.env.SMTP_FROM || '"Clinera" <noreply@clinera.com>',

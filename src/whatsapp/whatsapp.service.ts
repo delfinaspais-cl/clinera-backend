@@ -30,17 +30,22 @@ export class WhatsAppService {
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.phoneNumberId = this.configService.get('WHATSAPP_PHONE_NUMBER_ID') || '';
+    this.phoneNumberId =
+      this.configService.get('WHATSAPP_PHONE_NUMBER_ID') || '';
     this.accessToken = this.configService.get('WHATSAPP_ACCESS_TOKEN') || '';
     this.apiVersion = this.configService.get('WHATSAPP_API_VERSION', 'v18.0');
-    this.webhookSecret = this.configService.get('WHATSAPP_WEBHOOK_SECRET') || '';
+    this.webhookSecret =
+      this.configService.get('WHATSAPP_WEBHOOK_SECRET') || '';
   }
 
-  async sendMessage(dto: SendWhatsAppMessageDto, userId?: string): Promise<WhatsAppMessageResult> {
+  async sendMessage(
+    dto: SendWhatsAppMessageDto,
+    userId?: string,
+  ): Promise<WhatsAppMessageResult> {
     try {
       // Validar que el número de teléfono tenga el formato correcto
       const formattedPhone = this.formatPhoneNumber(dto.to);
-      
+
       // Crear registro en la base de datos
       const messageRecord = await this.prisma.whatsAppMessage.create({
         data: {
@@ -50,7 +55,9 @@ export class WhatsAppService {
           messageType: dto.messageType,
           messageText: dto.messageText,
           templateName: dto.templateName,
-          templateParams: dto.templateParams ? JSON.stringify(dto.templateParams) : null,
+          templateParams: dto.templateParams
+            ? JSON.stringify(dto.templateParams)
+            : null,
           mediaUrl: dto.mediaUrl,
           mediaId: dto.mediaId,
           status: 'pending',
@@ -66,21 +73,38 @@ export class WhatsAppService {
       switch (dto.messageType) {
         case 'text':
           if (!dto.messageText) {
-            throw new Error('messageText es requerido para mensajes de tipo text');
+            throw new Error(
+              'messageText es requerido para mensajes de tipo text',
+            );
           }
-          payload = this.buildTextMessagePayload(formattedPhone, dto.messageText);
+          payload = this.buildTextMessagePayload(
+            formattedPhone,
+            dto.messageText,
+          );
           break;
         case 'template':
           if (!dto.templateName) {
-            throw new Error('templateName es requerido para mensajes de tipo template');
+            throw new Error(
+              'templateName es requerido para mensajes de tipo template',
+            );
           }
-          payload = this.buildTemplateMessagePayload(formattedPhone, dto.templateName, dto.templateParams);
+          payload = this.buildTemplateMessagePayload(
+            formattedPhone,
+            dto.templateName,
+            dto.templateParams,
+          );
           break;
         case 'image':
         case 'document':
         case 'audio':
         case 'video':
-          payload = this.buildMediaMessagePayload(formattedPhone, dto.messageType, dto.mediaUrl, dto.mediaId, dto.messageText);
+          payload = this.buildMediaMessagePayload(
+            formattedPhone,
+            dto.messageType,
+            dto.mediaUrl,
+            dto.mediaId,
+            dto.messageText,
+          );
           break;
         default:
           throw new Error(`Tipo de mensaje no soportado: ${dto.messageType}`);
@@ -137,13 +161,16 @@ export class WhatsAppService {
     clinicaId?: string,
     userId?: string,
   ): Promise<WhatsAppMessageResult> {
-    return this.sendMessage({
-      to,
-      messageType: 'template',
-      templateName,
-      templateParams,
-      clinicaId,
-    }, userId);
+    return this.sendMessage(
+      {
+        to,
+        messageType: 'template',
+        templateName,
+        templateParams,
+        clinicaId,
+      },
+      userId,
+    );
   }
 
   async sendTextMessage(
@@ -152,15 +179,20 @@ export class WhatsAppService {
     clinicaId?: string,
     userId?: string,
   ): Promise<WhatsAppMessageResult> {
-    return this.sendMessage({
-      to,
-      messageType: 'text',
-      messageText: text,
-      clinicaId,
-    }, userId);
+    return this.sendMessage(
+      {
+        to,
+        messageType: 'text',
+        messageText: text,
+        clinicaId,
+      },
+      userId,
+    );
   }
 
-  async createTemplate(dto: CreateWhatsAppTemplateDto): Promise<WhatsAppTemplateResult> {
+  async createTemplate(
+    dto: CreateWhatsAppTemplateDto,
+  ): Promise<WhatsAppTemplateResult> {
     try {
       // Crear registro en la base de datos
       const templateRecord = await this.prisma.whatsAppTemplate.create({
@@ -194,7 +226,9 @@ export class WhatsAppService {
           },
         });
 
-        this.logger.log(`Plantilla creada exitosamente: ${response.templateId}`);
+        this.logger.log(
+          `Plantilla creada exitosamente: ${response.templateId}`,
+        );
         return {
           success: true,
           templateId: response.templateId,
@@ -262,7 +296,7 @@ export class WhatsAppService {
 
       return {
         success: true,
-        templates: templates.map(template => ({
+        templates: templates.map((template) => ({
           ...template,
           components: JSON.parse(template.components),
         })),
@@ -297,9 +331,11 @@ export class WhatsAppService {
 
       return {
         success: true,
-        messages: messages.map(message => ({
+        messages: messages.map((message) => ({
           ...message,
-          templateParams: message.templateParams ? JSON.parse(message.templateParams) : null,
+          templateParams: message.templateParams
+            ? JSON.parse(message.templateParams)
+            : null,
           metadata: message.metadata ? JSON.parse(message.metadata) : null,
         })),
       };
@@ -315,12 +351,12 @@ export class WhatsAppService {
   private formatPhoneNumber(phone: string): string {
     // Remover todos los caracteres no numéricos
     let cleaned = phone.replace(/\D/g, '');
-    
+
     // Asegurar que tenga el código de país
     if (!cleaned.startsWith('54')) {
       cleaned = '54' + cleaned;
     }
-    
+
     return cleaned;
   }
 
@@ -333,7 +369,11 @@ export class WhatsAppService {
     };
   }
 
-  private buildTemplateMessagePayload(to: string, templateName: string, templateParams?: Record<string, any>): any {
+  private buildTemplateMessagePayload(
+    to: string,
+    templateName: string,
+    templateParams?: Record<string, any>,
+  ): any {
     const payload: any = {
       messaging_product: 'whatsapp',
       to,
@@ -361,7 +401,13 @@ export class WhatsAppService {
     return payload;
   }
 
-  private buildMediaMessagePayload(to: string, type: string, mediaUrl?: string, mediaId?: string, caption?: string): any {
+  private buildMediaMessagePayload(
+    to: string,
+    type: string,
+    mediaUrl?: string,
+    mediaId?: string,
+    caption?: string,
+  ): any {
     const payload: any = {
       messaging_product: 'whatsapp',
       to,
@@ -373,7 +419,9 @@ export class WhatsAppService {
     } else if (mediaUrl) {
       payload[type] = { link: mediaUrl };
     } else {
-      throw new Error(`Se requiere mediaUrl o mediaId para mensajes de tipo ${type}`);
+      throw new Error(
+        `Se requiere mediaUrl o mediaId para mensajes de tipo ${type}`,
+      );
     }
 
     if (caption) {
@@ -383,13 +431,15 @@ export class WhatsAppService {
     return payload;
   }
 
-  private async sendToWhatsAppAPI(payload: any): Promise<WhatsAppMessageResult> {
+  private async sendToWhatsAppAPI(
+    payload: any,
+  ): Promise<WhatsAppMessageResult> {
     try {
       const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/messages`;
-      
+
       const response = await axios.post(url, payload, {
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -399,7 +449,10 @@ export class WhatsAppService {
         messageId: response.data.messages[0].id,
       };
     } catch (error) {
-      this.logger.error('Error en WhatsApp API:', error.response?.data || error.message);
+      this.logger.error(
+        'Error en WhatsApp API:',
+        error.response?.data || error.message,
+      );
       return {
         success: false,
         error: error.response?.data?.error?.message || error.message,
@@ -407,13 +460,15 @@ export class WhatsAppService {
     }
   }
 
-  private async sendTemplateToWhatsAppAPI(payload: any): Promise<WhatsAppTemplateResult> {
+  private async sendTemplateToWhatsAppAPI(
+    payload: any,
+  ): Promise<WhatsAppTemplateResult> {
     try {
       const url = `https://graph.facebook.com/${this.apiVersion}/${this.phoneNumberId}/message_templates`;
-      
+
       const response = await axios.post(url, payload, {
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`,
+          Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
         },
       });
@@ -423,7 +478,10 @@ export class WhatsAppService {
         templateId: response.data.id,
       };
     } catch (error) {
-      this.logger.error('Error creando plantilla en WhatsApp API:', error.response?.data || error.message);
+      this.logger.error(
+        'Error creando plantilla en WhatsApp API:',
+        error.response?.data || error.message,
+      );
       return {
         success: false,
         error: error.response?.data?.error?.message || error.message,
@@ -433,7 +491,9 @@ export class WhatsAppService {
 
   verifyWebhookSignature(signature: string, body: string): boolean {
     try {
-      const expectedSignature = crypto.HmacSHA256(body, this.webhookSecret).toString(crypto.enc.Hex);
+      const expectedSignature = crypto
+        .HmacSHA256(body, this.webhookSecret)
+        .toString(crypto.enc.Hex);
       return signature === `sha256=${expectedSignature}`;
     } catch (error) {
       this.logger.error('Error verificando firma del webhook:', error);

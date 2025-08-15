@@ -20,10 +20,7 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  findAll(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Request() req,
-  ) {
+  findAll(@Param('clinicaUrl') clinicaUrl: string, @Request() req) {
     return this.notificationsService.findAll(clinicaUrl, req.user.id);
   }
 
@@ -36,10 +33,7 @@ export class NotificationsController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-  ) {
+  findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.notificationsService.findOne(clinicaUrl, id);
   }
 
@@ -53,18 +47,12 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
-  markAsRead(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-  ) {
+  markAsRead(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.notificationsService.markAsRead(clinicaUrl, id);
   }
 
   @Delete(':id')
-  remove(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-  ) {
+  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.notificationsService.remove(clinicaUrl, id);
   }
 

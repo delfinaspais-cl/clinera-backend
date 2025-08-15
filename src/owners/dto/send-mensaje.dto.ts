@@ -17,4 +17,4 @@ export class SendMensajeDto {
   @IsString()
   @IsOptional()
   clinicaId?: string;
-} 
+}

@@ -1,4 +1,11 @@
-import { Controller, Get, Post, Param, Body, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  BadRequestException,
+} from '@nestjs/common';
 import { ClinicasService } from '../clinicas/clinicas.service';
 import { CreateTurnoLandingDto } from './dto/create-turno-landing.dto';
 import { AuthService } from '../auth/auth.service';
@@ -9,7 +16,7 @@ export class PublicController {
   constructor(
     private readonly clinicasService: ClinicasService,
     private readonly authService: AuthService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get('clinica/:clinicaUrl/landing')
@@ -27,7 +34,7 @@ export class PublicController {
   @Post('clinica/:clinicaUrl/landing/turnos')
   async createTurnoFromLanding(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Body() dto: CreateTurnoLandingDto
+    @Body() dto: CreateTurnoLandingDto,
   ) {
     // Este endpoint es público, no requiere autenticación
     return this.clinicasService.createTurnoFromLanding(clinicaUrl, dto);
@@ -46,10 +53,10 @@ export class PublicController {
               name: true,
               role: true,
               estado: true,
-              createdAt: true
-            }
-          }
-        }
+              createdAt: true,
+            },
+          },
+        },
       });
 
       if (!clinica) {
@@ -62,9 +69,9 @@ export class PublicController {
           id: clinica.id,
           nombre: clinica.name,
           url: clinica.url,
-          estado: clinica.estado
+          estado: clinica.estado,
         },
-        usuarios: clinica.users
+        usuarios: clinica.users,
       };
     } catch (error) {
       console.error('Error en debug-users:', error);
@@ -77,18 +84,25 @@ export class PublicController {
   @Post('register-clinica-temp')
   async registerClinicaTemp(@Body() body: any) {
     console.log('🚨 Endpoint temporal usado:', body);
-    
+
     try {
-      const { admin, clinica, planId = 'professional', simulatePayment = true } = body;
-      
+      const {
+        admin,
+        clinica,
+        planId = 'professional',
+        simulatePayment = true,
+      } = body;
+
       // Validar datos requeridos
       if (!admin || !clinica) {
-        throw new BadRequestException('Datos de admin y clínica son requeridos');
+        throw new BadRequestException(
+          'Datos de admin y clínica son requeridos',
+        );
       }
 
       // Verificar si la URL de clínica ya existe
       const existingClinica = await this.prisma.clinica.findUnique({
-        where: { url: clinica.url }
+        where: { url: clinica.url },
       });
 
       if (existingClinica) {
@@ -97,11 +111,13 @@ export class PublicController {
 
       // Verificar si el email del admin ya existe
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: admin.email }
+        where: { email: admin.email },
       });
 
       if (existingUser) {
-        throw new BadRequestException(`El email "${admin.email}" ya está registrado`);
+        throw new BadRequestException(
+          `El email "${admin.email}" ya está registrado`,
+        );
       }
 
       // Crear la clínica
@@ -112,7 +128,7 @@ export class PublicController {
         colorSecundario: clinica.color_secundario || '#1E40AF',
         direccion: clinica.direccion || '',
         telefono: clinica.telefono || '',
-        email: clinica.email || ''
+        email: clinica.email || '',
       };
 
       const clinicaCreada = await this.prisma.clinica.create({
@@ -125,8 +141,8 @@ export class PublicController {
           phone: clinicaData.telefono,
           email: clinicaData.email,
           estado: 'activa',
-          estadoPago: 'pagado'
-        }
+          estadoPago: 'pagado',
+        },
       });
 
       // Crear el usuario admin
@@ -134,13 +150,13 @@ export class PublicController {
         email: admin.email,
         password: admin.password,
         name: admin.nombre,
-        role: 'ADMIN'
+        role: 'ADMIN',
       });
 
       // Actualizar el usuario con la clínica
       await this.prisma.user.update({
         where: { email: admin.email },
-        data: { clinicaId: clinicaCreada.id }
+        data: { clinicaId: clinicaCreada.id },
       });
 
       return {
@@ -153,17 +169,17 @@ export class PublicController {
           colorPrimario: clinicaCreada.colorPrimario,
           colorSecundario: clinicaCreada.colorSecundario,
           especialidades: [],
-          horarios: []
+          horarios: [],
         },
         plan: planId,
         paymentSimulated: simulatePayment,
         adminCreated: true,
         adminToken: adminUser.access_token,
-        warning: '⚠️ Este es un endpoint temporal solo para pruebas'
+        warning: '⚠️ Este es un endpoint temporal solo para pruebas',
       };
     } catch (error) {
       console.error('Error en registro temporal:', error);
       throw error;
     }
   }
-} 
+}

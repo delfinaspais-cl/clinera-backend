@@ -5,4 +5,4 @@ export class UpdateClinicaEstadoDto {
   @IsNotEmpty()
   @IsIn(['activa', 'inactiva'])
   estado: string;
-} 
+}

@@ -7,7 +7,9 @@ export class ScheduleService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     const professionals = await this.prisma.professional.findMany({
@@ -15,7 +17,7 @@ export class ScheduleService {
       include: { agendas: true },
     });
 
-    return professionals.map(p => ({
+    return professionals.map((p) => ({
       professionalId: p.id,
       name: p.name,
       schedules: p.agendas,
@@ -55,14 +57,14 @@ export class ScheduleService {
 
     // Verificar que la agenda pertenece a un profesional de la clínica
     const agenda = await this.prisma.agenda.findFirst({
-      where: { 
+      where: {
         id,
         professional: {
           user: {
-            clinicaId: clinica.id
-          }
-        }
-      }
+            clinicaId: clinica.id,
+          },
+        },
+      },
     });
 
     if (!agenda) {

@@ -13,12 +13,15 @@ export class TokenCleanupService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupInactiveTokens() {
     this.logger.log('Iniciando limpieza de tokens inactivos...');
-    
+
     try {
       await this.pushNotificationsService.cleanupInactiveTokens();
       this.logger.log('Limpieza de tokens inactivos completada');
     } catch (error) {
-      this.logger.error('Error durante la limpieza de tokens inactivos:', error);
+      this.logger.error(
+        'Error durante la limpieza de tokens inactivos:',
+        error,
+      );
     }
   }
 }

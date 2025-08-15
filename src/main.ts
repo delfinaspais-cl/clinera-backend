@@ -9,20 +9,25 @@ async function bootstrap() {
 
   // Configuración de CORS más permisiva para desarrollo
   const isProduction = config.get<string>('NODE_ENV') === 'production';
-  
+
   const corsOptions = {
-    origin: isProduction 
+    origin: isProduction
       ? [
           config.get<string>('ALLOWED_ORIGIN'),
           'http://localhost:3000',
           'http://localhost:3001',
           'https://clinera-frontend.vercel.app',
-          'https://clinera.vercel.app'
+          'https://clinera.vercel.app',
         ].filter(Boolean) // Remueve valores undefined/null
       : true, // Permite todos los orígenes en desarrollo
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+    ],
   };
 
   app.enableCors(corsOptions);

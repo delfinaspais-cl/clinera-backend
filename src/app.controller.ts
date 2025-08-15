@@ -1,4 +1,18 @@
-import { Controller, Get, Post, Put, Patch, Delete, Param, Query, UseGuards, Request, BadRequestException, UnauthorizedException, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+  BadRequestException,
+  UnauthorizedException,
+  Body,
+} from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
 import { OwnersService } from './owners/owners.service';
@@ -25,7 +39,9 @@ export class AppController {
     try {
       return await this.clinicasService.getClinicaLanding(clinicaUrl);
     } catch (error) {
-      throw new BadRequestException(error.message || 'Error al obtener datos del landing');
+      throw new BadRequestException(
+        error.message || 'Error al obtener datos del landing',
+      );
     }
   }
 
@@ -37,10 +53,15 @@ export class AppController {
       // Verificar que el usuario tenga acceso a esta clínica
       if (req.user.role === 'OWNER') {
         return await this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, {});
-      } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      } else if (
+        req.user.role === 'ADMIN' &&
+        req.user.clinicaUrl === clinicaUrl
+      ) {
         return await this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, {});
       } else {
-        throw new UnauthorizedException('Acceso denegado. No tienes permisos para acceder a esta clínica.');
+        throw new UnauthorizedException(
+          'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+        );
       }
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -53,21 +74,31 @@ export class AppController {
   // Endpoint para notificaciones (con autenticación)
   @Get('clinica/:clinicaUrl/notifications')
   @UseGuards(JwtAuthGuard)
-  async getNotifications(@Param('clinicaUrl') clinicaUrl: string, @Request() req) {
+  async getNotifications(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Request() req,
+  ) {
     try {
       // Verificar que el usuario tenga acceso a esta clínica
       if (req.user.role === 'OWNER') {
         return await this.notificationsService.findAll(clinicaUrl, req.user.id);
-      } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      } else if (
+        req.user.role === 'ADMIN' &&
+        req.user.clinicaUrl === clinicaUrl
+      ) {
         return await this.notificationsService.findAll(clinicaUrl, req.user.id);
       } else {
-        throw new UnauthorizedException('Acceso denegado. No tienes permisos para acceder a esta clínica.');
+        throw new UnauthorizedException(
+          'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+        );
       }
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new BadRequestException(error.message || 'Error al obtener notificaciones');
+      throw new BadRequestException(
+        error.message || 'Error al obtener notificaciones',
+      );
     }
   }
 
@@ -78,9 +109,11 @@ export class AppController {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden acceder a las clínicas.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden acceder a las clínicas.',
+        );
       }
-      
+
       return await this.ownersService.getAllClinicas();
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -98,9 +131,11 @@ export class AppController {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden crear clínicas.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden crear clínicas.',
+        );
       }
-      
+
       return await this.ownersService.createClinica(createClinicaDto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -114,14 +149,23 @@ export class AppController {
   // Endpoint para actualizar clínicas del owner (dashboard) - PUT
   @Put('clinicas/:clinicaId')
   @UseGuards(JwtAuthGuard)
-  async updateClinica(@Param('clinicaId') clinicaId: string, @Body() updateClinicaDto: any, @Request() req) {
+  async updateClinica(
+    @Param('clinicaId') clinicaId: string,
+    @Body() updateClinicaDto: any,
+    @Request() req,
+  ) {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden actualizar clínicas.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden actualizar clínicas.',
+        );
       }
-      
-      return await this.ownersService.updateClinica(clinicaId, updateClinicaDto);
+
+      return await this.ownersService.updateClinica(
+        clinicaId,
+        updateClinicaDto,
+      );
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -134,14 +178,23 @@ export class AppController {
   // Endpoint para actualizar clínicas del owner (dashboard) - PATCH (para compatibilidad con frontend)
   @Patch('clinicas/:clinicaId')
   @UseGuards(JwtAuthGuard)
-  async patchClinica(@Param('clinicaId') clinicaId: string, @Body() updateClinicaDto: any, @Request() req) {
+  async patchClinica(
+    @Param('clinicaId') clinicaId: string,
+    @Body() updateClinicaDto: any,
+    @Request() req,
+  ) {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden actualizar clínicas.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden actualizar clínicas.',
+        );
       }
-      
-      return await this.ownersService.updateClinica(clinicaId, updateClinicaDto);
+
+      return await this.ownersService.updateClinica(
+        clinicaId,
+        updateClinicaDto,
+      );
     } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
@@ -158,9 +211,11 @@ export class AppController {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden borrar clínicas.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden borrar clínicas.',
+        );
       }
-      
+
       return await this.ownersService.deleteClinica(clinicaId);
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -178,9 +233,11 @@ export class AppController {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden acceder a los mensajes.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden acceder a los mensajes.',
+        );
       }
-      
+
       return await this.ownersService.getOwnerMessages();
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -198,9 +255,11 @@ export class AppController {
     try {
       // Verificar que el usuario sea OWNER
       if (req.user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo los propietarios pueden enviar mensajes.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo los propietarios pueden enviar mensajes.',
+        );
       }
-      
+
       return await this.ownersService.createOwnerMessage(sendMensajeDto);
     } catch (error) {
       if (error instanceof UnauthorizedException) {

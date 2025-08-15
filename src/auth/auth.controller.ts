@@ -1,5 +1,18 @@
-import { Body, Controller, Post, Headers, UseGuards, Get, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Post,
+  Headers,
+  UseGuards,
+  Get,
+  Param,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { OwnerLoginDto } from './dto/owner-login.dto';
@@ -15,7 +28,10 @@ import * as bcrypt from 'bcrypt';
 @ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService, private prisma: PrismaService) {}
+  constructor(
+    private authService: AuthService,
+    private prisma: PrismaService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterAuthDto) {
@@ -30,15 +46,18 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Iniciar sesión de usuario' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Login exitoso',
     schema: {
       type: 'object',
       properties: {
-        access_token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
-      }
-    }
+        access_token: {
+          type: 'string',
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   @Post('login')
@@ -63,16 +82,18 @@ export class AuthController {
     return this.authService.clinicaLogin(dto);
   }
 
-  @ApiOperation({ summary: 'Generar token temporal con secreto hardcodeado (TEMPORAL)' })
+  @ApiOperation({
+    summary: 'Generar token temporal con secreto hardcodeado (TEMPORAL)',
+  })
   @ApiResponse({ status: 200, description: 'Token temporal' })
   @Post('temp-token')
   async generateTempToken(@Body() body: any) {
     try {
       const { clinicaUrl, username, password } = body;
-      
+
       // Usar el mismo proceso de login pero con secreto hardcodeado
       const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl }
+        where: { url: clinicaUrl },
       });
 
       if (!clinica) {
@@ -80,13 +101,13 @@ export class AuthController {
       }
 
       const user = await this.prisma.user.findFirst({
-        where: { 
+        where: {
           email: username,
-          clinicaId: clinica.id
+          clinicaId: clinica.id,
         },
         include: {
-          clinica: true
-        }
+          clinica: true,
+        },
       });
 
       if (!user) {
@@ -99,15 +120,15 @@ export class AuthController {
       }
 
       // Generar token con secreto hardcodeado
-      const payload = { 
-        sub: user.id, 
-        email: user.email, 
+      const payload = {
+        sub: user.id,
+        email: user.email,
         role: user.role,
         name: user.name,
         clinicaId: user.clinicaId,
-        clinicaUrl: clinica.url
+        clinicaUrl: clinica.url,
       };
-      
+
       // Usar JWT_SECRET hardcodeado
       const jwt = require('jsonwebtoken');
       const token = jwt.sign(payload, 'supersecret123', { expiresIn: '1d' });
@@ -120,9 +141,9 @@ export class AuthController {
           name: user.name,
           role: user.role,
           clinicaId: user.clinicaId,
-          clinicaUrl: clinica.url
+          clinicaUrl: clinica.url,
         },
-        note: 'Token generado con secreto hardcodeado - SOLO PARA PRUEBAS'
+        note: 'Token generado con secreto hardcodeado - SOLO PARA PRUEBAS',
       };
     } catch (error) {
       console.error('Error en temp-token:', error);
@@ -134,12 +155,12 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Configuración JWT' })
   @Get('jwt-config')
   jwtConfig() {
-    return { 
+    return {
       jwtSecret: process.env.JWT_SECRET ? 'CONFIGURADO' : 'NO CONFIGURADO',
       jwtSecretLength: process.env.JWT_SECRET?.length || 0,
       usingFallback: !process.env.JWT_SECRET,
       fallbackSecret: 'supersecret123',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -150,10 +171,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('verify-token')
   verifyToken() {
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: 'Token válido',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -179,4 +200,3 @@ export class AuthController {
     return this.authService.validateEmail(email);
   }
 }
-

@@ -32,4 +32,4 @@ export class CreateTurnoLandingDto {
   @IsString()
   @IsNotEmpty()
   motivo: string;
-} 
+}

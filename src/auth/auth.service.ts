@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -21,7 +25,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       return user;
     }
     return null;
@@ -44,7 +48,7 @@ export class AuthService {
     try {
       // Debug: Log de los datos recibidos
       console.log('Datos recibidos en registro:', JSON.stringify(dto, null, 2));
-      
+
       // Validar que el campo role existe
       if (!dto.role) {
         throw new BadRequestException('El campo "role" es requerido');
@@ -52,12 +56,14 @@ export class AuthService {
 
       const role = dto.role.toUpperCase(); // normaliza
       if (!['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'].includes(role)) {
-        throw new BadRequestException(`Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`);
+        throw new BadRequestException(
+          `Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`,
+        );
       }
 
       // Verificar si el email ya existe
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.email }
+        where: { email: dto.email },
       });
 
       if (existingUser) {
@@ -87,10 +93,10 @@ export class AuthService {
   async ownerLogin(dto: OwnerLoginDto) {
     try {
       console.log('Owner login DTO:', dto); // Debug log
-      
+
       // Buscar usuario por username (que será el email para owners)
-      const user = await this.prisma.user.findUnique({ 
-        where: { email: dto.username } 
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.username },
       });
 
       if (!user) {
@@ -99,7 +105,9 @@ export class AuthService {
 
       // Verificar que sea un OWNER
       if (user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo propietarios pueden acceder.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo propietarios pueden acceder.',
+        );
       }
 
       // Verificar contraseña
@@ -109,13 +117,13 @@ export class AuthService {
       }
 
       // Generar token
-      const payload = { 
-        sub: user.id, 
-        email: user.email, 
+      const payload = {
+        sub: user.id,
+        email: user.email,
         role: user.role,
-        name: user.name 
+        name: user.name,
       };
-      
+
       const token = this.jwtService.sign(payload);
 
       return {
@@ -125,8 +133,8 @@ export class AuthService {
           id: user.id,
           name: user.name,
           role: user.role,
-          email: user.email
-        }
+          email: user.email,
+        },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -147,7 +155,7 @@ export class AuthService {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
-        where: { url: dto.clinicaUrl }
+        where: { url: dto.clinicaUrl },
       });
 
       if (!clinica) {
@@ -156,13 +164,13 @@ export class AuthService {
 
       // Buscar usuario por username (email) y clínica
       const user = await this.prisma.user.findFirst({
-        where: { 
+        where: {
           email: dto.username,
-          clinicaId: clinica.id
+          clinicaId: clinica.id,
         },
         include: {
-          clinica: true
-        }
+          clinica: true,
+        },
       });
 
       if (!user) {
@@ -176,15 +184,15 @@ export class AuthService {
       }
 
       // Generar token
-      const payload = { 
-        sub: user.id, 
-        email: user.email, 
+      const payload = {
+        sub: user.id,
+        email: user.email,
         role: user.role,
         name: user.name,
         clinicaId: user.clinicaId,
-        clinicaUrl: clinica.url
+        clinicaUrl: clinica.url,
       };
-      
+
       const token = this.jwtService.sign(payload);
 
       return {
@@ -195,8 +203,8 @@ export class AuthService {
           name: user.name,
           role: user.role,
           clinicaId: user.clinicaId,
-          clinicaUrl: clinica.url
-        }
+          clinicaUrl: clinica.url,
+        },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -218,14 +226,15 @@ export class AuthService {
     try {
       // Buscar usuario por email
       const user = await this.prisma.user.findUnique({
-        where: { email: dto.email }
+        where: { email: dto.email },
       });
 
       if (!user) {
         // Por seguridad, no revelamos si el email existe o no
         return {
           success: true,
-          message: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña'
+          message:
+            'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
         };
       }
 
@@ -239,24 +248,27 @@ export class AuthService {
           email: dto.email,
           token: resetToken,
           expiresAt,
-          used: false
-        }
+          used: false,
+        },
       });
 
       // Enviar email
       const emailSent = await this.emailService.sendPasswordResetEmail(
         dto.email,
         resetToken,
-        user.name || 'Usuario'
+        user.name || 'Usuario',
       );
 
       if (!emailSent) {
-        throw new BadRequestException('Error al enviar el email de recuperación');
+        throw new BadRequestException(
+          'Error al enviar el email de recuperación',
+        );
       }
 
       return {
         success: true,
-        message: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña'
+        message:
+          'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -275,9 +287,9 @@ export class AuthService {
           token: dto.token,
           used: false,
           expiresAt: {
-            gt: new Date()
-          }
-        }
+            gt: new Date(),
+          },
+        },
       });
 
       if (!resetToken) {
@@ -286,7 +298,7 @@ export class AuthService {
 
       // Buscar usuario
       const user = await this.prisma.user.findUnique({
-        where: { email: resetToken.email }
+        where: { email: resetToken.email },
       });
 
       if (!user) {
@@ -297,24 +309,24 @@ export class AuthService {
       const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
       await this.prisma.user.update({
         where: { id: user.id },
-        data: { password: hashedPassword }
+        data: { password: hashedPassword },
       });
 
       // Marcar token como usado
       await this.prisma.passwordResetToken.update({
         where: { id: resetToken.id },
-        data: { used: true }
+        data: { used: true },
       });
 
       // Enviar email de confirmación
       await this.emailService.sendPasswordChangedEmail(
         user.email,
-        user.name || 'Usuario'
+        user.name || 'Usuario',
       );
 
       return {
         success: true,
-        message: 'Contraseña actualizada exitosamente'
+        message: 'Contraseña actualizada exitosamente',
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -332,27 +344,27 @@ export class AuthService {
           token,
           used: false,
           expiresAt: {
-            gt: new Date()
-          }
-        }
+            gt: new Date(),
+          },
+        },
       });
 
       return {
         valid: !!resetToken,
-        message: resetToken ? 'Token válido' : 'Token inválido o expirado'
+        message: resetToken ? 'Token válido' : 'Token inválido o expirado',
       };
     } catch (error) {
       console.error('Error al validar token:', error);
       return {
         valid: false,
-        message: 'Error al validar token'
+        message: 'Error al validar token',
       };
     }
   }
 
   async validateEmail(email: string) {
     const user = await this.prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
     return { available: !user };
   }
@@ -361,10 +373,10 @@ export class AuthService {
     try {
       // Verificar si ya existe un OWNER para Railway
       const existingOwner = await this.prisma.user.findFirst({
-        where: { 
+        where: {
           email: 'railway-owner@clinera.io',
-          role: 'OWNER'
-        }
+          role: 'OWNER',
+        },
       });
 
       if (existingOwner) {
@@ -373,8 +385,8 @@ export class AuthService {
           message: 'OWNER para Railway ya existe',
           credentials: {
             email: 'railway-owner@clinera.io',
-            password: '123456'
-          }
+            password: '123456',
+          },
         };
       }
 
@@ -387,8 +399,8 @@ export class AuthService {
           name: 'Railway Owner',
           role: 'OWNER',
           clinicaId: null, // Los OWNER no tienen clínica específica
-          estado: 'activo'
-        }
+          estado: 'activo',
+        },
       });
 
       return {
@@ -396,14 +408,14 @@ export class AuthService {
         message: 'OWNER creado exitosamente para Railway',
         credentials: {
           email: 'railway-owner@clinera.io',
-          password: '123456'
+          password: '123456',
         },
         user: {
           id: owner.id,
           name: owner.name,
           email: owner.email,
-          role: owner.role
-        }
+          role: owner.role,
+        },
       };
     } catch (error) {
       console.error('Error creando OWNER para Railway:', error);
@@ -411,4 +423,3 @@ export class AuthService {
     }
   }
 }
-

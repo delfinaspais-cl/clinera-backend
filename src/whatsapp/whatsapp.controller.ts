@@ -60,10 +60,7 @@ export class WhatsAppController {
     status: 401,
     description: 'No autorizado',
   })
-  async sendMessage(
-    @Request() req,
-    @Body() dto: SendWhatsAppMessageDto,
-  ) {
+  async sendMessage(@Request() req, @Body() dto: SendWhatsAppMessageDto) {
     const result = await this.whatsappService.sendMessage(dto, req.user.id);
 
     return {
@@ -141,7 +138,8 @@ export class WhatsAppController {
   })
   async sendTemplateMessage(
     @Request() req,
-    @Body() body: {
+    @Body()
+    body: {
       to: string;
       templateName: string;
       templateParams?: Record<string, any>;
@@ -290,7 +288,10 @@ export class WhatsAppController {
     try {
       // Verificar la firma del webhook
       const body = JSON.stringify(payload);
-      const isValidSignature = this.whatsappService.verifyWebhookSignature(signature, body);
+      const isValidSignature = this.whatsappService.verifyWebhookSignature(
+        signature,
+        body,
+      );
 
       if (!isValidSignature) {
         console.error('Firma de webhook inválida');
@@ -310,15 +311,19 @@ export class WhatsAppController {
   @Get('webhook/verify')
   @ApiOperation({
     summary: 'Verificar webhook',
-    description: 'Endpoint para verificar la configuración del webhook de WhatsApp',
+    description:
+      'Endpoint para verificar la configuración del webhook de WhatsApp',
   })
   @ApiResponse({
     status: 200,
     description: 'Verificación exitosa',
   })
-  async verifyWebhook(@Query('hub.mode') mode: string, @Query('hub.verify_token') token: string) {
+  async verifyWebhook(
+    @Query('hub.mode') mode: string,
+    @Query('hub.verify_token') token: string,
+  ) {
     const expectedToken = process.env.WHATSAPP_VERIFY_TOKEN;
-    
+
     if (mode === 'subscribe' && token === expectedToken) {
       const challenge = 'challenge';
       return challenge;

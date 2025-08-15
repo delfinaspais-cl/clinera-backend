@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class RegisterDeviceTokenDto {
   @ApiProperty({
     description: 'Token del dispositivo para notificaciones push',
-    example: 'fMEP0vJqS0:APA91bHqX...'
+    example: 'fMEP0vJqS0:APA91bHqX...',
   })
   @IsString()
   @IsNotEmpty()
@@ -13,7 +13,7 @@ export class RegisterDeviceTokenDto {
   @ApiProperty({
     description: 'Plataforma del dispositivo',
     enum: ['android', 'ios', 'web'],
-    example: 'android'
+    example: 'android',
   })
   @IsString()
   @IsIn(['android', 'ios', 'web'])
@@ -22,7 +22,7 @@ export class RegisterDeviceTokenDto {
   @ApiProperty({
     description: 'Identificador único del dispositivo (opcional)',
     example: 'device_123456',
-    required: false
+    required: false,
   })
   @IsString()
   @IsOptional()

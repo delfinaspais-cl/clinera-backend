@@ -1,6 +1,12 @@
 import { Controller, Get, Param, UseGuards, Res, Query } from '@nestjs/common';
 import type { Response } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+} from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { ExportService } from './services/export.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
@@ -32,14 +38,14 @@ export class ReportsController {
   // Endpoints de exportación
   @ApiOperation({ summary: 'Exportar turnos a PDF' })
   @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Archivo PDF descargado',
     content: {
       'application/pdf': {
-        schema: { type: 'string', format: 'binary' }
-      }
-    }
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
   })
   @ApiBearerAuth()
   @Get('export/turnos/pdf')
@@ -48,12 +54,12 @@ export class ReportsController {
     @Res() res: Response,
     @Query('fechaDesde') fechaDesde?: string,
     @Query('fechaHasta') fechaHasta?: string,
-    @Query('estado') estado?: string
+    @Query('estado') estado?: string,
   ) {
     const turnos = await this.reportesService.getTurnosForExport(clinicaUrl, {
       fechaDesde,
       fechaHasta,
-      estado
+      estado,
     });
     const clinica = await this.reportesService.getClinicaInfo(clinicaUrl);
     await this.exportService.generateTurnosPDF(turnos, clinica.name, res);
@@ -65,12 +71,12 @@ export class ReportsController {
     @Res() res: Response,
     @Query('fechaDesde') fechaDesde?: string,
     @Query('fechaHasta') fechaHasta?: string,
-    @Query('estado') estado?: string
+    @Query('estado') estado?: string,
   ) {
     const turnos = await this.reportesService.getTurnosForExport(clinicaUrl, {
       fechaDesde,
       fechaHasta,
-      estado
+      estado,
     });
     const clinica = await this.reportesService.getClinicaInfo(clinicaUrl);
     await this.exportService.generateTurnosExcel(turnos, clinica.name, res);
@@ -80,9 +86,12 @@ export class ReportsController {
   async exportPacientesPDF(
     @Param('clinicaUrl') clinicaUrl: string,
     @Res() res: Response,
-    @Query('estado') estado?: string
+    @Query('estado') estado?: string,
   ) {
-    const pacientes = await this.reportesService.getPacientesForExport(clinicaUrl, { estado });
+    const pacientes = await this.reportesService.getPacientesForExport(
+      clinicaUrl,
+      { estado },
+    );
     const clinica = await this.reportesService.getClinicaInfo(clinicaUrl);
     await this.exportService.generatePacientesPDF(pacientes, clinica.name, res);
   }
@@ -91,10 +100,17 @@ export class ReportsController {
   async exportPacientesExcel(
     @Param('clinicaUrl') clinicaUrl: string,
     @Res() res: Response,
-    @Query('estado') estado?: string
+    @Query('estado') estado?: string,
   ) {
-    const pacientes = await this.reportesService.getPacientesForExport(clinicaUrl, { estado });
+    const pacientes = await this.reportesService.getPacientesForExport(
+      clinicaUrl,
+      { estado },
+    );
     const clinica = await this.reportesService.getClinicaInfo(clinicaUrl);
-    await this.exportService.generatePacientesExcel(pacientes, clinica.name, res);
+    await this.exportService.generatePacientesExcel(
+      pacientes,
+      clinica.name,
+      res,
+    );
   }
 }

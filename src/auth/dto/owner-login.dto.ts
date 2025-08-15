@@ -8,4 +8,4 @@ export class OwnerLoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
-} 
+}

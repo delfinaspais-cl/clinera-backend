@@ -6,10 +6,7 @@ import { WhatsAppService } from './whatsapp.service';
 import { WebhookService } from './services/webhook.service';
 
 @Module({
-  imports: [
-    ConfigModule,
-    PrismaModule,
-  ],
+  imports: [ConfigModule, PrismaModule],
   controllers: [WhatsAppController],
   providers: [WhatsAppService, WebhookService],
   exports: [WhatsAppService, WebhookService],

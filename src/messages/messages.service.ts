@@ -8,7 +8,9 @@ export class MensajesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     return this.prisma.mensaje.findMany({
@@ -18,7 +20,9 @@ export class MensajesService {
   }
 
   async create(clinicaUrl: string, dto: CreateMensajeDto) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     return this.prisma.mensaje.create({
@@ -57,10 +61,10 @@ export class MensajesService {
 
     // Verificar que el mensaje pertenece a la clínica
     const mensaje = await this.prisma.mensaje.findFirst({
-      where: { 
+      where: {
         id,
-        clinicaId: clinica.id
-      }
+        clinicaId: clinica.id,
+      },
     });
 
     if (!mensaje) {

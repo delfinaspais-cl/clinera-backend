@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { FirebaseService, PushNotificationPayload } from './services/firebase.service';
+import {
+  FirebaseService,
+  PushNotificationPayload,
+} from './services/firebase.service';
 import { RegisterDeviceTokenDto } from './dto/register-device-token.dto';
 import { SendNotificationDto } from './dto/send-notification.dto';
 
@@ -138,7 +141,7 @@ export class PushNotificationsService {
           },
           select: { token: true },
         });
-        tokens = userTokens.map(t => t.token);
+        tokens = userTokens.map((t) => t.token);
       } else if (dto.clinicaId) {
         // Enviar a todos los usuarios de una clínica
         const clinicaTokens = await this.prisma.pushNotificationToken.findMany({
@@ -151,7 +154,7 @@ export class PushNotificationsService {
           },
           select: { token: true },
         });
-        tokens = clinicaTokens.map(t => t.token);
+        tokens = clinicaTokens.map((t) => t.token);
       } else {
         return {
           success: false,
@@ -162,7 +165,8 @@ export class PushNotificationsService {
       if (tokens.length === 0) {
         return {
           success: true,
-          message: 'No hay dispositivos registrados para enviar la notificación',
+          message:
+            'No hay dispositivos registrados para enviar la notificación',
         };
       }
 
@@ -175,13 +179,14 @@ export class PushNotificationsService {
       };
 
       // Enviar notificación
-      const results = await this.firebaseService.sendNotificationToMultipleTokens(
-        tokens,
-        payload,
-      );
+      const results =
+        await this.firebaseService.sendNotificationToMultipleTokens(
+          tokens,
+          payload,
+        );
 
       // Contar resultados exitosos
-      const successfulCount = results.filter(r => r.success).length;
+      const successfulCount = results.filter((r) => r.success).length;
       const failedCount = results.length - successfulCount;
 
       this.logger.log(
@@ -230,12 +235,13 @@ export class PushNotificationsService {
         data,
       };
 
-      const results = await this.firebaseService.sendNotificationToMultipleTokens(
-        tokens.map(t => t.token),
-        payload,
-      );
+      const results =
+        await this.firebaseService.sendNotificationToMultipleTokens(
+          tokens.map((t) => t.token),
+          payload,
+        );
 
-      const successfulCount = results.filter(r => r.success).length;
+      const successfulCount = results.filter((r) => r.success).length;
 
       this.logger.log(
         `Notificación enviada a usuario ${userId}: ${successfulCount}/${tokens.length} exitosas`,

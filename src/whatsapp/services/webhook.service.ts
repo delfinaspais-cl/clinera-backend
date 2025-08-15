@@ -24,7 +24,7 @@ export class WebhookService {
 
       // Procesar según el tipo de evento
       const eventType = this.getEventType(payload);
-      
+
       switch (eventType) {
         case 'message':
           await this.processMessageEvent(payload);
@@ -57,7 +57,7 @@ export class WebhookService {
   private getEventType(payload: any): string {
     if (payload.entry && payload.entry[0]?.changes) {
       const change = payload.entry[0].changes[0];
-      
+
       if (change.value?.messages) {
         return 'message';
       } else if (change.value?.statuses) {
@@ -66,17 +66,17 @@ export class WebhookService {
         return 'template_status';
       }
     }
-    
+
     return 'unknown';
   }
 
   private async processMessageEvent(payload: any): Promise<void> {
     try {
       const messages = payload.entry[0].changes[0].value.messages;
-      
+
       for (const message of messages) {
         this.logger.log(`Mensaje recibido de ${message.from}: ${message.type}`);
-        
+
         // Aquí puedes implementar la lógica para responder automáticamente
         // Por ejemplo, enviar un mensaje de confirmación
         if (message.type === 'text') {
@@ -93,10 +93,10 @@ export class WebhookService {
   private async processMessageStatusEvent(payload: any): Promise<void> {
     try {
       const statuses = payload.entry[0].changes[0].value.statuses;
-      
+
       for (const status of statuses) {
         this.logger.log(`Estado del mensaje ${status.id}: ${status.status}`);
-        
+
         // Actualizar el estado del mensaje en la base de datos
         await this.prisma.whatsAppMessage.updateMany({
           where: {
@@ -118,10 +118,12 @@ export class WebhookService {
   private async processTemplateStatusEvent(payload: any): Promise<void> {
     try {
       const templates = payload.entry[0].changes[0].value.message_templates;
-      
+
       for (const template of templates) {
-        this.logger.log(`Estado de plantilla ${template.id}: ${template.status}`);
-        
+        this.logger.log(
+          `Estado de plantilla ${template.id}: ${template.status}`,
+        );
+
         // Actualizar el estado de la plantilla en la base de datos
         await this.prisma.whatsAppTemplate.updateMany({
           where: {
@@ -143,27 +145,31 @@ export class WebhookService {
     try {
       const text = message.text.body.toLowerCase();
       const from = message.from;
-      
+
       // Ejemplo de respuestas automáticas
-      if (text.includes('hola') || text.includes('buenos días') || text.includes('buenas')) {
+      if (
+        text.includes('hola') ||
+        text.includes('buenos días') ||
+        text.includes('buenas')
+      ) {
         await this.whatsappService.sendTextMessage(
           from,
-          '¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?'
+          '¡Hola! Gracias por contactarnos. ¿En qué podemos ayudarte?',
         );
       } else if (text.includes('turno') || text.includes('cita')) {
         await this.whatsappService.sendTextMessage(
           from,
-          'Para agendar un turno, por favor visita nuestra página web o contáctanos por teléfono.'
+          'Para agendar un turno, por favor visita nuestra página web o contáctanos por teléfono.',
         );
       } else if (text.includes('horario') || text.includes('atención')) {
         await this.whatsappService.sendTextMessage(
           from,
-          'Nuestros horarios de atención son de lunes a viernes de 8:00 a 18:00 hs.'
+          'Nuestros horarios de atención son de lunes a viernes de 8:00 a 18:00 hs.',
         );
       } else {
         await this.whatsappService.sendTextMessage(
           from,
-          'Gracias por tu mensaje. Un representante se pondrá en contacto contigo pronto.'
+          'Gracias por tu mensaje. Un representante se pondrá en contacto contigo pronto.',
         );
       }
     } catch (error) {
@@ -175,31 +181,31 @@ export class WebhookService {
     try {
       const buttonText = message.button.text;
       const from = message.from;
-      
+
       // Manejar respuestas de botones
       switch (buttonText) {
         case 'Agendar Turno':
           await this.whatsappService.sendTextMessage(
             from,
-            'Para agendar un turno, por favor visita nuestra página web o contáctanos por teléfono.'
+            'Para agendar un turno, por favor visita nuestra página web o contáctanos por teléfono.',
           );
           break;
         case 'Ver Horarios':
           await this.whatsappService.sendTextMessage(
             from,
-            'Nuestros horarios de atención son de lunes a viernes de 8:00 a 18:00 hs.'
+            'Nuestros horarios de atención son de lunes a viernes de 8:00 a 18:00 hs.',
           );
           break;
         case 'Contacto':
           await this.whatsappService.sendTextMessage(
             from,
-            'Puedes contactarnos por teléfono al 123-456-7890 o por email a info@clinica.com'
+            'Puedes contactarnos por teléfono al 123-456-7890 o por email a info@clinica.com',
           );
           break;
         default:
           await this.whatsappService.sendTextMessage(
             from,
-            'Gracias por tu interés. Un representante se pondrá en contacto contigo pronto.'
+            'Gracias por tu interés. Un representante se pondrá en contacto contigo pronto.',
           );
       }
     } catch (error) {
@@ -221,7 +227,7 @@ export class WebhookService {
 
       return {
         success: true,
-        webhooks: webhooks.map(webhook => ({
+        webhooks: webhooks.map((webhook) => ({
           ...webhook,
           payload: JSON.parse(webhook.payload),
         })),

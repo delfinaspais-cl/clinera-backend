@@ -1,22 +1,32 @@
-import { IsOptional, IsString, IsArray, ValidateNested, IsEmail, Matches, MinLength, IsHexColor } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsEmail,
+  Matches,
+  MinLength,
+  IsHexColor,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class HorarioDto {
   @IsString({ message: 'El día es requerido' })
   @Matches(/^(LUNES|MARTES|MIERCOLES|JUEVES|VIERNES|SABADO|DOMINGO)$/, {
-    message: 'El día debe ser: LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO o DOMINGO'
+    message:
+      'El día debe ser: LUNES, MARTES, MIERCOLES, JUEVES, VIERNES, SABADO o DOMINGO',
   })
   day: string;
 
   @IsString({ message: 'La hora de apertura es requerida' })
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { 
-    message: 'La hora debe tener formato HH:MM (24 horas)' 
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: 'La hora debe tener formato HH:MM (24 horas)',
   })
   openTime: string;
 
   @IsString({ message: 'La hora de cierre es requerida' })
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, { 
-    message: 'La hora debe tener formato HH:MM (24 horas)' 
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
+    message: 'La hora debe tener formato HH:MM (24 horas)',
   })
   closeTime: string;
 }
@@ -25,8 +35,9 @@ export class UpdateClinicaDto {
   @IsOptional()
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
   @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, { 
-    message: 'El nombre solo puede contener letras, números, espacios, guiones y puntos' 
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, {
+    message:
+      'El nombre solo puede contener letras, números, espacios, guiones y puntos',
   })
   nombre?: string;
 
@@ -34,8 +45,9 @@ export class UpdateClinicaDto {
   @IsOptional()
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
   @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, { 
-    message: 'El nombre solo puede contener letras, números, espacios, guiones y puntos' 
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-\.]+$/, {
+    message:
+      'El nombre solo puede contener letras, números, espacios, guiones y puntos',
   })
   name?: string;
 
@@ -62,17 +74,27 @@ export class UpdateClinicaDto {
   email?: string;
 
   @IsOptional()
-  @IsHexColor({ message: 'El color primario debe ser un color hexadecimal válido' })
+  @IsHexColor({
+    message: 'El color primario debe ser un color hexadecimal válido',
+  })
   colorPrimario?: string;
 
   @IsOptional()
-  @IsHexColor({ message: 'El color secundario debe ser un color hexadecimal válido' })
+  @IsHexColor({
+    message: 'El color secundario debe ser un color hexadecimal válido',
+  })
   colorSecundario?: string;
 
   @IsOptional()
   @IsArray({ message: 'Las especialidades deben ser un array' })
-  @IsString({ each: true, message: 'Cada especialidad debe ser una cadena de texto' })
-  @MinLength(2, { each: true, message: 'Cada especialidad debe tener al menos 2 caracteres' })
+  @IsString({
+    each: true,
+    message: 'Cada especialidad debe ser una cadena de texto',
+  })
+  @MinLength(2, {
+    each: true,
+    message: 'Cada especialidad debe tener al menos 2 caracteres',
+  })
   especialidades?: string[];
 
   @IsOptional()
@@ -83,7 +105,9 @@ export class UpdateClinicaDto {
 
   @IsOptional()
   @IsString({ message: 'El estado debe ser una cadena de texto' })
-  @Matches(/^(activa|inactiva)$/, { message: 'El estado debe ser "activa" o "inactiva"' })
+  @Matches(/^(activa|inactiva)$/, {
+    message: 'El estado debe ser "activa" o "inactiva"',
+  })
   estado?: string;
 
   @IsOptional()

@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -67,7 +71,9 @@ export class NotificationsService {
       });
 
       if (!destinatario) {
-        throw new BadRequestException('Destinatario no encontrado en esta clínica');
+        throw new BadRequestException(
+          'Destinatario no encontrado en esta clínica',
+        );
       }
     }
 
@@ -79,7 +85,9 @@ export class NotificationsService {
         prioridad: dto.prioridad,
         clinicaId: clinica.id,
         destinatarioId: dto.destinatarioId || null,
-        fechaVencimiento: dto.fechaVencimiento ? new Date(dto.fechaVencimiento) : null,
+        fechaVencimiento: dto.fechaVencimiento
+          ? new Date(dto.fechaVencimiento)
+          : null,
       },
       include: {
         destinatario: {
@@ -158,7 +166,9 @@ export class NotificationsService {
         ...(dto.tipo && { tipo: dto.tipo }),
         ...(dto.prioridad && { prioridad: dto.prioridad }),
         ...(dto.leida !== undefined && { leida: dto.leida }),
-        ...(dto.fechaVencimiento && { fechaVencimiento: new Date(dto.fechaVencimiento) }),
+        ...(dto.fechaVencimiento && {
+          fechaVencimiento: new Date(dto.fechaVencimiento),
+        }),
         updatedAt: new Date(),
       },
       include: {
@@ -283,7 +293,10 @@ export class NotificationsService {
     ]);
 
     const notificacionesNoLeidas = totalNotificaciones - notificacionesLeidas;
-    const porcentajeLeidas = totalNotificaciones > 0 ? (notificacionesLeidas / totalNotificaciones) * 100 : 0;
+    const porcentajeLeidas =
+      totalNotificaciones > 0
+        ? (notificacionesLeidas / totalNotificaciones) * 100
+        : 0;
 
     return {
       success: true,

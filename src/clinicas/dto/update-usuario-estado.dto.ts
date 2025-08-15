@@ -5,4 +5,4 @@ export class UpdateUsuarioEstadoDto {
   @IsNotEmpty()
   @IsIn(['activo', 'inactivo'])
   estado: string;
-} 
+}

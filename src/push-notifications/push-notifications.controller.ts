@@ -34,7 +34,8 @@ export class PushNotificationsController {
   @Post('register-token')
   @ApiOperation({
     summary: 'Registrar token de dispositivo para notificaciones push',
-    description: 'Registra o actualiza el token de un dispositivo para recibir notificaciones push',
+    description:
+      'Registra o actualiza el token de un dispositivo para recibir notificaciones push',
   })
   @ApiBody({ type: RegisterDeviceTokenDto })
   @ApiResponse({
@@ -44,7 +45,10 @@ export class PushNotificationsController {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Token de dispositivo registrado exitosamente' },
+        message: {
+          type: 'string',
+          example: 'Token de dispositivo registrado exitosamente',
+        },
       },
     },
   })
@@ -75,7 +79,8 @@ export class PushNotificationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Desactivar token de dispositivo',
-    description: 'Desactiva un token de dispositivo para dejar de recibir notificaciones push',
+    description:
+      'Desactiva un token de dispositivo para dejar de recibir notificaciones push',
   })
   @ApiResponse({
     status: 200,
@@ -84,7 +89,10 @@ export class PushNotificationsController {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Token de dispositivo desactivado exitosamente' },
+        message: {
+          type: 'string',
+          example: 'Token de dispositivo desactivado exitosamente',
+        },
       },
     },
   })
@@ -92,10 +100,7 @@ export class PushNotificationsController {
     status: 401,
     description: 'No autorizado',
   })
-  async unregisterDeviceToken(
-    @Request() req,
-    @Param('token') token: string,
-  ) {
+  async unregisterDeviceToken(@Request() req, @Param('token') token: string) {
     const result = await this.pushNotificationsService.unregisterDeviceToken(
       req.user.id,
       token,
@@ -110,7 +115,8 @@ export class PushNotificationsController {
   @Get('my-tokens')
   @ApiOperation({
     summary: 'Obtener tokens del usuario actual',
-    description: 'Obtiene todos los tokens de dispositivos registrados del usuario autenticado',
+    description:
+      'Obtiene todos los tokens de dispositivos registrados del usuario autenticado',
   })
   @ApiResponse({
     status: 200,
@@ -140,7 +146,9 @@ export class PushNotificationsController {
     description: 'No autorizado',
   })
   async getUserTokens(@Request() req) {
-    const result = await this.pushNotificationsService.getUserTokens(req.user.id);
+    const result = await this.pushNotificationsService.getUserTokens(
+      req.user.id,
+    );
 
     return {
       success: result.success,
@@ -152,7 +160,8 @@ export class PushNotificationsController {
   @Post('send')
   @ApiOperation({
     summary: 'Enviar notificación push',
-    description: 'Envía una notificación push a usuarios específicos o a toda una clínica',
+    description:
+      'Envía una notificación push a usuarios específicos o a toda una clínica',
   })
   @ApiBody({ type: SendNotificationDto })
   @ApiResponse({
@@ -162,7 +171,11 @@ export class PushNotificationsController {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Notificación enviada a 5 dispositivos (4 exitosas, 1 fallida)' },
+        message: {
+          type: 'string',
+          example:
+            'Notificación enviada a 5 dispositivos (4 exitosas, 1 fallida)',
+        },
         results: {
           type: 'array',
           items: {
@@ -205,7 +218,10 @@ export class PushNotificationsController {
       type: 'object',
       properties: {
         title: { type: 'string', example: 'Nuevo turno confirmado' },
-        body: { type: 'string', example: 'Tu turno ha sido confirmado para mañana' },
+        body: {
+          type: 'string',
+          example: 'Tu turno ha sido confirmado para mañana',
+        },
         data: {
           type: 'object',
           example: { type: 'appointment', appointmentId: '123' },
@@ -221,7 +237,10 @@ export class PushNotificationsController {
       type: 'object',
       properties: {
         success: { type: 'boolean', example: true },
-        message: { type: 'string', example: 'Notificación enviada a 2 dispositivos' },
+        message: {
+          type: 'string',
+          example: 'Notificación enviada a 2 dispositivos',
+        },
       },
     },
   })

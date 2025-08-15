@@ -6,7 +6,9 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async turnosPorEstado(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     const estados = await this.prisma.turno.groupBy({
@@ -19,7 +21,9 @@ export class ReportsService {
   }
 
   async totalIngresos(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     // Simulación de ingresos: 10.000 por turno confirmado
@@ -38,7 +42,9 @@ export class ReportsService {
   }
 
   async pacientesPorMes(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ where: { url: clinicaUrl } });
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
     const pacientes = await this.prisma.patient.findMany({
@@ -64,23 +70,26 @@ export class ReportsService {
 
   // Métodos para exportación
   async getClinicaInfo(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({ 
+    const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
-      select: { id: true, name: true }
+      select: { id: true, name: true },
     });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
     return clinica;
   }
 
-  async getTurnosForExport(clinicaUrl: string, filters: {
-    fechaDesde?: string;
-    fechaHasta?: string;
-    estado?: string;
-  }) {
+  async getTurnosForExport(
+    clinicaUrl: string,
+    filters: {
+      fechaDesde?: string;
+      fechaHasta?: string;
+      estado?: string;
+    },
+  ) {
     const clinica = await this.getClinicaInfo(clinicaUrl);
-    
+
     const where: any = { clinicaId: clinica.id };
-    
+
     // Aplicar filtros
     if (filters.fechaDesde || filters.fechaHasta) {
       where.fecha = {};
@@ -91,17 +100,17 @@ export class ReportsService {
         where.fecha.lte = new Date(filters.fechaHasta);
       }
     }
-    
+
     if (filters.estado) {
       where.estado = filters.estado;
     }
 
     const turnos = await this.prisma.turno.findMany({
       where,
-      orderBy: { fecha: 'desc' }
+      orderBy: { fecha: 'desc' },
     });
 
-    return turnos.map(turno => ({
+    return turnos.map((turno) => ({
       paciente: turno.paciente,
       email: turno.email,
       telefono: turno.telefono,
@@ -110,22 +119,25 @@ export class ReportsService {
       fecha: turno.fecha.toISOString().split('T')[0],
       hora: turno.hora,
       estado: turno.estado,
-      motivo: turno.motivo
+      motivo: turno.motivo,
     }));
   }
 
-  async getPacientesForExport(clinicaUrl: string, filters: {
-    estado?: string;
-  }) {
+  async getPacientesForExport(
+    clinicaUrl: string,
+    filters: {
+      estado?: string;
+    },
+  ) {
     const clinica = await this.getClinicaInfo(clinicaUrl);
-    
+
     const where: any = {
       user: {
         clinicaId: clinica.id,
-        role: 'PATIENT'
-      }
+        role: 'PATIENT',
+      },
     };
-    
+
     if (filters.estado) {
       where.user.estado = filters.estado;
     }
@@ -138,21 +150,23 @@ export class ReportsService {
             email: true,
             phone: true,
             location: true,
-            estado: true
-          }
-        }
+            estado: true,
+          },
+        },
       },
-      orderBy: { name: 'asc' }
+      orderBy: { name: 'asc' },
     });
 
-    return pacientes.map(paciente => ({
+    return pacientes.map((paciente) => ({
       nombre: paciente.name,
       email: paciente.user.email,
       telefono: paciente.phone || paciente.user.phone,
       ubicacion: paciente.user.location,
       estado: paciente.user.estado,
-      fechaNacimiento: paciente.birthDate ? paciente.birthDate.toISOString().split('T')[0] : null,
-      notas: paciente.notes
+      fechaNacimiento: paciente.birthDate
+        ? paciente.birthDate.toISOString().split('T')[0]
+        : null,
+      notas: paciente.notes,
     }));
   }
 }

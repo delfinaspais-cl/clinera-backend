@@ -8,11 +8,7 @@ import { FirebaseService } from './services/firebase.service';
 import { TokenCleanupService } from './services/token-cleanup.service';
 
 @Module({
-  imports: [
-    ConfigModule,
-    PrismaModule,
-    ScheduleModule.forRoot(),
-  ],
+  imports: [ConfigModule, PrismaModule, ScheduleModule.forRoot()],
   controllers: [PushNotificationsController],
   providers: [PushNotificationsService, FirebaseService, TokenCleanupService],
   exports: [PushNotificationsService, FirebaseService],

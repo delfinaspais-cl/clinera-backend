@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsDateString, IsEnum, IsNumber } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+} from 'class-validator';
 
 export class SearchTurnosDto {
   @IsOptional()

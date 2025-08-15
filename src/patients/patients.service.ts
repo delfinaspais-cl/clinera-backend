@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-client.dto';
@@ -11,12 +15,12 @@ export class PatientsService {
 
   async findAll(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-  where: { url: clinicaUrl },
-  include: {
-    especialidades: true,
-    horarios: true,
-  },
-});
+      where: { url: clinicaUrl },
+      include: {
+        especialidades: true,
+        horarios: true,
+      },
+    });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
@@ -29,35 +33,35 @@ export class PatientsService {
   }
 
   async create(clinicaUrl: string, dto: CreatePatientDto) {
-  const clinica = await this.prisma.clinica.findUnique({
-    where: { url: clinicaUrl },
-  });
-  if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+    if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-  const hashedPassword = await bcrypt.hash(dto.password, 10); // 👈 encriptar
+    const hashedPassword = await bcrypt.hash(dto.password, 10); // 👈 encriptar
 
-  const user = await this.prisma.user.create({
-    data: {
-      email: dto.email,
-      password: hashedPassword,
-      role: 'PATIENT',
-      name: dto.name,
-      phone: dto.phone,
-      clinicaId: clinica.id,
-    },
-  });
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        role: 'PATIENT',
+        name: dto.name,
+        phone: dto.phone,
+        clinicaId: clinica.id,
+      },
+    });
 
-  return this.prisma.patient.create({
-    data: {
-      name: dto.name,
-      birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-      phone: dto.phone,
-      notes: dto.notes,
-      userId: user.id,
-    },
-    include: { user: true },
-  });
-}
+    return this.prisma.patient.create({
+      data: {
+        name: dto.name,
+        birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+        phone: dto.phone,
+        notes: dto.notes,
+        userId: user.id,
+      },
+      include: { user: true },
+    });
+  }
 
   async findOne(clinicaUrl: string, id: string) {
     const paciente = await this.prisma.patient.findUnique({
@@ -96,15 +100,15 @@ export class PatientsService {
 
     // Verificar que el paciente pertenece a la clínica
     const patient = await this.prisma.patient.findFirst({
-      where: { 
+      where: {
         id,
         user: {
-          clinicaId: clinica.id
-        }
+          clinicaId: clinica.id,
+        },
       },
       include: {
-        user: true
-      }
+        user: true,
+      },
     });
 
     if (!patient) {
@@ -150,7 +154,7 @@ export class PatientsService {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl }
+        where: { url: clinicaUrl },
       });
 
       if (!clinica) {
@@ -161,15 +165,17 @@ export class PatientsService {
       const where: any = {
         user: {
           clinicaId: clinica.id,
-          role: 'PATIENT'
-        }
+          role: 'PATIENT',
+        },
       };
 
       // Filtro por nombre
       if (searchDto.nombre) {
         where.OR = [
           { name: { contains: searchDto.nombre, mode: 'insensitive' } },
-          { user: { name: { contains: searchDto.nombre, mode: 'insensitive' } } }
+          {
+            user: { name: { contains: searchDto.nombre, mode: 'insensitive' } },
+          },
         ];
       }
 
@@ -177,7 +183,7 @@ export class PatientsService {
       if (searchDto.email) {
         where.user = {
           ...where.user,
-          email: { contains: searchDto.email, mode: 'insensitive' }
+          email: { contains: searchDto.email, mode: 'insensitive' },
         };
       }
 
@@ -185,7 +191,11 @@ export class PatientsService {
       if (searchDto.telefono) {
         where.OR = [
           { phone: { contains: searchDto.telefono, mode: 'insensitive' } },
-          { user: { phone: { contains: searchDto.telefono, mode: 'insensitive' } } }
+          {
+            user: {
+              phone: { contains: searchDto.telefono, mode: 'insensitive' },
+            },
+          },
         ];
       }
 
@@ -193,7 +203,7 @@ export class PatientsService {
       if (searchDto.ubicacion) {
         where.user = {
           ...where.user,
-          location: { contains: searchDto.ubicacion, mode: 'insensitive' }
+          location: { contains: searchDto.ubicacion, mode: 'insensitive' },
         };
       }
 
@@ -212,7 +222,7 @@ export class PatientsService {
       if (searchDto.fechaCreacionDesde || searchDto.fechaCreacionHasta) {
         where.user = {
           ...where.user,
-          createdAt: {}
+          createdAt: {},
         };
         if (searchDto.fechaCreacionDesde) {
           where.user.createdAt.gte = new Date(searchDto.fechaCreacionDesde);
@@ -226,7 +236,7 @@ export class PatientsService {
       if (searchDto.estado) {
         where.user = {
           ...where.user,
-          estado: searchDto.estado
+          estado: searchDto.estado,
         };
       }
 
@@ -265,29 +275,31 @@ export class PatientsService {
                 location: true,
                 estado: true,
                 createdAt: true,
-                updatedAt: true
-              }
-            }
+                updatedAt: true,
+              },
+            },
           },
           orderBy,
           skip,
-          take: limit
+          take: limit,
         }),
-        this.prisma.patient.count({ where })
+        this.prisma.patient.count({ where }),
       ]);
 
       // Transformar los datos para el formato requerido
-      const pacientesFormateados = pacientes.map(paciente => ({
+      const pacientesFormateados = pacientes.map((paciente) => ({
         id: paciente.id,
         nombre: paciente.name,
         email: paciente.user.email,
         telefono: paciente.phone || paciente.user.phone,
         ubicacion: paciente.user.location,
-        fechaNacimiento: paciente.birthDate ? paciente.birthDate.toISOString().split('T')[0] : null,
+        fechaNacimiento: paciente.birthDate
+          ? paciente.birthDate.toISOString().split('T')[0]
+          : null,
         notas: paciente.notes,
         estado: paciente.user.estado,
         fechaCreacion: paciente.user.createdAt.toISOString(),
-        fechaActualizacion: paciente.user.updatedAt.toISOString()
+        fechaActualizacion: paciente.user.updatedAt.toISOString(),
       }));
 
       return {
@@ -297,7 +309,7 @@ export class PatientsService {
           page,
           limit,
           total,
-          totalPages: Math.ceil(total / limit)
+          totalPages: Math.ceil(total / limit),
         },
         filters: {
           nombre: searchDto.nombre,
@@ -308,8 +320,8 @@ export class PatientsService {
           fechaNacimientoHasta: searchDto.fechaNacimientoHasta,
           fechaCreacionDesde: searchDto.fechaCreacionDesde,
           fechaCreacionHasta: searchDto.fechaCreacionHasta,
-          estado: searchDto.estado
-        }
+          estado: searchDto.estado,
+        },
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
