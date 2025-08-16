@@ -28,8 +28,8 @@ export class RootController {
   }
 
   @Get('manifest.json')
-  getManifest(@Res() res: Response) {
-    const manifest = {
+  getManifest() {
+    return {
       name: 'Clinera Backend API',
       short_name: 'Clinera',
       description: 'API Backend para el sistema de gestión de clínicas',
@@ -40,20 +40,14 @@ export class RootController {
       theme_color: '#3B82F6',
       icons: [],
     };
-
-    res.setHeader('Content-Type', 'application/json');
-    res.json(manifest);
   }
 
   @Get('robots.txt')
-  getRobots(@Res() res: Response) {
-    const robots = `User-agent: *
+  getRobots() {
+    return `User-agent: *
 Allow: /api/
 Disallow: /api/auth/
 Disallow: /api/admin/`;
-
-    res.setHeader('Content-Type', 'text/plain');
-    res.send(robots);
   }
 
   @Get('favicon.ico')
