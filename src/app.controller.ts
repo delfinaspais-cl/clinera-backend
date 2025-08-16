@@ -76,7 +76,9 @@ export class AppController {
     try {
       return await this.clinicasService.getClinicaLanding(clinicaUrl);
     } catch (error) {
-      throw new BadRequestException(error.message || 'Error al obtener datos del landing');
+      throw new BadRequestException(
+        error.message || 'Error al obtener datos del landing',
+      );
     }
   }
 }
