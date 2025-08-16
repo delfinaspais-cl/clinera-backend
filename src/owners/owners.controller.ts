@@ -17,6 +17,7 @@ import { CreateClinicaDto } from './dto/create-clinica.dto';
 import { UpdateClinicaEstadoDto } from './dto/update-clinica-estado.dto';
 import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
+import { UpdateOwnerConfigDto } from './dto/update-owner-config.dto';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -243,5 +244,17 @@ export class OwnersController {
   @Get('validate/email/:email')
   async validateEmail(@Param('email') email: string) {
     return this.ownersService.validateEmail(email);
+  }
+
+  // Endpoint para actualizar configuración del propietario
+  @Post('config')
+  async updateOwnerConfig(@Request() req, @Body() dto: UpdateOwnerConfigDto) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden actualizar su configuración.',
+      );
+    }
+
+    return this.ownersService.updateOwnerConfig(req.user.id, dto);
   }
 }

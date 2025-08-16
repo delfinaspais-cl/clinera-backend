@@ -871,4 +871,91 @@ export class OwnersService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  // Método para actualizar configuración del propietario
+  async updateOwnerConfig(ownerId: string, dto: any) {
+    try {
+      console.log('🔍 Actualizando configuración del propietario:', ownerId);
+
+      // Verificar que el owner existe
+      const owner = await this.prisma.user.findFirst({
+        where: { 
+          id: ownerId,
+          role: 'OWNER'
+        },
+      });
+
+      if (!owner) {
+        throw new BadRequestException('Propietario no encontrado');
+      }
+
+      // Verificar que el email no esté en uso por otro usuario (si cambió)
+      if (dto.email && dto.email !== owner.email) {
+        const existingUser = await this.prisma.user.findFirst({
+          where: { 
+            email: dto.email,
+            id: { not: ownerId }
+          },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('El email ya está en uso por otro usuario');
+        }
+      }
+
+      // Preparar datos para actualizar
+      const updateData: any = {
+        name: dto.nombre,
+        email: dto.email,
+        phone: dto.telefono,
+        updatedAt: new Date(),
+      };
+
+      // Agregar campos adicionales si existen en el modelo User
+      if (dto.whatsapp !== undefined) updateData.whatsapp = dto.whatsapp;
+      if (dto.facebook !== undefined) updateData.facebook = dto.facebook;
+      if (dto.instagram !== undefined) updateData.instagram = dto.instagram;
+      if (dto.website !== undefined) updateData.website = dto.website;
+      if (dto.avatar_url !== undefined) updateData.avatar_url = dto.avatar_url;
+      if (dto.configuracion !== undefined) updateData.configuracion = JSON.stringify(dto.configuracion);
+
+      // Actualizar el usuario
+      const updatedOwner = await this.prisma.user.update({
+        where: { id: ownerId },
+        data: updateData,
+      });
+
+      console.log('✅ Configuración del propietario actualizada exitosamente');
+
+      // Preparar respuesta
+      const responseData = {
+        id: updatedOwner.id,
+        nombre: updatedOwner.name,
+        email: updatedOwner.email,
+        telefono: updatedOwner.phone,
+        whatsapp: updatedOwner.whatsapp || null,
+        facebook: updatedOwner.facebook || null,
+        instagram: updatedOwner.instagram || null,
+        website: updatedOwner.website || null,
+        avatar_url: updatedOwner.avatar_url || null,
+        configuracion: updatedOwner.configuracion ? JSON.parse(updatedOwner.configuracion) : {},
+        updated_at: updatedOwner.updatedAt,
+      };
+
+      return {
+        success: true,
+        message: 'Configuración del propietario actualizada exitosamente',
+        data: responseData,
+      };
+
+    } catch (error) {
+      console.error('❌ Error al actualizar configuración del propietario:', error);
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
 }

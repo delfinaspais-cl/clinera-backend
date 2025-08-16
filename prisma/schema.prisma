@@ -92,6 +92,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Campos adicionales para configuración del propietario
+  whatsapp     String?
+  facebook     String?
+  instagram    String?
+  website      String?
+  avatar_url   String?
+  configuracion String? // JSON object
+
   clinica         Clinica?         @relation(fields: [clinicaId], references: [id])
   patient         Patient?
   professional    Professional?
