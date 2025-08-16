@@ -12,12 +12,64 @@ import {
   BadRequestException,
   UnauthorizedException,
   Body,
+  Res,
 } from '@nestjs/common';
 import { ClinicasService } from './clinicas/clinicas.service';
 import { NotificationsService } from './notifications/notifications.service';
 import { OwnersService } from './owners/owners.service';
 import { JwtAuthGuard } from './auth/jwt.auth.guard';
 import { AppService } from './app.service';
+import type { Response } from 'express';
+
+@Controller()
+export class RootController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getRoot() {
+    return {
+      message: 'Clinera Backend API',
+      version: '1.0.0',
+      status: 'running',
+      documentation: '/docs',
+      health: '/api/health',
+    };
+  }
+
+  @Get('manifest.json')
+  getManifest(@Res() res: Response) {
+    const manifest = {
+      name: 'Clinera Backend API',
+      short_name: 'Clinera',
+      description: 'API Backend para el sistema de gestión de clínicas',
+      version: '1.0.0',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#3B82F6',
+      icons: [],
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json(manifest);
+  }
+
+  @Get('robots.txt')
+  getRobots(@Res() res: Response) {
+    const robots = `User-agent: *
+Allow: /api/
+Disallow: /api/auth/
+Disallow: /api/admin/`;
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(robots);
+  }
+
+  @Get('favicon.ico')
+  getFavicon(@Res() res: Response) {
+    res.status(204).send(); // No content
+  }
+}
 
 @Controller('api')
 export class AppController {
@@ -31,6 +83,43 @@ export class AppController {
   @Get('health')
   healthCheck() {
     return this.appService.healthCheck();
+  }
+
+  // Endpoint para manifest.json
+  @Get('manifest.json')
+  getManifest(@Res() res: Response) {
+    const manifest = {
+      name: 'Clinera Backend API',
+      short_name: 'Clinera',
+      description: 'API Backend para el sistema de gestión de clínicas',
+      version: '1.0.0',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#3B82F6',
+      icons: []
+    };
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.json(manifest);
+  }
+
+  // Endpoint para robots.txt
+  @Get('robots.txt')
+  getRobots(@Res() res: Response) {
+    const robots = `User-agent: *
+Allow: /api/
+Disallow: /api/auth/
+Disallow: /api/admin/`;
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(robots);
+  }
+
+  // Endpoint para favicon.ico
+  @Get('favicon.ico')
+  getFavicon(@Res() res: Response) {
+    res.status(204).send(); // No content
   }
 
   // Endpoint para landing público (sin autenticación)

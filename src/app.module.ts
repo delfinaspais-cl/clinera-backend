@@ -16,7 +16,7 @@ import { EspecialidadesModule } from './especialidades/especialidades.module';
 import { PushNotificationsModule } from './push-notifications/push-notifications.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
+import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
 import { OwnersService } from './owners/owners.service';
 
@@ -44,7 +44,7 @@ import { OwnersService } from './owners/owners.service';
     WhatsAppModule,
     // otros módulos
   ],
-  controllers: [AppController],
+  controllers: [RootController, AppController],
   providers: [AppService, OwnersService],
 })
 export class AppModule {}
