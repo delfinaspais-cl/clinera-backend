@@ -15,6 +15,8 @@ import { HorariosModule } from './horarios/horarios.module';
 import { EspecialidadesModule } from './especialidades/especialidades.module';
 import { PushNotificationsModule } from './push-notifications/push-notifications.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
+import { ContactosModule } from './contactos/contactos.module';
+import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
@@ -42,6 +44,8 @@ import { OwnersService } from './owners/owners.service';
     EspecialidadesModule,
     PushNotificationsModule,
     WhatsAppModule,
+    ContactosModule,
+    EmailModule,
     // otros módulos
   ],
   controllers: [RootController, AppController],

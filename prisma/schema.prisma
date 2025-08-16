@@ -251,6 +251,28 @@ model WhatsAppTemplate {
   @@index([clinicaId])
 }
 
+model Contacto {
+  id            String   @id @default(cuid())
+  nombre        String
+  email         String
+  telefono      String?
+  empresa       String?
+  tipoConsulta  String
+  plan          String?
+  mensaje       String
+  estado        String   @default("nuevo")
+  procesado     Boolean  @default(false)
+  notas         String?
+  metadata      String?  // JSON object
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([estado])
+  @@index([tipoConsulta])
+  @@index([createdAt(sort: Desc)])
+  @@index([email])
+}
+
 model WhatsAppWebhook {
   id        String   @id @default(cuid())
   eventType String   // "message" | "message_status" | "template_status"
