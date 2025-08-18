@@ -197,13 +197,25 @@ export class AuthService {
 
       return {
         success: true,
+        message: 'Login exitoso',
         token,
         user: {
           id: user.id,
           name: user.name,
+          email: user.email,
           role: user.role,
           clinicaId: user.clinicaId,
           clinicaUrl: clinica.url,
+          permisos: this.getPermisosByRole(user.role),
+        },
+        clinica: {
+          id: clinica.id,
+          nombre: clinica.name,
+          url: clinica.url,
+          plan: clinica.estadoPago === 'pagado' ? 'professional' : 'basic',
+          estado: clinica.estado,
+          colorPrimario: clinica.colorPrimario,
+          colorSecundario: clinica.colorSecundario,
         },
       };
     } catch (error) {
@@ -420,6 +432,21 @@ export class AuthService {
     } catch (error) {
       console.error('Error creando OWNER para Railway:', error);
       throw new BadRequestException('Error creando usuario OWNER');
+    }
+  }
+
+  private getPermisosByRole(role: string): string[] {
+    switch (role) {
+      case 'ADMIN':
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones'];
+      case 'PROFESSIONAL':
+        return ['turnos', 'pacientes', 'reportes'];
+      case 'SECRETARY':
+        return ['turnos', 'pacientes', 'notificaciones'];
+      case 'OWNER':
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'planes', 'facturacion'];
+      default:
+        return [];
     }
   }
 }

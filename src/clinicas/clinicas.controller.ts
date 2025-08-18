@@ -30,6 +30,8 @@ import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
+import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dto';
+import { CreateNotificacionDto } from './dto/create-notificacion.dto';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -589,34 +591,134 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/plan')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener información del plan de la clínica' })
+  @ApiResponse({ status: 200, description: 'Plan obtenido exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getClinicaPlan(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getClinicaPlan(clinicaUrl);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.getClinicaPlan(clinicaUrl);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
+  @Get(':clinicaUrl/turnos')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener turnos de la clínica' })
+  @ApiResponse({ status: 200, description: 'Turnos obtenidos exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getTurnos(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: GetTurnosFiltersDto,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getTurnos(clinicaUrl, filters);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.getTurnos(clinicaUrl, filters);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
   @Post(':clinicaUrl/turnos')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Crear nuevo turno' })
+  @ApiResponse({ status: 201, description: 'Turno creado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async createTurno(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() dto: CreateTurnoDto,
   ) {
-    const role = req.user.role;
-
-    if (role !== 'OWNER' && role !== 'ADMIN' && role !== 'PATIENT') {
-      throw new BadRequestException('No tienes permiso para crear un turno.');
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.createTurno(clinicaUrl, dto);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.createTurno(clinicaUrl, dto);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para crear turnos en esta clínica.',
+      );
     }
-
-    return this.clinicasService.createTurno(clinicaUrl, dto);
   }
 
-  // @Get(':clinicaUrl/turnos')
-  // @UseGuards(JwtAuthGuard)
-  // async getTurnosByClinicaUrl(
-  //   @Request() req,
-  //   @Param('clinicaUrl') clinicaUrl: string,
-  //   @Query() filters: GetTurnosFiltersDto
-  // ) {
-  //   // OWNER o ADMIN puede ver turnos
-  //   if (req.user.role === 'OWNER' || (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl)) {
-  //     return this.clinicasService.getTurnosByClinicaUrl(clinicaUrl, filters);
-  //   } else {
-  //     throw new Error('No tienes permisos para ver los turnos de esta clínica');
-  //   }
-  // }
+  @Get(':clinicaUrl/notificaciones')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener notificaciones de la clínica' })
+  @ApiResponse({ status: 200, description: 'Notificaciones obtenidas exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getNotificaciones(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: GetNotificacionesFiltersDto,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getNotificaciones(clinicaUrl, filters);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.getNotificaciones(clinicaUrl, filters);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
+  @Post(':clinicaUrl/notificaciones')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Crear nueva notificación' })
+  @ApiResponse({ status: 201, description: 'Notificación creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async createNotificacion(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreateNotificacionDto,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.createNotificacion(clinicaUrl, dto);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.createNotificacion(clinicaUrl, dto);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para crear notificaciones en esta clínica.',
+      );
+    }
+  }
 }

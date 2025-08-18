@@ -57,12 +57,24 @@ export class OwnersService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
+    // Verificar que la URL no exista
     const existingClinica = await this.prisma.clinica.findUnique({
       where: { url: dto.url },
     });
 
     if (existingClinica) {
-      throw new BadRequestException('La URL de la clínica ya existe');
+      throw new BadRequestException('URL de clínica ya existe');
+    }
+
+    // Verificar que el email no exista
+    if (dto.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        throw new BadRequestException('El email ya está registrado');
+      }
     }
 
     const clinica = await this.prisma.clinica.create({
@@ -74,42 +86,30 @@ export class OwnersService {
         email: dto.email,
         colorPrimario: dto.colorPrimario || '#3B82F6',
         colorSecundario: dto.colorSecundario || '#1E40AF',
+        descripcion: dto.descripcion,
         estado: dto.estado || 'activa',
-        estadoPago: 'pagado',
+        estadoPago: 'pendiente',
         fechaCreacion: new Date(),
-        ultimoPago: new Date(),
-        proximoPago: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        ultimoPago: null,
+        proximoPago: null,
       },
     });
 
     // Crear usuario ADMIN automáticamente para la clínica
     let adminUser: any = null;
-    if (dto.email) {
-      // Verificar si el email ya existe
-      const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.email },
+    if (dto.email && dto.password) {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      adminUser = await this.prisma.user.create({
+        data: {
+          name: `Administrador de ${dto.nombre}`,
+          email: dto.email,
+          password: hashedPassword,
+          role: 'ADMIN',
+          clinicaId: clinica.id,
+          estado: 'activo',
+        },
       });
-
-      if (!existingUser) {
-        // Generar contraseña temporal (el admin deberá cambiarla en su primer login)
-        const tempPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
-        adminUser = await this.prisma.user.create({
-          data: {
-            name: `Administrador de ${dto.nombre}`,
-            email: dto.email,
-            password: hashedPassword,
-            role: 'ADMIN',
-            clinicaId: clinica.id,
-            estado: 'activo',
-          },
-        });
-
-        console.log(
-          `Usuario ADMIN creado para clínica ${dto.nombre} con email: ${dto.email} y contraseña temporal: ${tempPassword}`,
-        );
-      }
     }
 
     if (dto.especialidades?.length) {
@@ -137,18 +137,30 @@ export class OwnersService {
       include: { especialidades: true, horarios: true },
     });
 
+    if (!clinicaConRelaciones) {
+      throw new BadRequestException('Error al crear la clínica');
+    }
+
     return {
       success: true,
-      clinica: clinicaConRelaciones,
-      adminUser: adminUser
-        ? {
-            email: adminUser.email,
-            name: adminUser.name,
-            role: adminUser.role,
-            message:
-              'Usuario administrador creado automáticamente. Revisa los logs del servidor para la contraseña temporal.',
-          }
-        : null,
+      message: 'Clínica creada exitosamente',
+      clinica: {
+        id: clinicaConRelaciones.id,
+        nombre: clinicaConRelaciones.name,
+        url: clinicaConRelaciones.url,
+        email: clinicaConRelaciones.email,
+        colorPrimario: clinicaConRelaciones.colorPrimario,
+        colorSecundario: clinicaConRelaciones.colorSecundario,
+        descripcion: clinicaConRelaciones.descripcion,
+        direccion: clinicaConRelaciones.address,
+        telefono: clinicaConRelaciones.phone,
+        plan: dto.plan || 'basic',
+        estado: clinicaConRelaciones.estado,
+        estadoPago: clinicaConRelaciones.estadoPago,
+        fechaCreacion: clinicaConRelaciones.fechaCreacion,
+        createdAt: clinicaConRelaciones.createdAt,
+        updatedAt: clinicaConRelaciones.updatedAt,
+      },
     };
   }
 

@@ -193,6 +193,7 @@ export class OwnersController {
       direccion: clinica.direccion,
       telefono: clinica.telefono,
       email: clinica.email,
+      password: admin.password, // Usar la contraseña del admin
     };
 
     const clinicaCreada = await this.ownersService.createClinica(clinicaData);

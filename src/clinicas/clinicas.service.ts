@@ -1578,4 +1578,376 @@ export class ClinicasService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  async getClinicaPlan(clinicaUrl: string) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Definir planes disponibles
+      const planes = {
+        basic: {
+          id: 'basic',
+          nombre: 'basic',
+          descripcion: 'Plan básico para clínicas pequeñas',
+          precio: 29.99,
+          moneda: 'USD',
+          periodo: 'monthly',
+          caracteristicas: [
+            'Hasta 3 profesionales',
+            'Hasta 50 pacientes',
+            'Soporte por email',
+            'Reportes básicos'
+          ],
+          limites: {
+            profesionales: 3,
+            pacientes: 50,
+            turnosPorMes: 200,
+            almacenamiento: '500MB',
+            notificaciones: true,
+            reportes: true,
+            integraciones: false
+          }
+        },
+        professional: {
+          id: 'professional',
+          nombre: 'professional',
+          descripcion: 'Plan profesional para clínicas medianas',
+          precio: 79.99,
+          moneda: 'USD',
+          periodo: 'monthly',
+          caracteristicas: [
+            'Hasta 10 profesionales',
+            'Hasta 200 pacientes',
+            'Soporte prioritario',
+            'Reportes avanzados',
+            'Integraciones básicas'
+          ],
+          limites: {
+            profesionales: 10,
+            pacientes: 200,
+            turnosPorMes: 1000,
+            almacenamiento: '2GB',
+            notificaciones: true,
+            reportes: true,
+            integraciones: true
+          }
+        },
+        enterprise: {
+          id: 'enterprise',
+          nombre: 'enterprise',
+          descripcion: 'Plan empresarial para clínicas grandes',
+          precio: 199.99,
+          moneda: 'USD',
+          periodo: 'monthly',
+          caracteristicas: [
+            'Profesionales ilimitados',
+            'Pacientes ilimitados',
+            'Soporte 24/7',
+            'Reportes personalizados',
+            'Integraciones avanzadas',
+            'API personalizada'
+          ],
+          limites: {
+            profesionales: -1, // ilimitado
+            pacientes: -1, // ilimitado
+            turnosPorMes: -1, // ilimitado
+            almacenamiento: '10GB',
+            notificaciones: true,
+            reportes: true,
+            integraciones: true
+          }
+        }
+      };
+
+      const planActual = planes[clinica.estadoPago === 'pagado' ? 'professional' : 'basic'] || planes.basic;
+
+      return {
+        success: true,
+        plan: {
+          ...planActual,
+          estado: clinica.estadoPago === 'pagado' ? 'activo' : 'pendiente',
+          fechaInicio: clinica.fechaCreacion,
+          fechaVencimiento: clinica.proximoPago,
+          proximoPago: clinica.proximoPago,
+          historial: [
+            {
+              plan: planActual.nombre,
+              fecha: clinica.fechaCreacion,
+              accion: 'activacion'
+            }
+          ]
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener plan de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getTurnos(clinicaUrl: string, filters: any) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros
+      const where: any = {
+        clinicaId: clinica.id,
+      };
+
+      if (filters.fecha) {
+        where.fecha = {
+          gte: new Date(filters.fecha),
+          lt: new Date(new Date(filters.fecha).getTime() + 24 * 60 * 60 * 1000),
+        };
+      }
+
+      if (filters.estado) {
+        where.estado = filters.estado;
+      }
+
+      if (filters.doctor) {
+        where.doctor = { contains: filters.doctor, mode: 'insensitive' };
+      }
+
+      if (filters.especialidad) {
+        where.especialidad = { contains: filters.especialidad, mode: 'insensitive' };
+      }
+
+      // Paginación
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const skip = (page - 1) * limit;
+
+      // Obtener turnos
+      const [turnos, total] = await Promise.all([
+        this.prisma.turno.findMany({
+          where,
+          orderBy: { fecha: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.turno.count({ where }),
+      ]);
+
+      return {
+        success: true,
+        turnos: turnos.map(turno => ({
+          id: turno.id,
+          paciente: turno.paciente,
+          email: turno.email,
+          telefono: turno.telefono,
+          especialidad: turno.especialidad,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toISOString().split('T')[0],
+          hora: turno.hora,
+          estado: turno.estado,
+          motivo: turno.motivo,
+          clinicaId: turno.clinicaId,
+          createdAt: turno.createdAt,
+          updatedAt: turno.updatedAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener turnos:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+
+
+  async getNotificaciones(clinicaUrl: string, filters: any) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros
+      const where: any = {
+        clinicaId: clinica.id,
+      };
+
+      if (filters.leida !== undefined) {
+        where.leida = filters.leida;
+      }
+
+      if (filters.categoria) {
+        where.tipo = filters.categoria;
+      }
+
+      if (filters.usuarioId) {
+        where.destinatarioId = filters.usuarioId;
+      }
+
+      // Paginación
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const skip = (page - 1) * limit;
+
+      // Obtener notificaciones
+      const [notificaciones, total] = await Promise.all([
+        this.prisma.notificacion.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.notificacion.count({ where }),
+      ]);
+
+      // Obtener estadísticas
+      const [totalNotificaciones, noLeidas] = await Promise.all([
+        this.prisma.notificacion.count({ where: { clinicaId: clinica.id } }),
+        this.prisma.notificacion.count({ 
+          where: { clinicaId: clinica.id, leida: false } 
+        }),
+      ]);
+
+      // Obtener estadísticas por categoría
+      const statsPorCategoria = await this.prisma.notificacion.groupBy({
+        by: ['tipo'],
+        where: { clinicaId: clinica.id },
+        _count: { tipo: true },
+      });
+
+      const porCategoria = {};
+      statsPorCategoria.forEach(stat => {
+        porCategoria[stat.tipo] = stat._count.tipo;
+      });
+
+      return {
+        success: true,
+        notificaciones: notificaciones.map(notif => ({
+          id: notif.id,
+          clinicaId: notif.clinicaId,
+          usuarioId: notif.destinatarioId,
+          titulo: notif.titulo,
+          mensaje: notif.mensaje,
+          categoria: notif.tipo,
+          leida: notif.leida,
+          datos: {}, // Por ahora vacío, se puede expandir
+          createdAt: notif.createdAt,
+          updatedAt: notif.updatedAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+        stats: {
+          total: totalNotificaciones,
+          noLeidas,
+          porCategoria,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener notificaciones:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async createNotificacion(clinicaUrl: string, dto: any) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Validaciones
+      if (!dto.titulo || dto.titulo.length > 255) {
+        throw new BadRequestException('Título es requerido y debe tener máximo 255 caracteres');
+      }
+
+      if (!dto.mensaje || dto.mensaje.length > 1000) {
+        throw new BadRequestException('Mensaje es requerido y debe tener máximo 1000 caracteres');
+      }
+
+      const categoriasValidas = ['turno', 'recordatorio', 'sistema', 'pago', 'emergencia'];
+      if (!dto.categoria || !categoriasValidas.includes(dto.categoria)) {
+        throw new BadRequestException('Categoría inválida');
+      }
+
+      // Verificar usuario si se especifica
+      if (dto.usuarioId) {
+        const usuario = await this.prisma.user.findUnique({
+          where: { id: dto.usuarioId },
+        });
+        if (!usuario) {
+          throw new BadRequestException('Usuario especificado no encontrado');
+        }
+      }
+
+      // Crear notificación
+      const notificacion = await this.prisma.notificacion.create({
+        data: {
+          titulo: dto.titulo,
+          mensaje: dto.mensaje,
+          tipo: dto.categoria,
+          clinicaId: clinica.id,
+          destinatarioId: dto.usuarioId,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Notificación creada exitosamente',
+        notificacion: {
+          id: notificacion.id,
+          clinicaId: notificacion.clinicaId,
+          usuarioId: notificacion.destinatarioId,
+          titulo: notificacion.titulo,
+          mensaje: notificacion.mensaje,
+          categoria: notificacion.tipo,
+          leida: notificacion.leida,
+          datos: {},
+          createdAt: notificacion.createdAt,
+          updatedAt: notificacion.updatedAt,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al crear notificación:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
 }
