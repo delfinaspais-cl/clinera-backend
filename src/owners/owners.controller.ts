@@ -124,6 +124,17 @@ export class OwnersController {
     return this.ownersService.getOwnerStats();
   }
 
+  @Get('messages')
+  async getOwnerMessages(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo los propietarios pueden ver mensajes.',
+      );
+    }
+
+    return this.ownersService.getOwnerMessages();
+  }
+
   @Post('messages')
   async createOwnerMessage(@Request() req, @Body() dto: SendMensajeDto) {
     if (req.user.role !== 'OWNER') {
