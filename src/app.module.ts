@@ -17,10 +17,18 @@ import { PushNotificationsModule } from './push-notifications/push-notifications
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
+import { PlansModule } from './plans/plans.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
 import { OwnersService } from './owners/owners.service';
+
+// Importar los nuevos controladores globales
+import { GlobalClinicasController } from './clinicas/global-clinicas.controller';
+import { GlobalTurnosController } from './turnos/global-turnos.controller';
+import { GlobalPatientsController } from './patients/global-patients.controller';
+import { GlobalProfessionalsController } from './professionals/global-professionals.controller';
+import { GlobalNotificationsController } from './notifications/global-notifications.controller';
 
 @Module({
   imports: [
@@ -46,9 +54,17 @@ import { OwnersService } from './owners/owners.service';
     WhatsAppModule,
     ContactosModule,
     EmailModule,
-    // otros módulos
+    PlansModule,
   ],
-  controllers: [RootController, AppController],
+  controllers: [
+    RootController, 
+    AppController, 
+    GlobalClinicasController,
+    GlobalTurnosController,
+    GlobalPatientsController,
+    GlobalProfessionalsController,
+    GlobalNotificationsController,
+  ],
   providers: [AppService, OwnersService],
 })
 export class AppModule {}
