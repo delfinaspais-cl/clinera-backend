@@ -8,31 +8,80 @@ export class MensajesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    try {
+      console.log('📧 Obteniendo mensajes para clínica:', clinicaUrl);
+      
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    return this.prisma.mensaje.findMany({
-      where: { clinicaId: clinica.id },
-      orderBy: { createdAt: 'desc' },
-    });
+      const mensajes = await this.prisma.mensaje.findMany({
+        where: { clinicaId: clinica.id },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      console.log(`✅ Encontrados ${mensajes.length} mensajes para ${clinica.name}`);
+
+      return {
+        success: true,
+        messages: mensajes.map(mensaje => ({
+          id: mensaje.id,
+          asunto: mensaje.asunto,
+          mensaje: mensaje.mensaje,
+          tipo: mensaje.tipo,
+          leido: mensaje.leido,
+          clinicaId: mensaje.clinicaId,
+          createdAt: mensaje.createdAt,
+          updatedAt: mensaje.updatedAt,
+        })),
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo mensajes:', error);
+      throw error;
+    }
   }
 
   async create(clinicaUrl: string, dto: CreateMensajeDto) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    try {
+      console.log('💬 Creando mensaje para clínica:', clinicaUrl);
+      console.log('📝 DTO recibido:', dto);
+      
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    return this.prisma.mensaje.create({
-      data: {
-        asunto: dto.asunto,
-        mensaje: dto.mensaje,
-        tipo: dto.tipo,
-        clinicaId: clinica.id,
-      },
-    });
+      const mensaje = await this.prisma.mensaje.create({
+        data: {
+          asunto: dto.asunto,
+          mensaje: dto.mensaje,
+          tipo: dto.tipo,
+          clinicaId: clinica.id,
+          leido: false,
+        },
+      });
+
+      console.log(`✅ Mensaje creado exitosamente para ${clinica.name}`);
+
+      return {
+        success: true,
+        message: 'Mensaje enviado exitosamente',
+        data: {
+          id: mensaje.id,
+          asunto: mensaje.asunto,
+          mensaje: mensaje.mensaje,
+          tipo: mensaje.tipo,
+          leido: mensaje.leido,
+          clinicaId: mensaje.clinicaId,
+          createdAt: mensaje.createdAt,
+          updatedAt: mensaje.updatedAt,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error creando mensaje:', error);
+      throw error;
+    }
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdateMensajeDto) {
