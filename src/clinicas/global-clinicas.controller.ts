@@ -118,6 +118,76 @@ export class GlobalClinicasController {
     }
   }
 
+  @Get('owner')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener clínicas del propietario' })
+  @ApiResponse({ status: 200, description: 'Clínicas del propietario obtenidas exitosamente' })
+  @ApiResponse({ status: 401, description: 'Token requerido o inválido' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado. Se requieren permisos de OWNER' })
+  async findOwnerClinicas(@Request() req) {
+    try {
+      if (req.user.role !== 'OWNER') {
+        throw new BadRequestException('Solo los propietarios pueden acceder a este endpoint');
+      }
+
+      const clinicas = await this.prisma.clinica.findMany({
+        include: {
+          users: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              estado: true,
+            },
+          },
+          turnos: {
+            select: {
+              id: true,
+              estado: true,
+            },
+          },
+          _count: {
+            select: {
+              users: true,
+              turnos: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Calcular estadísticas para cada clínica
+      const clinicasConStats = clinicas.map((clinica) => {
+        const turnosPendientes = clinica.turnos.filter(t => t.estado === 'pendiente').length;
+        const turnosConfirmados = clinica.turnos.filter(t => t.estado === 'confirmado').length;
+        const turnosCancelados = clinica.turnos.filter(t => t.estado === 'cancelado').length;
+
+        return {
+          ...clinica,
+          estadisticas: {
+            totalUsuarios: clinica._count.users,
+            totalTurnos: clinica._count.turnos,
+            turnosPendientes,
+            turnosConfirmados,
+            turnosCancelados,
+          },
+        };
+      });
+
+      return {
+        success: true,
+        data: clinicasConStats,
+        message: 'Clínicas del propietario obtenidas exitosamente',
+      };
+    } catch (error) {
+      console.error('Error obteniendo clínicas del owner:', error);
+      throw new BadRequestException('Error al obtener las clínicas del propietario');
+    }
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener clínica específica' })
   @ApiResponse({ status: 200, description: 'Clínica obtenida exitosamente' })
@@ -195,74 +265,6 @@ export class GlobalClinicasController {
       }
       console.error('Error obteniendo clínica:', error);
       throw new BadRequestException('Error al obtener la clínica');
-    }
-  }
-
-  @Get('owner')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener clínicas del propietario' })
-  @ApiResponse({ status: 200, description: 'Clínicas del propietario obtenidas exitosamente' })
-  async findOwnerClinicas(@Request() req) {
-    try {
-      if (req.user.role !== 'OWNER') {
-        throw new BadRequestException('Solo los propietarios pueden acceder a este endpoint');
-      }
-
-      const clinicas = await this.prisma.clinica.findMany({
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-              estado: true,
-            },
-          },
-          turnos: {
-            select: {
-              id: true,
-              estado: true,
-            },
-          },
-          _count: {
-            select: {
-              users: true,
-              turnos: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      // Calcular estadísticas para cada clínica
-      const clinicasConStats = clinicas.map((clinica) => {
-        const turnosPendientes = clinica.turnos.filter(t => t.estado === 'pendiente').length;
-        const turnosConfirmados = clinica.turnos.filter(t => t.estado === 'confirmado').length;
-        const turnosCancelados = clinica.turnos.filter(t => t.estado === 'cancelado').length;
-
-        return {
-          ...clinica,
-          estadisticas: {
-            totalUsuarios: clinica._count.users,
-            totalTurnos: clinica._count.turnos,
-            turnosPendientes,
-            turnosConfirmados,
-            turnosCancelados,
-          },
-        };
-      });
-
-      return {
-        success: true,
-        data: clinicasConStats,
-        message: 'Clínicas del propietario obtenidas exitosamente',
-      };
-    } catch (error) {
-      console.error('Error obteniendo clínicas del owner:', error);
-      throw new BadRequestException('Error al obtener las clínicas del propietario');
     }
   }
 } 
