@@ -51,6 +51,17 @@ export class CreateClinicaDto {
   @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'El color secundario debe ser un color hex válido (#RRGGBB)' })
   colorSecundario?: string = '#1E40AF';
 
+  // Campos adicionales que envía el frontend
+  @IsString()
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'El color primario debe ser un color hex válido (#RRGGBB)' })
+  color_primario?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'El color secundario debe ser un color hex válido (#RRGGBB)' })
+  color_secundario?: string;
+
   @IsString()
   @IsOptional()
   descripcion?: string;
@@ -68,10 +79,7 @@ export class CreateClinicaDto {
   plan?: 'basic' | 'professional' | 'enterprise' = 'basic';
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => HorarioDto)
-  horarios?: HorarioDto[];
+  horarios?: HorarioDto[] | string;
 
   @IsArray()
   @IsOptional()
@@ -80,4 +88,11 @@ export class CreateClinicaDto {
   @IsString()
   @IsOptional()
   estado?: string = 'activa';
+
+  // Campo adicional para admin
+  @IsOptional()
+  admin?: {
+    nombre: string;
+    email: string;
+  };
 }

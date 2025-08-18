@@ -90,12 +90,12 @@ export class OwnersService {
       data: {
         name: dto.nombre,
         url: urlNormalizada,
-        address: dto.direccion,
-        phone: dto.telefono,
+        address: dto.direccion || '',
+        phone: dto.telefono || '',
         email: dto.email,
-        colorPrimario: dto.colorPrimario || '#3B82F6',
-        colorSecundario: dto.colorSecundario || '#1E40AF',
-        descripcion: dto.descripcion,
+        colorPrimario: dto.colorPrimario || dto.color_primario || '#3B82F6',
+        colorSecundario: dto.colorSecundario || dto.color_secundario || '#1E40AF',
+        descripcion: dto.descripcion || '',
         estado: dto.estado || 'activa',
         estadoPago: 'pendiente',
         fechaCreacion: new Date(),
@@ -130,15 +130,36 @@ export class OwnersService {
       });
     }
 
-    if (dto.horarios && Array.isArray(dto.horarios) && dto.horarios.length > 0) {
-      await this.prisma.horario.createMany({
-        data: dto.horarios.map((h) => ({
-          day: h.day,
-          openTime: h.openTime,
-          closeTime: h.closeTime,
-          clinicaId: clinica.id,
-        })),
-      });
+    // Manejar horarios (puede ser array o string JSON)
+    if (dto.horarios) {
+      let horariosArray: Array<{day: string, openTime: string, closeTime: string}> = [];
+      
+      if (typeof dto.horarios === 'string') {
+        try {
+          const horariosJson = JSON.parse(dto.horarios);
+          // Convertir el formato del frontend al formato de la base de datos
+          horariosArray = Object.entries(horariosJson).map(([day, schedule]: [string, any]) => ({
+            day: day,
+            openTime: schedule.inicio,
+            closeTime: schedule.fin,
+          }));
+        } catch (error) {
+          console.log('Error parsing horarios JSON:', error);
+        }
+      } else if (Array.isArray(dto.horarios)) {
+        horariosArray = dto.horarios;
+      }
+      
+      if (horariosArray.length > 0) {
+        await this.prisma.horario.createMany({
+          data: horariosArray.map((h) => ({
+            day: h.day,
+            openTime: h.openTime,
+            closeTime: h.closeTime,
+            clinicaId: clinica.id,
+          })),
+        });
+      }
     }
 
     const clinicaConRelaciones = await this.prisma.clinica.findUnique({
