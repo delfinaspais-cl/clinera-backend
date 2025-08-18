@@ -64,7 +64,11 @@ export class ContactosService {
   }
 
   private async checkRateLimit(email: string): Promise<void> {
-    // Verificar si ya se enviaron 3 consultas en las últimas 24 horas desde este email
+    // En desarrollo, ser más permisivo con el rate limiting
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const maxContacts = isDevelopment ? 10 : 3; // 10 en desarrollo, 3 en producción
+    
+    // Verificar si ya se enviaron consultas en las últimas 24 horas desde este email
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     
     const recentContacts = await this.prisma.contacto.count({
@@ -76,8 +80,11 @@ export class ContactosService {
       },
     });
 
-    if (recentContacts >= 3) {
-      throw new BadRequestException('Has alcanzado el límite de consultas diarias. Intenta nuevamente mañana.');
+    if (recentContacts >= maxContacts) {
+      const message = isDevelopment 
+        ? `Has alcanzado el límite de consultas diarias (${maxContacts}). Intenta nuevamente mañana.`
+        : 'Has alcanzado el límite de consultas diarias. Intenta nuevamente mañana.';
+      throw new BadRequestException(message);
     }
   }
 
@@ -228,5 +235,28 @@ export class ContactosService {
     });
 
     return contacto;
+  }
+
+  async clearTestContacts() {
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    if (!isDevelopment) {
+      throw new BadRequestException('Este método solo está disponible en desarrollo');
+    }
+
+    // Eliminar contactos de prueba (emails que contengan 'test' o 'example')
+    const deletedContacts = await this.prisma.contacto.deleteMany({
+      where: {
+        OR: [
+          { email: { contains: 'test', mode: 'insensitive' } },
+          { email: { contains: 'example', mode: 'insensitive' } },
+          { email: { contains: 'delfina.spais@oacg.cl' } }, // Tu email de prueba
+        ],
+      },
+    });
+
+    return {
+      message: 'Contactos de prueba eliminados',
+      deletedCount: deletedContacts.count,
+    };
   }
 }

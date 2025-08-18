@@ -20,6 +20,15 @@ import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 export class ContactosController {
   constructor(private readonly contactosService: ContactosService) {}
 
+  @Get('health')
+  async healthCheck() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      message: 'Contact API is working correctly'
+    };
+  }
+
   @Post()
   @HttpCode(HttpStatus.OK)
   async create(
@@ -70,5 +79,16 @@ export class ContactosController {
     @Body() body: { estado: string; notas?: string }
   ) {
     return await this.contactosService.updateEstado(id, body.estado, body.notas);
+  }
+
+  // Endpoint para limpiar contactos de prueba (solo en desarrollo)
+  @Delete('clear-test')
+  async clearTestContacts() {
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    if (!isDevelopment) {
+      throw new BadRequestException('Este endpoint solo está disponible en desarrollo');
+    }
+    
+    return await this.contactosService.clearTestContacts();
   }
 }
