@@ -994,4 +994,319 @@ export class OwnersService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  // ===== NUEVOS MÉTODOS PARA MENSAJERÍA =====
+
+  async searchClinicas(query: string) {
+    try {
+      console.log('🔍 Buscando clínicas con query:', query);
+
+      const clinicas = await this.prisma.clinica.findMany({
+        where: {
+          OR: [
+            { name: { contains: query, mode: 'insensitive' } },
+            { url: { contains: query, mode: 'insensitive' } },
+            { email: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          email: true,
+          estado: true,
+        },
+        take: 20,
+      });
+
+      return {
+        success: true,
+        clinicas: clinicas.map(clinica => ({
+          id: clinica.id,
+          nombre: clinica.name,
+          url: clinica.url,
+          email: clinica.email,
+          estado: clinica.estado,
+        })),
+      };
+    } catch (error) {
+      console.error('❌ Error buscando clínicas:', error);
+      throw new BadRequestException('Error al buscar clínicas');
+    }
+  }
+
+  async markMessageAsRead(messageId: string) {
+    try {
+      console.log('📝 Marcando mensaje como leído:', messageId);
+
+      const message = await this.prisma.mensaje.update({
+        where: { id: messageId },
+        data: { leido: true },
+      });
+
+      return {
+        success: true,
+        message: 'Mensaje marcado como leído',
+        data: message,
+      };
+    } catch (error) {
+      console.error('❌ Error marcando mensaje como leído:', error);
+      throw new BadRequestException('Error al marcar mensaje como leído');
+    }
+  }
+
+  async getConversations() {
+    try {
+      console.log('💬 Obteniendo conversaciones');
+
+      // Obtener todas las clínicas que tienen mensajes
+      const clinicasWithMessages = await this.prisma.clinica.findMany({
+        where: {
+          mensajes: {
+            some: {},
+          },
+        },
+        include: {
+          mensajes: {
+            orderBy: { createdAt: 'desc' },
+            take: 1, // Solo el último mensaje
+          },
+          _count: {
+            select: {
+              mensajes: true,
+            },
+          },
+        },
+      });
+
+      const conversations = await Promise.all(
+        clinicasWithMessages.map(async (clinica) => {
+          // Contar mensajes no leídos
+          const unreadCount = await this.prisma.mensaje.count({
+            where: {
+              clinicaId: clinica.id,
+              leido: false,
+            },
+          });
+
+          return {
+            clinicaId: clinica.id,
+            clinicaNombre: clinica.name,
+            clinicaUrl: clinica.url,
+            lastMessage: clinica.mensajes[0] ? {
+              id: clinica.mensajes[0].id,
+              asunto: clinica.mensajes[0].asunto,
+              mensaje: clinica.mensajes[0].mensaje,
+              fecha: clinica.mensajes[0].createdAt,
+              leido: clinica.mensajes[0].leido,
+            } : null,
+            unreadCount,
+            totalMessages: clinica._count.mensajes,
+          };
+        })
+      );
+
+      return {
+        success: true,
+        conversations: conversations.filter(conv => conv.lastMessage), // Solo conversaciones con mensajes
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo conversaciones:', error);
+      throw new BadRequestException('Error al obtener conversaciones');
+    }
+  }
+
+  async getConversationMessages(clinicaId: string) {
+    try {
+      console.log('💬 Obteniendo mensajes de conversación:', clinicaId);
+
+      const messages = await this.prisma.mensaje.findMany({
+        where: { clinicaId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return {
+        success: true,
+        messages: messages.map(message => ({
+          id: message.id,
+          asunto: message.asunto,
+          mensaje: message.mensaje,
+          tipo: message.tipo,
+          leido: message.leido,
+          clinicaId: message.clinicaId,
+          createdAt: message.createdAt,
+          updatedAt: message.updatedAt,
+        })),
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo mensajes de conversación:', error);
+      throw new BadRequestException('Error al obtener mensajes de conversación');
+    }
+  }
+
+  async sendMessageToConversation(clinicaId: string, dto: SendMensajeDto) {
+    try {
+      console.log('💬 Enviando mensaje a conversación:', clinicaId);
+
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      const message = await this.prisma.mensaje.create({
+        data: {
+          asunto: dto.asunto,
+          mensaje: dto.mensaje,
+          tipo: dto.tipo,
+          clinicaId: clinicaId,
+          leido: false,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Mensaje enviado exitosamente',
+        data: message,
+      };
+    } catch (error) {
+      console.error('❌ Error enviando mensaje a conversación:', error);
+      throw new BadRequestException('Error al enviar mensaje');
+    }
+  }
+
+  async getMessageStats() {
+    try {
+      console.log('📊 Obteniendo estadísticas de mensajes');
+
+      const [total, unread, read] = await Promise.all([
+        this.prisma.mensaje.count(),
+        this.prisma.mensaje.count({ where: { leido: false } }),
+        this.prisma.mensaje.count({ where: { leido: true } }),
+      ]);
+
+      // Contar mensajes en conversación (clínicas con mensajes)
+      const clinicasWithMessages = await this.prisma.clinica.count({
+        where: {
+          mensajes: {
+            some: {},
+          },
+        },
+      });
+
+      return {
+        success: true,
+        stats: {
+          total,
+          unread,
+          read,
+          archived: 0, // Por ahora no implementamos archivo
+          inConversation: clinicasWithMessages,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo estadísticas de mensajes:', error);
+      throw new BadRequestException('Error al obtener estadísticas de mensajes');
+    }
+  }
+
+  async archiveMessage(messageId: string, archived: boolean) {
+    try {
+      console.log('📁 Archivando/desarchivando mensaje:', messageId, archived);
+
+      // Por ahora solo marcamos como leído/no leído
+      // En el futuro se puede implementar un campo archived en el modelo
+      const message = await this.prisma.mensaje.update({
+        where: { id: messageId },
+        data: { leido: !archived }, // Si se archiva, se marca como leído
+      });
+
+      return {
+        success: true,
+        message: archived ? 'Mensaje archivado' : 'Mensaje desarchivado',
+        data: message,
+      };
+    } catch (error) {
+      console.error('❌ Error archivando mensaje:', error);
+      throw new BadRequestException('Error al archivar mensaje');
+    }
+  }
+
+  async getMessagesWithFilters(filters: {
+    status?: string;
+    clinicaId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    try {
+      console.log('📧 Obteniendo mensajes con filtros:', filters);
+
+      const where: any = {};
+
+      // Aplicar filtros
+      if (filters.clinicaId) {
+        where.clinicaId = filters.clinicaId;
+      }
+
+      if (filters.status) {
+        switch (filters.status) {
+          case 'unread':
+            where.leido = false;
+            break;
+          case 'read':
+            where.leido = true;
+            break;
+          case 'archived':
+            // Por ahora no implementamos archivo, pero se puede extender
+            where.leido = true;
+            break;
+          case 'in_conversation':
+            // Mensajes de clínicas que tienen múltiples mensajes
+            break;
+        }
+      }
+
+      const messages = await this.prisma.mensaje.findMany({
+        where,
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: filters.limit || 50,
+        skip: filters.offset || 0,
+      });
+
+      return {
+        success: true,
+        messages: messages.map(message => ({
+          id: message.id,
+          asunto: message.asunto,
+          mensaje: message.mensaje,
+          tipo: message.tipo,
+          leido: message.leido,
+          clinicaId: message.clinicaId,
+          clinica: message.clinica,
+          createdAt: message.createdAt,
+          updatedAt: message.updatedAt,
+        })),
+        pagination: {
+          limit: filters.limit || 50,
+          offset: filters.offset || 0,
+          total: await this.prisma.mensaje.count({ where }),
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo mensajes con filtros:', error);
+      throw new BadRequestException('Error al obtener mensajes');
+    }
+  }
 }

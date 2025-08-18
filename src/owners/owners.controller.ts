@@ -7,6 +7,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
   BadRequestException,
@@ -194,6 +195,118 @@ export class OwnersController {
     }
 
     return this.ownersService.getOwnerNotifications();
+  }
+
+  // ===== NUEVOS ENDPOINTS PARA MENSAJERÍA =====
+
+  @Get('clinicas/search')
+  async searchClinicas(@Request() req, @Query('q') query: string) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden buscar clínicas.',
+      );
+    }
+
+    return this.ownersService.searchClinicas(query);
+  }
+
+  @Patch('messages/:messageId/read')
+  async markMessageAsRead(@Request() req, @Param('messageId') messageId: string) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden marcar mensajes como leídos.',
+      );
+    }
+
+    return this.ownersService.markMessageAsRead(messageId);
+  }
+
+  @Get('conversations')
+  async getConversations(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder a las conversaciones.',
+      );
+    }
+
+    return this.ownersService.getConversations();
+  }
+
+  @Get('conversations/:clinicaId/messages')
+  async getConversationMessages(
+    @Request() req,
+    @Param('clinicaId') clinicaId: string,
+  ) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder a los mensajes de conversación.',
+      );
+    }
+
+    return this.ownersService.getConversationMessages(clinicaId);
+  }
+
+  @Post('conversations/:clinicaId/messages')
+  async sendMessageToConversation(
+    @Request() req,
+    @Param('clinicaId') clinicaId: string,
+    @Body() dto: SendMensajeDto,
+  ) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden enviar mensajes.',
+      );
+    }
+
+    return this.ownersService.sendMessageToConversation(clinicaId, dto);
+  }
+
+  @Get('messages/stats')
+  async getMessageStats(@Request() req) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder a las estadísticas de mensajes.',
+      );
+    }
+
+    return this.ownersService.getMessageStats();
+  }
+
+  @Patch('messages/:messageId/archive')
+  async archiveMessage(
+    @Request() req,
+    @Param('messageId') messageId: string,
+    @Body() body: { archived: boolean },
+  ) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden archivar mensajes.',
+      );
+    }
+
+    return this.ownersService.archiveMessage(messageId, body.archived);
+  }
+
+  @Get('messages')
+  async getMessagesWithFilters(
+    @Request() req,
+    @Query('status') status?: string,
+    @Query('clinicaId') clinicaId?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    if (req.user.role !== 'OWNER') {
+      throw new BadRequestException(
+        'Acceso denegado. Solo propietarios pueden acceder a los mensajes.',
+      );
+    }
+
+    return this.ownersService.getMessagesWithFilters({
+      status,
+      clinicaId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+    });
   }
 
   @Post('register-complete')
