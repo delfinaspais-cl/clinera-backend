@@ -57,9 +57,12 @@ export class OwnersService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
+    // Convertir URL a minúsculas para consistencia
+    const urlNormalizada = dto.url.toLowerCase();
+    
     // Verificar que la URL no exista
     const existingClinica = await this.prisma.clinica.findUnique({
-      where: { url: dto.url },
+      where: { url: urlNormalizada },
     });
 
     if (existingClinica) {
@@ -80,7 +83,7 @@ export class OwnersService {
     const clinica = await this.prisma.clinica.create({
       data: {
         name: dto.nombre,
-        url: dto.url,
+        url: urlNormalizada,
         address: dto.direccion,
         phone: dto.telefono,
         email: dto.email,

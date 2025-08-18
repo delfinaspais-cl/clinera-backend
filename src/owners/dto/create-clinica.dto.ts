@@ -29,7 +29,7 @@ export class CreateClinicaDto {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^[a-z0-9-]+$/, { message: 'La URL solo puede contener letras minúsculas, números y guiones' })
+  @Matches(/^[a-zA-Z0-9-]+$/, { message: 'La URL solo puede contener letras, números y guiones' })
   url: string;
 
   @IsEmail()
