@@ -64,9 +64,9 @@ export class ContactosService {
   }
 
   private async checkRateLimit(email: string): Promise<void> {
-    // En desarrollo, ser más permisivo con el rate limiting
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const maxContacts = isDevelopment ? 10 : 3; // 10 en desarrollo, 3 en producción
+    // En desarrollo o Railway, ser más permisivo con el rate limiting
+    const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.RAILWAY_ENVIRONMENT;
+    const maxContacts = isDevelopment ? 50 : 3; // 50 en desarrollo/Railway, 3 en producción real
     
     // Verificar si ya se enviaron consultas en las últimas 24 horas desde este email
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -238,7 +238,7 @@ export class ContactosService {
   }
 
   async clearTestContacts() {
-    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.RAILWAY_ENVIRONMENT;
     if (!isDevelopment) {
       throw new BadRequestException('Este método solo está disponible en desarrollo');
     }

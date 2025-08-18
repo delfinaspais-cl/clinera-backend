@@ -83,10 +83,10 @@ export class ContactosController {
     return await this.contactosService.updateEstado(id, body.estado, body.notas);
   }
 
-  // Endpoint para limpiar contactos de prueba (solo en desarrollo)
+  // Endpoint para limpiar contactos de prueba (solo en desarrollo/Railway)
   @Delete('clear-test')
   async clearTestContacts() {
-    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.RAILWAY_ENVIRONMENT;
     if (!isDevelopment) {
       throw new BadRequestException('Este endpoint solo está disponible en desarrollo');
     }
