@@ -70,6 +70,60 @@ export class AppController {
     return this.appService.healthCheck();
   }
 
+  @Get('plans')
+  getPlans() {
+    try {
+      // Definir los planes disponibles (formato esperado por frontend)
+      const plans = [
+        {
+          id: 'core',
+          name: 'CORE',
+          price: 29,
+          features: [
+            'Hasta 5 profesionales',
+            'Gestión básica de turnos',
+            'Notificaciones por email',
+            'Soporte por email',
+          ],
+        },
+        {
+          id: 'flow',
+          name: 'FLOW',
+          price: 59,
+          features: [
+            'Hasta 15 profesionales',
+            'Gestión avanzada de turnos',
+            'Notificaciones por email y SMS',
+            'Reportes básicos',
+            'Soporte prioritario',
+          ],
+        },
+        {
+          id: 'nexus',
+          name: 'NEXUS',
+          price: 99,
+          features: [
+            'Profesionales ilimitados',
+            'Gestión completa de turnos',
+            'Notificaciones por email, SMS y WhatsApp',
+            'Reportes avanzados',
+            'Integración con sistemas externos',
+            'Soporte 24/7',
+          ],
+        },
+      ];
+
+      return {
+        success: true,
+        plans,
+        message: 'Planes obtenidos exitosamente',
+      };
+    } catch (error) {
+      console.error('Error obteniendo planes:', error);
+      throw new BadRequestException('Error al obtener los planes');
+    }
+  }
+
   // Endpoint para landing público (sin autenticación)
   @Get('landing/:clinicaUrl')
   async getLanding(@Param('clinicaUrl') clinicaUrl: string) {

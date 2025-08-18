@@ -353,28 +353,38 @@ export class GlobalTurnosController {
   @Post('public')
   @ApiOperation({ summary: 'Crear turno público (sin autenticación)' })
   @ApiResponse({ status: 201, description: 'Turno público creado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o clínica no encontrada' })
   async createPublic(@Body() createTurnoDto: any) {
     try {
-      // Validar que la clínica existe
+      // Validar campos requeridos según schema esperado por frontend
+      const requiredFields = ['clinicaUrl', 'nombre', 'email', 'fecha', 'hora'];
+      const missingFields = requiredFields.filter(field => !createTurnoDto[field]);
+      
+      if (missingFields.length > 0) {
+        throw new BadRequestException(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+      }
+
+      // Buscar clínica por URL en lugar de ID
       const clinica = await this.prisma.clinica.findUnique({
-        where: { id: createTurnoDto.clinicaId },
+        where: { url: createTurnoDto.clinicaUrl },
       });
 
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
       }
 
+      // Crear el turno con el schema correcto
       const turno = await this.prisma.turno.create({
         data: {
-          paciente: createTurnoDto.paciente,
+          paciente: createTurnoDto.nombre,
           email: createTurnoDto.email,
-          telefono: createTurnoDto.telefono,
-          especialidad: createTurnoDto.especialidad,
-          doctor: createTurnoDto.doctor,
+          telefono: createTurnoDto.telefono || '',
+          especialidad: createTurnoDto.motivo || 'Consulta general',
+          doctor: createTurnoDto.profesional || 'Por asignar',
           fecha: new Date(createTurnoDto.fecha),
           hora: createTurnoDto.hora,
-          motivo: createTurnoDto.motivo,
-          clinicaId: createTurnoDto.clinicaId,
+          motivo: createTurnoDto.motivo || 'Consulta',
+          clinicaId: clinica.id,
           estado: 'pendiente',
         },
         include: {
@@ -392,10 +402,10 @@ export class GlobalTurnosController {
       await this.prisma.notificacion.create({
         data: {
           titulo: 'Nuevo turno solicitado',
-          mensaje: `Se ha solicitado un nuevo turno para ${createTurnoDto.paciente} el ${createTurnoDto.fecha} a las ${createTurnoDto.hora}`,
+          mensaje: `Se ha solicitado un nuevo turno para ${createTurnoDto.nombre} el ${createTurnoDto.fecha} a las ${createTurnoDto.hora}`,
           tipo: 'info',
           prioridad: 'media',
-          clinicaId: createTurnoDto.clinicaId,
+          clinicaId: clinica.id,
         },
       });
 
@@ -406,6 +416,9 @@ export class GlobalTurnosController {
       };
     } catch (error) {
       console.error('Error creando turno público:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException('Error al crear el turno público');
     }
   }

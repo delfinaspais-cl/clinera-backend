@@ -118,6 +118,64 @@ export class GlobalClinicasController {
     }
   }
 
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Crear nueva clínica' })
+  @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'Token requerido o inválido' })
+  async create(@Body() createClinicaDto: any, @Request() req) {
+    try {
+      // Validar schema esperado por frontend
+      const requiredFields = ['name', 'url', 'email', 'colorPrimario', 'colorSecundario'];
+      const missingFields = requiredFields.filter(field => !createClinicaDto[field]);
+      
+      if (missingFields.length > 0) {
+        throw new BadRequestException(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+      }
+
+      // Validar que el usuario sea OWNER
+      if (req.user.role !== 'OWNER') {
+        throw new BadRequestException('Solo los propietarios pueden crear clínicas');
+      }
+
+      // Crear la clínica
+      const clinica = await this.prisma.clinica.create({
+        data: {
+          name: createClinicaDto.name,
+          url: createClinicaDto.url,
+          address: createClinicaDto.address || '',
+          phone: createClinicaDto.phone || '',
+          email: createClinicaDto.email,
+          colorPrimario: createClinicaDto.colorPrimario,
+          colorSecundario: createClinicaDto.colorSecundario,
+          descripcion: createClinicaDto.descripcion || '',
+          contacto: createClinicaDto.contacto || '',
+          estado: 'activa',
+          estadoPago: createClinicaDto.plan || 'pendiente',
+          fechaCreacion: new Date(),
+          ultimoPago: null,
+          proximoPago: null,
+          rating: 4.5,
+          stats: null,
+        },
+      });
+
+      return {
+        success: true,
+        data: clinica,
+        message: 'Clínica creada exitosamente',
+      };
+    } catch (error) {
+      console.error('Error creando clínica:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al crear la clínica');
+    }
+  }
+
   @Get('owner')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
