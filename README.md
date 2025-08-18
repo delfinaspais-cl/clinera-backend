@@ -210,3 +210,4 @@ Crea usuarios de prueba:
 
 - **Frontend**: Next.js (http://localhost:3000)
 - **Backend**: Nest.js (http://localhost:3001)
+# Railway Deploy Trigger
