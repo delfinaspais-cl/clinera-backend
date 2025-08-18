@@ -121,7 +121,7 @@ export class OwnersService {
       });
     }
 
-    if (dto.horarios?.length) {
+    if (dto.horarios && Array.isArray(dto.horarios) && dto.horarios.length > 0) {
       await this.prisma.horario.createMany({
         data: dto.horarios.map((h) => ({
           day: h.day,
@@ -218,7 +218,7 @@ export class OwnersService {
       }
 
       // Reemplazar horarios si se envían
-      if (dto.horarios) {
+      if (dto.horarios && Array.isArray(dto.horarios)) {
         await this.prisma.horario.deleteMany({
           where: { clinicaId },
         });
