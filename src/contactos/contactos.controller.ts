@@ -6,11 +6,13 @@ import {
   Param, 
   Query, 
   Put, 
+  Delete,
   Req, 
   UseGuards,
   ValidationPipe,
   HttpStatus,
-  HttpCode
+  HttpCode,
+  BadRequestException
 } from '@nestjs/common';
 import { ContactosService } from './contactos.service';
 import { CreateContactoDto } from './dto/create-contacto.dto';
