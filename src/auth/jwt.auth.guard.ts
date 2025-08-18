@@ -7,8 +7,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     const token = request.headers.authorization?.split(' ')[1];
 
-    // Modo testing para desarrollo
-    if ((process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) && token === 'test_token') {
+    // Modo testing para desarrollo y Railway
+    if ((process.env.NODE_ENV === 'development' || !process.env.NODE_ENV || process.env.ENABLE_TEST_TOKEN === 'true') && token === 'test_token') {
       request.user = {
         id: 'test_user_id',
         email: 'test@example.com',
