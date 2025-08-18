@@ -32,6 +32,10 @@ export class OwnersController {
 
   @Post('clinicas')
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
+    console.log('🔍 DEBUG - Controlador createClinica llamado');
+    console.log('🔍 DEBUG - Usuario:', req.user);
+    console.log('🔍 DEBUG - DTO recibido en controlador:', JSON.stringify(dto, null, 2));
+    
     if (req.user.role !== 'OWNER') {
       throw new BadRequestException(
         'Acceso denegado. Solo propietarios pueden acceder.',

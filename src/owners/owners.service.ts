@@ -57,8 +57,14 @@ export class OwnersService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
+    // Debug: mostrar qué datos llegan
+    console.log('🔍 DEBUG - Datos recibidos en createClinica:', JSON.stringify(dto, null, 2));
+    console.log('🔍 DEBUG - URL original:', dto.url);
+    console.log('🔍 DEBUG - Tipo de URL:', typeof dto.url);
+    
     // Convertir URL a minúsculas para consistencia
     const urlNormalizada = dto.url.toLowerCase();
+    console.log('🔍 DEBUG - URL normalizada:', urlNormalizada);
     
     // Verificar que la URL no exista
     const existingClinica = await this.prisma.clinica.findUnique({
