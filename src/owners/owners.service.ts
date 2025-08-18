@@ -1116,14 +1116,34 @@ export class OwnersService {
     }
   }
 
-  async getConversationMessages(clinicaId: string) {
+  async getConversationMessages(clinicaIdOrUrl: string) {
     try {
-      console.log('💬 Obteniendo mensajes de conversación:', clinicaId);
+      console.log('💬 Obteniendo mensajes de conversación:', clinicaIdOrUrl);
+
+      // Primero intentar buscar por ID
+      let clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaIdOrUrl },
+      });
+
+      // Si no se encuentra por ID, intentar buscar por URL
+      if (!clinica) {
+        clinica = await this.prisma.clinica.findUnique({
+          where: { url: clinicaIdOrUrl },
+        });
+      }
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      console.log('✅ Clínica encontrada:', clinica.name, 'ID:', clinica.id);
 
       const messages = await this.prisma.mensaje.findMany({
-        where: { clinicaId },
+        where: { clinicaId: clinica.id },
         orderBy: { createdAt: 'desc' },
       });
+
+      console.log('📧 Mensajes encontrados:', messages.length);
 
       return {
         success: true,
@@ -1144,25 +1164,34 @@ export class OwnersService {
     }
   }
 
-  async sendMessageToConversation(clinicaId: string, dto: SendMensajeDto) {
+  async sendMessageToConversation(clinicaIdOrUrl: string, dto: SendMensajeDto) {
     try {
-      console.log('💬 Enviando mensaje a conversación:', clinicaId);
+      console.log('💬 Enviando mensaje a conversación:', clinicaIdOrUrl);
 
-      // Verificar que la clínica existe
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { id: clinicaId },
+      // Primero intentar buscar por ID
+      let clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaIdOrUrl },
       });
+
+      // Si no se encuentra por ID, intentar buscar por URL
+      if (!clinica) {
+        clinica = await this.prisma.clinica.findUnique({
+          where: { url: clinicaIdOrUrl },
+        });
+      }
 
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
       }
+
+      console.log('✅ Clínica encontrada:', clinica.name, 'ID:', clinica.id);
 
       const message = await this.prisma.mensaje.create({
         data: {
           asunto: dto.asunto,
           mensaje: dto.mensaje,
           tipo: dto.tipo,
-          clinicaId: clinicaId,
+          clinicaId: clinica.id,
           leido: false,
         },
       });
