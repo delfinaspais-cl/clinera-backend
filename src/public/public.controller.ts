@@ -5,11 +5,14 @@ import {
   Param,
   Body,
   BadRequestException,
+  Headers,
 } from '@nestjs/common';
 import { ClinicasService } from '../clinicas/clinicas.service';
 import { CreateTurnoLandingDto } from './dto/create-turno-landing.dto';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ProfessionalsService } from '../professionals/professionals.service';
+import { CreateProfessionalDto } from '../professionals/dto/create-professional.dto';
 
 @Controller('public')
 export class PublicController {
@@ -17,6 +20,7 @@ export class PublicController {
     private readonly clinicasService: ClinicasService,
     private readonly authService: AuthService,
     private readonly prisma: PrismaService,
+    private readonly professionalsService: ProfessionalsService,
   ) {}
 
   @Get('clinica/:clinicaUrl/landing')
@@ -38,6 +42,56 @@ export class PublicController {
   ) {
     // Este endpoint es público, no requiere autenticación
     return this.clinicasService.createTurnoFromLanding(clinicaUrl, dto);
+  }
+
+  // ===== NUEVO ENDPOINT PÚBLICO PARA CREAR PROFESIONALES =====
+  
+  @Post('clinica/:clinicaUrl/profesionales')
+  // TODO: Implementar rate limiting para prevenir spam
+  // @UseGuards(ThrottlerGuard)
+  // @Throttle(5, 60) // Máximo 5 requests por minuto por IP
+  async createProfessionalFromLanding(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreateProfessionalDto,
+    @Headers('x-clinica-token') clinicaToken?: string, // Token opcional para mayor seguridad
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Validación adicional con token de clínica (opcional)
+      if (clinicaToken) {
+        // Aquí puedes implementar validación del token de clínica
+        // Por ejemplo, verificar que el token coincida con la clínica
+        if (clinicaToken !== clinica.id) {
+          throw new BadRequestException('Token de clínica inválido');
+        }
+      }
+
+      // Crear el profesional usando el servicio existente
+      const result = await this.professionalsService.create(clinicaUrl, dto);
+
+      return {
+        success: true,
+        message: 'Profesional creado exitosamente',
+        data: result,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al crear el profesional');
+    }
   }
 
   @Get('clinica/:clinicaUrl/debug-users')

@@ -9,8 +9,6 @@ export class MensajesService {
 
   async findAll(clinicaUrl: string) {
     try {
-      console.log('📧 Obteniendo mensajes para clínica:', clinicaUrl);
-      
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
       });
@@ -20,8 +18,6 @@ export class MensajesService {
         where: { clinicaId: clinica.id },
         orderBy: { createdAt: 'desc' },
       });
-
-      console.log(`✅ Encontrados ${mensajes.length} mensajes para ${clinica.name}`);
 
       return {
         success: true,
@@ -37,16 +33,12 @@ export class MensajesService {
         })),
       };
     } catch (error) {
-      console.error('❌ Error obteniendo mensajes:', error);
       throw error;
     }
   }
 
   async create(clinicaUrl: string, dto: CreateMensajeDto) {
     try {
-      console.log('💬 Creando mensaje para clínica:', clinicaUrl);
-      console.log('📝 DTO recibido:', dto);
-      
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
       });
@@ -61,8 +53,6 @@ export class MensajesService {
           leido: false,
         },
       });
-
-      console.log(`✅ Mensaje creado exitosamente para ${clinica.name}`);
 
       return {
         success: true,
@@ -79,7 +69,6 @@ export class MensajesService {
         },
       };
     } catch (error) {
-      console.error('❌ Error creando mensaje:', error);
       throw error;
     }
   }

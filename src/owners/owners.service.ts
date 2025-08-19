@@ -1037,8 +1037,6 @@ export class OwnersService {
 
   async markMessageAsRead(messageId: string) {
     try {
-      console.log('📝 Marcando mensaje como leído:', messageId);
-
       const message = await this.prisma.mensaje.update({
         where: { id: messageId },
         data: { leido: true },
@@ -1050,15 +1048,12 @@ export class OwnersService {
         data: message,
       };
     } catch (error) {
-      console.error('❌ Error marcando mensaje como leído:', error);
       throw new BadRequestException('Error al marcar mensaje como leído');
     }
   }
 
   async getConversations() {
     try {
-      console.log('💬 Obteniendo conversaciones');
-
       // Obtener todas las clínicas que tienen mensajes
       const clinicasWithMessages = await this.prisma.clinica.findMany({
         where: {
@@ -1111,15 +1106,12 @@ export class OwnersService {
         conversations: conversations.filter(conv => conv.lastMessage), // Solo conversaciones con mensajes
       };
     } catch (error) {
-      console.error('❌ Error obteniendo conversaciones:', error);
       throw new BadRequestException('Error al obtener conversaciones');
     }
   }
 
   async getConversationMessages(clinicaIdOrUrl: string) {
     try {
-      console.log('💬 Obteniendo mensajes de conversación:', clinicaIdOrUrl);
-
       // Primero intentar buscar por ID
       let clinica = await this.prisma.clinica.findUnique({
         where: { id: clinicaIdOrUrl },
@@ -1136,14 +1128,10 @@ export class OwnersService {
         throw new BadRequestException('Clínica no encontrada');
       }
 
-      console.log('✅ Clínica encontrada:', clinica.name, 'ID:', clinica.id);
-
       const messages = await this.prisma.mensaje.findMany({
         where: { clinicaId: clinica.id },
         orderBy: { createdAt: 'desc' },
       });
-
-      console.log('📧 Mensajes encontrados:', messages.length);
 
       return {
         success: true,
@@ -1159,15 +1147,12 @@ export class OwnersService {
         })),
       };
     } catch (error) {
-      console.error('❌ Error obteniendo mensajes de conversación:', error);
       throw new BadRequestException('Error al obtener mensajes de conversación');
     }
   }
 
   async sendMessageToConversation(clinicaIdOrUrl: string, dto: SendMensajeDto) {
     try {
-      console.log('💬 Enviando mensaje a conversación:', clinicaIdOrUrl);
-
       // Primero intentar buscar por ID
       let clinica = await this.prisma.clinica.findUnique({
         where: { id: clinicaIdOrUrl },
@@ -1183,8 +1168,6 @@ export class OwnersService {
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
       }
-
-      console.log('✅ Clínica encontrada:', clinica.name, 'ID:', clinica.id);
 
       const message = await this.prisma.mensaje.create({
         data: {
@@ -1202,15 +1185,12 @@ export class OwnersService {
         data: message,
       };
     } catch (error) {
-      console.error('❌ Error enviando mensaje a conversación:', error);
       throw new BadRequestException('Error al enviar mensaje');
     }
   }
 
   async getMessageStats() {
     try {
-      console.log('📊 Obteniendo estadísticas de mensajes');
-
       const [total, unread, read] = await Promise.all([
         this.prisma.mensaje.count(),
         this.prisma.mensaje.count({ where: { leido: false } }),
@@ -1237,15 +1217,12 @@ export class OwnersService {
         },
       };
     } catch (error) {
-      console.error('❌ Error obteniendo estadísticas de mensajes:', error);
       throw new BadRequestException('Error al obtener estadísticas de mensajes');
     }
   }
 
   async archiveMessage(messageId: string, archived: boolean) {
     try {
-      console.log('📁 Archivando/desarchivando mensaje:', messageId, archived);
-
       // Por ahora solo marcamos como leído/no leído
       // En el futuro se puede implementar un campo archived en el modelo
       const message = await this.prisma.mensaje.update({
@@ -1259,7 +1236,6 @@ export class OwnersService {
         data: message,
       };
     } catch (error) {
-      console.error('❌ Error archivando mensaje:', error);
       throw new BadRequestException('Error al archivar mensaje');
     }
   }
@@ -1271,8 +1247,6 @@ export class OwnersService {
     offset?: number;
   }) {
     try {
-      console.log('📧 Obteniendo mensajes con filtros:', filters);
-
       const where: any = {};
 
       // Aplicar filtros
