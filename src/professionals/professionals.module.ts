@@ -7,5 +7,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [ProfessionalsController],
   providers: [ProfessionalsService],
+  exports: [ProfessionalsService], // Exportar el servicio para que otros módulos puedan usarlo
 })
 export class ProfessionalsModule {}
