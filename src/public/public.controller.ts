@@ -14,7 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProfessionalsService } from '../professionals/professionals.service';
 import { CreateProfessionalDto } from '../professionals/dto/create-professional.dto';
 
-@Controller('public')
+@Controller('api/public')
 export class PublicController {
   constructor(
     private readonly clinicasService: ClinicasService,
