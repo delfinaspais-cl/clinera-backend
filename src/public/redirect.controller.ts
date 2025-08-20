@@ -5,7 +5,7 @@ import {
   Res,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Controller('public')
 export class RedirectController {
