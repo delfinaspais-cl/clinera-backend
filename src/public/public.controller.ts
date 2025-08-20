@@ -7,7 +7,10 @@ import {
   Body,
   BadRequestException,
   Headers,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ClinicasService } from '../clinicas/clinicas.service';
 import { CreateTurnoLandingDto } from './dto/create-turno-landing.dto';
 import { AuthService } from '../auth/auth.service';
@@ -24,6 +27,18 @@ export class PublicController {
     private readonly prisma: PrismaService,
     private readonly professionalsService: ProfessionalsService,
   ) {}
+
+  // ===== ENDPOINT DE REDIRECCIÓN TEMPORAL =====
+  // Para manejar URLs sin /api/ desde el frontend
+  @Get('redirect/:clinicaUrl/exists')
+  async redirectClinicaExists(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Res() res: Response,
+  ) {
+    // Redirigir a la URL correcta
+    const correctUrl = `/api/public/clinica/${clinicaUrl}/exists`;
+    return res.redirect(HttpStatus.MOVED_PERMANENTLY, correctUrl);
+  }
 
   @Get('clinica/:clinicaUrl/landing')
   async getClinicaLanding(@Param('clinicaUrl') clinicaUrl: string) {
