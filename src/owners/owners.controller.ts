@@ -42,16 +42,16 @@ export class OwnersController {
     return this.ownersService.getAllClinicas();
   }
 
-  @Get('clinicas/:id')
-  async getClinicaById(@Request() req, @Param('id') clinicaId: string) {
-    if (req.user.role !== 'OWNER') {
-      throw new BadRequestException(
-        'Acceso denegado. Solo propietarios pueden acceder.',
-      );
-    }
+  // @Get('clinicas/:id')
+  // async getClinicaById(@Request() req, @Param('id') clinicaId: string) {
+  //   if (req.user.role !== 'OWNER') {
+  //     throw new BadRequestException(
+  //       'Acceso denegado. Solo propietarios pueden acceder.',
+  //     );
+  //   }
 
-    return this.ownersService.getClinicaById(clinicaId);
-  }
+  //   return this.ownersService.getClinicaById(clinicaId);
+  // }
 
   @Post('clinicas')
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
