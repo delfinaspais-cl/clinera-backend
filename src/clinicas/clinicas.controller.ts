@@ -114,54 +114,54 @@ export class ClinicasController {
     }
   }
 
-  @Put(':clinicaUrl/usuarios/:id')
-  @UseGuards(JwtAuthGuard)
-  async updateUsuario(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') userId: string,
-    @Body() dto: CreateUsuarioClinicaDto,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede actualizar usuarios en cualquier clínica
-      return this.clinicasService.updateUsuario(clinicaUrl, userId, dto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede actualizar usuarios en su propia clínica
-      return this.clinicasService.updateUsuario(clinicaUrl, userId, dto);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para actualizar usuarios en esta clínica.',
-      );
-    }
-  }
+  // @Put(':clinicaUrl/usuarios/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async updateUsuario(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Param('id') userId: string,
+  //   @Body() dto: CreateUsuarioClinicaDto,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     // OWNER puede actualizar usuarios en cualquier clínica
+  //     return this.clinicasService.updateUsuarioEstado(clinicaUrl, userId, dto);
+  //   } else if (
+  //     req.user.role === 'ADMIN' &&
+  //     req.user.clinicaUrl === clinicaUrl
+  //   ) {
+  //     // ADMIN solo puede actualizar usuarios en su propia clínica
+  //     return this.clinicasService.updateUsuario(clinicaUrl, userId, dto);
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'Acceso denegado. No tienes permisos para actualizar usuarios en esta clínica.',
+  //     );
+  //   }
+  // }
 
-  @Delete(':clinicaUrl/usuarios/:id')
-  @UseGuards(JwtAuthGuard)
-  async deleteUsuario(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') userId: string,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede eliminar usuarios en cualquier clínica
-      return this.clinicasService.deleteUsuario(clinicaUrl, userId);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede eliminar usuarios en su propia clínica
-      return this.clinicasService.deleteUsuario(clinicaUrl, userId);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para eliminar usuarios en esta clínica.',
-      );
-    }
-  }
+  // @Delete(':clinicaUrl/usuarios/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async deleteUsuario(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Param('id') userId: string,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     // OWNER puede eliminar usuarios en cualquier clínica
+  //     return this.clinicasService.(clinicaUrl, userId);
+  //   } else if (
+  //     req.user.role === 'ADMIN' &&
+  //     req.user.clinicaUrl === clinicaUrl
+  //   ) {
+  //     // ADMIN solo puede eliminar usuarios en su propia clínica
+  //     return this.clinicasService.deleteUsuario(clinicaUrl, userId);
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'Acceso denegado. No tienes permisos para eliminar usuarios en esta clínica.',
+  //     );
+  //   }
+  // }
 
   @Get(':clinicaUrl/turnos')
   @UseGuards(JwtAuthGuard)
@@ -194,78 +194,78 @@ export class ClinicasController {
     }
   }
 
-  @Post(':clinicaUrl/turnos')
-  @UseGuards(JwtAuthGuard)
-  async createTurno(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Body() dto: CreateTurnoDto,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede crear turnos en cualquier clínica
-      return this.clinicasService.createTurno(clinicaUrl, dto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede crear turnos en su propia clínica
-      return this.clinicasService.createTurno(clinicaUrl, dto);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para crear turnos en esta clínica.',
-      );
-    }
-  }
+  // @Post(':clinicaUrl/turnos')
+  // @UseGuards(JwtAuthGuard)
+  // async createTurno(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Body() dto: CreateTurnoDto,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     // OWNER puede crear turnos en cualquier clínica
+  //     return this.clinicasService.createTurno(clinicaUrl, dto);
+  //   } else if (
+  //     req.user.role === 'ADMIN' &&
+  //     req.user.clinicaUrl === clinicaUrl
+  //   ) {
+  //     // ADMIN solo puede crear turnos en su propia clínica
+  //     return this.clinicasService.createTurno(clinicaUrl, dto);
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'Acceso denegado. No tienes permisos para crear turnos en esta clínica.',
+  //     );
+  //   }
+  // }
 
-  @Put(':clinicaUrl/turnos/:id')
-  @UseGuards(JwtAuthGuard)
-  async updateTurno(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') turnoId: string,
-    @Body() dto: CreateTurnoDto,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede actualizar turnos en cualquier clínica
-      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede actualizar turnos en su propia clínica
-      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para actualizar turnos en esta clínica.',
-      );
-    }
-  }
+  // @Put(':clinicaUrl/turnos/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async updateTurno(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Param('id') turnoId: string,
+  //   @Body() dto: CreateTurnoDto,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     // OWNER puede actualizar turnos en cualquier clínica
+  //     return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+  //   } else if (
+  //     req.user.role === 'ADMIN' &&
+  //     req.user.clinicaUrl === clinicaUrl
+  //   ) {
+  //     // ADMIN solo puede actualizar turnos en su propia clínica
+  //     return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'Acceso denegado. No tienes permisos para actualizar turnos en esta clínica.',
+  //     );
+  //   }
+  // }
 
-  @Delete(':clinicaUrl/turnos/:id')
-  @UseGuards(JwtAuthGuard)
-  async deleteTurno(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') turnoId: string,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede eliminar turnos en cualquier clínica
-      return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
-      } else if (
-        req.user.role === 'ADMIN' &&
-        req.user.clinicaUrl === clinicaUrl
-      ) {
-        // ADMIN solo puede eliminar turnos en su propia clínica
-        return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
-      } else {
-        throw new UnauthorizedException(
-          'Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.',
-        );
-      }
-  }
+  // @Delete(':clinicaUrl/turnos/:id')
+  // @UseGuards(JwtAuthGuard)
+  // async deleteTurno(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Param('id') turnoId: string,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     // OWNER puede eliminar turnos en cualquier clínica
+  //     return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
+  //     } else if (
+  //       req.user.role === 'ADMIN' &&
+  //       req.user.clinicaUrl === clinicaUrl
+  //     ) {
+  //       // ADMIN solo puede eliminar turnos en su propia clínica
+  //       return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
+  //     } else {
+  //       throw new UnauthorizedException(
+  //         'Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.',
+  //       );
+  //     }
+  // }
 
   @Get(':clinicaUrl/turnos-simple')
   @UseGuards(JwtAuthGuard)
@@ -791,30 +791,30 @@ export class ClinicasController {
     }
   }
 
-  @Get(':clinicaUrl')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Obtener datos de clínica específica' })
-  @ApiResponse({ status: 200, description: 'Datos de clínica obtenidos exitosamente' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
-  async getClinicaByUrl(
-    @Request() req,
-    @Param('clinicaUrl') clinicaUrl: string,
-  ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.getClinicaByUrl(clinicaUrl);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.getClinicaByUrl(clinicaUrl);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
-    }
-  }
+  // @Get(':clinicaUrl')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiOperation({ summary: 'Obtener datos de clínica específica' })
+  // @ApiResponse({ status: 200, description: 'Datos de clínica obtenidos exitosamente' })
+  // @ApiResponse({ status: 401, description: 'No autorizado' })
+  // @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  // async getClinicaByUrl(
+  //   @Request() req,
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  // ) {
+  //   // Verificar que el usuario tenga acceso a esta clínica
+  //   if (req.user.role === 'OWNER') {
+  //     return this.clinicasService.getClinicaByUrl(clinicaUrl);
+  //   } else if (
+  //     req.user.role === 'ADMIN' &&
+  //     req.user.clinicaUrl === clinicaUrl
+  //   ) {
+  //     return this.clinicasService.getClinicaByUrl(clinicaUrl);
+  //   } else {
+  //     throw new UnauthorizedException(
+  //       'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+  //     );
+  //   }
+  // }
 
   @Get(':clinicaUrl/notificaciones')
   @UseGuards(JwtAuthGuard)
