@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, MinLength, IsIn, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  MinLength,
+  IsIn,
+  IsString,
+} from 'class-validator';
 
 export class RegisterAuthDto {
   @IsEmail()
@@ -11,6 +17,6 @@ export class RegisterAuthDto {
   @IsNotEmpty()
   name: string;
 
-  @IsIn(['ADMIN', 'PROFESSIONAL', 'PATIENT'])
+  @IsIn(['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'])
   role: string;
 }

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,17 +10,22 @@ import { RegisterAuthDto } from './dto/register-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { OwnerLoginDto } from './dto/owner-login.dto';
 import { ClinicaLoginDto } from './dto/clinica-login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EmailService } from './services/email.service';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       return user;
     }
     return null;
@@ -39,7 +48,7 @@ export class AuthService {
     try {
       // Debug: Log de los datos recibidos
       console.log('Datos recibidos en registro:', JSON.stringify(dto, null, 2));
-      
+
       // Validar que el campo role existe
       if (!dto.role) {
         throw new BadRequestException('El campo "role" es requerido');
@@ -47,12 +56,14 @@ export class AuthService {
 
       const role = dto.role.toUpperCase(); // normaliza
       if (!['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'].includes(role)) {
-        throw new BadRequestException(`Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`);
+        throw new BadRequestException(
+          `Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`,
+        );
       }
 
       // Verificar si el email ya existe
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.email }
+        where: { email: dto.email },
       });
 
       if (existingUser) {
@@ -81,9 +92,11 @@ export class AuthService {
 
   async ownerLogin(dto: OwnerLoginDto) {
     try {
+      console.log('Owner login DTO:', dto); // Debug log
+
       // Buscar usuario por username (que será el email para owners)
-      const user = await this.prisma.user.findUnique({ 
-        where: { email: dto.username } 
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.username },
       });
 
       if (!user) {
@@ -92,7 +105,9 @@ export class AuthService {
 
       // Verificar que sea un OWNER
       if (user.role !== 'OWNER') {
-        throw new UnauthorizedException('Acceso denegado. Solo propietarios pueden acceder.');
+        throw new UnauthorizedException(
+          'Acceso denegado. Solo propietarios pueden acceder.',
+        );
       }
 
       // Verificar contraseña
@@ -102,13 +117,13 @@ export class AuthService {
       }
 
       // Generar token
-      const payload = { 
-        sub: user.id, 
-        email: user.email, 
+      const payload = {
+        sub: user.id,
+        email: user.email,
         role: user.role,
-        name: user.name 
+        name: user.name,
       };
-      
+
       const token = this.jwtService.sign(payload);
 
       return {
@@ -118,8 +133,8 @@ export class AuthService {
           id: user.id,
           name: user.name,
           role: user.role,
-          email: user.email
-        }
+          email: user.email,
+        },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -140,7 +155,7 @@ export class AuthService {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
-        where: { url: dto.clinicaUrl }
+        where: { url: dto.clinicaUrl },
       });
 
       if (!clinica) {
@@ -149,13 +164,13 @@ export class AuthService {
 
       // Buscar usuario por username (email) y clínica
       const user = await this.prisma.user.findFirst({
-        where: { 
+        where: {
           email: dto.username,
-          clinicaId: clinica.id
+          clinicaId: clinica.id,
         },
         include: {
-          clinica: true
-        }
+          clinica: true,
+        },
       });
 
       if (!user) {
@@ -169,27 +184,39 @@ export class AuthService {
       }
 
       // Generar token
-      const payload = { 
-        sub: user.id, 
-        email: user.email, 
+      const payload = {
+        sub: user.id,
+        email: user.email,
         role: user.role,
         name: user.name,
         clinicaId: user.clinicaId,
-        clinicaUrl: clinica.url
+        clinicaUrl: clinica.url,
       };
-      
+
       const token = this.jwtService.sign(payload);
 
       return {
         success: true,
+        message: 'Login exitoso',
         token,
         user: {
           id: user.id,
           name: user.name,
+          email: user.email,
           role: user.role,
           clinicaId: user.clinicaId,
-          clinicaUrl: clinica.url
-        }
+          clinicaUrl: clinica.url,
+          permisos: this.getPermisosByRole(user.role),
+        },
+        clinica: {
+          id: clinica.id,
+          nombre: clinica.name,
+          url: clinica.url,
+          plan: clinica.estadoPago === 'pagado' ? 'professional' : 'basic',
+          estado: clinica.estado,
+          colorPrimario: clinica.colorPrimario,
+          colorSecundario: clinica.colorSecundario,
+        },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -206,5 +233,220 @@ export class AuthService {
     return { success: true };
   }
 
-}
+  // Métodos de recuperación de contraseña
+  async forgotPassword(dto: ForgotPasswordDto) {
+    try {
+      // Buscar usuario por email
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
+      if (!user) {
+        // Por seguridad, no revelamos si el email existe o no
+        return {
+          success: true,
+          message:
+            'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+        };
+      }
+
+      // Generar token único
+      const resetToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      // Guardar token en base de datos
+      await this.prisma.passwordResetToken.create({
+        data: {
+          email: dto.email,
+          token: resetToken,
+          expiresAt,
+          used: false,
+        },
+      });
+
+      // Enviar email
+      const emailSent = await this.emailService.sendPasswordResetEmail(
+        dto.email,
+        resetToken,
+        user.name || 'Usuario',
+      );
+
+      if (!emailSent) {
+        throw new BadRequestException(
+          'Error al enviar el email de recuperación',
+        );
+      }
+
+      return {
+        success: true,
+        message:
+          'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en forgotPassword:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+      // Buscar token válido
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token: dto.token,
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      if (!resetToken) {
+        throw new BadRequestException('Token inválido o expirado');
+      }
+
+      // Buscar usuario
+      const user = await this.prisma.user.findUnique({
+        where: { email: resetToken.email },
+      });
+
+      if (!user) {
+        throw new BadRequestException('Usuario no encontrado');
+      }
+
+      // Actualizar contraseña
+      const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      // Marcar token como usado
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      });
+
+      // Enviar email de confirmación
+      await this.emailService.sendPasswordChangedEmail(
+        user.email,
+        user.name || 'Usuario',
+      );
+
+      return {
+        success: true,
+        message: 'Contraseña actualizada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en resetPassword:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async validateResetToken(token: string) {
+    try {
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token,
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      return {
+        valid: !!resetToken,
+        message: resetToken ? 'Token válido' : 'Token inválido o expirado',
+      };
+    } catch (error) {
+      console.error('Error al validar token:', error);
+      return {
+        valid: false,
+        message: 'Error al validar token',
+      };
+    }
+  }
+
+  async validateEmail(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    return { available: !user };
+  }
+
+  async createOwnerForRailway() {
+    try {
+      // Verificar si ya existe un OWNER para Railway
+      const existingOwner = await this.prisma.user.findFirst({
+        where: {
+          email: 'railway-owner@clinera.io',
+          role: 'OWNER',
+        },
+      });
+
+      if (existingOwner) {
+        return {
+          success: true,
+          message: 'OWNER para Railway ya existe',
+          credentials: {
+            email: 'railway-owner@clinera.io',
+            password: '123456',
+          },
+        };
+      }
+
+      // Crear nuevo OWNER para Railway
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      const owner = await this.prisma.user.create({
+        data: {
+          email: 'railway-owner@clinera.io',
+          password: hashedPassword,
+          name: 'Railway Owner',
+          role: 'OWNER',
+          clinicaId: null, // Los OWNER no tienen clínica específica
+          estado: 'activo',
+        },
+      });
+
+      return {
+        success: true,
+        message: 'OWNER creado exitosamente para Railway',
+        credentials: {
+          email: 'railway-owner@clinera.io',
+          password: '123456',
+        },
+        user: {
+          id: owner.id,
+          name: owner.name,
+          email: owner.email,
+          role: owner.role,
+        },
+      };
+    } catch (error) {
+      console.error('Error creando OWNER para Railway:', error);
+      throw new BadRequestException('Error creando usuario OWNER');
+    }
+  }
+
+  private getPermisosByRole(role: string): string[] {
+    switch (role) {
+      case 'ADMIN':
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones'];
+      case 'PROFESSIONAL':
+        return ['turnos', 'pacientes', 'reportes'];
+      case 'SECRETARY':
+        return ['turnos', 'pacientes', 'notificaciones'];
+      case 'OWNER':
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'planes', 'facturacion'];
+      default:
+        return [];
+    }
+  }
+}

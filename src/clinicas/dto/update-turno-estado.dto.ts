@@ -4,4 +4,4 @@ export class UpdateTurnoEstadoDto {
   @IsString()
   @IsIn(['confirmado', 'pendiente', 'cancelado'])
   estado: string;
-} 
+}

@@ -46,10 +46,7 @@ export class ProfessionalsController {
   }
 
   @Delete(':id')
-  remove(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-  ) {
+  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.professionalsService.remove(clinicaUrl, id);
   }
 }

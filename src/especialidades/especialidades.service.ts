@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class EspecialidadesService {
@@ -7,7 +7,7 @@ export class EspecialidadesService {
 
   async getEspecialidades(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl }
+      where: { url: clinicaUrl },
     });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
@@ -19,7 +19,7 @@ export class EspecialidadesService {
 
   async updateEspecialidades(clinicaUrl: string, especialidades: string[]) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl }
+      where: { url: clinicaUrl },
     });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');

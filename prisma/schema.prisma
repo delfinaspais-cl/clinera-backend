@@ -40,9 +40,12 @@ model Clinica {
 
   users          User[]
   mensajes       Mensaje[]
+  notificaciones Notificacion[]
   turnos         Turno[]
   horarios       Horario[]
   especialidades Especialidad[]
+  whatsappMessages WhatsAppMessage[]
+  whatsappTemplates WhatsAppTemplate[]
 }
 
 model Mensaje {
@@ -51,11 +54,28 @@ model Mensaje {
   mensaje   String
   tipo      String // "pago" | "soporte" | "general"
   leido     Boolean  @default(false)
-  clinicaId String
+  clinicaId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clinica Clinica @relation(fields: [clinicaId], references: [id])
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+}
+
+model Notificacion {
+  id              String    @id @default(cuid())
+  titulo          String
+  mensaje         String
+  tipo            String    @default("info") // "info" | "warning" | "error" | "success"
+  prioridad       String    @default("media") // "baja" | "media" | "alta"
+  leida           Boolean   @default(false)
+  clinicaId       String
+  destinatarioId  String?   // Si es null, es para todos los usuarios de la clínica
+  fechaVencimiento DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clinica      Clinica? @relation(fields: [clinicaId], references: [id])
+  destinatario User?    @relation("UserNotifications", fields: [destinatarioId], references: [id])
 }
 
 model User {
@@ -72,9 +92,20 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  clinica      Clinica?      @relation(fields: [clinicaId], references: [id])
-  patient      Patient?
-  professional Professional?
+  // Campos adicionales para configuración del propietario
+  whatsapp     String?
+  facebook     String?
+  instagram    String?
+  website      String?
+  avatar_url   String?
+  configuracion String? // JSON object
+
+  clinica         Clinica?         @relation(fields: [clinicaId], references: [id])
+  patient         Patient?
+  professional    Professional?
+  notificaciones  Notificacion[]   @relation("UserNotifications")
+  pushTokens      PushNotificationToken[]
+  whatsappMessages WhatsAppMessage[]
 }
 
 model Turno {
@@ -147,6 +178,118 @@ model Especialidad {
   name      String
   clinicaId String
   clinica   Clinica @relation(fields: [clinicaId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+model PushNotificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String   // "android" | "ios" | "web"
+  deviceId  String?  // Identificador único del dispositivo
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([platform])
+}
+
+model WhatsAppMessage {
+  id              String   @id @default(cuid())
+  phoneNumberId   String   // ID del número de teléfono de WhatsApp Business
+  to              String   // Número de teléfono del destinatario
+  from            String   // Número de teléfono del remitente (WhatsApp Business)
+  messageType     String   // "text" | "template" | "image" | "document" | "audio" | "video"
+  messageText     String?  // Contenido del mensaje de texto
+  templateName    String?  // Nombre de la plantilla (si es template)
+  templateParams  String?  // Parámetros de la plantilla en JSON
+  mediaUrl        String?  // URL del archivo multimedia
+  mediaId         String?  // ID del archivo multimedia en WhatsApp
+  wamid           String?  // WhatsApp Message ID
+  status          String   @default("pending") // "pending" | "sent" | "delivered" | "read" | "failed"
+  errorCode       String?  // Código de error si falló
+  errorMessage    String?  // Mensaje de error si falló
+  clinicaId       String?
+  userId          String?  // Usuario que envió el mensaje
+  metadata        String?  // Datos adicionales en JSON
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([to])
+  @@index([status])
+  @@index([clinicaId])
+  @@index([userId])
+  @@index([wamid])
+}
+
+model WhatsAppTemplate {
+  id          String   @id @default(cuid())
+  name        String   // Nombre de la plantilla
+  language    String   @default("es") // Código de idioma
+  category    String   // "marketing" | "utility" | "authentication"
+  status      String   @default("pending") // "pending" | "approved" | "rejected"
+  components  String   // Componentes de la plantilla en JSON
+  example     String?  // Ejemplo de uso
+  clinicaId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+
+  @@index([name])
+  @@index([status])
+  @@index([clinicaId])
+}
+
+model Contacto {
+  id            String   @id @default(cuid())
+  nombre        String
+  email         String
+  telefono      String?
+  empresa       String?
+  tipoConsulta  String
+  plan          String?
+  mensaje       String
+  estado        String   @default("nuevo")
+  procesado     Boolean  @default(false)
+  notas         String?
+  metadata      String?  // JSON object
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([estado])
+  @@index([tipoConsulta])
+  @@index([createdAt(sort: Desc)])
+  @@index([email])
+}
+
+model WhatsAppWebhook {
+  id        String   @id @default(cuid())
+  eventType String   // "message" | "message_status" | "template_status"
+  payload   String   // Payload completo del webhook en JSON
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([processed])
 }
 
 // model Admin {

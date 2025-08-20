@@ -11,41 +11,40 @@ export class UsersService {
   }
 
   async findMe(userId: string) {
-  return this.prisma.user.findUnique({
-  where: { id: userId },
-  });
- }
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+  }
 
- async updateProfile(userId: string, dto: UpdateProfileDto) {
-  return this.prisma.user.update({
-    where: { id: userId },
-    data: {
-      name: dto.name,
-      email: dto.email,
-      phone: dto.phone,
-      location: dto.location,
-      bio: dto.bio,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      location: true,
-      bio: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
- }
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: dto.name,
+        email: dto.email,
+        phone: dto.phone,
+        location: dto.location,
+        bio: dto.bio,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        location: true,
+        bio: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 
- async findPatients() {
-  return this.prisma.user.findMany({
-    where: {
-      role: 'PATIENT',
-    },
-  });
-}
-
+  async findPatients() {
+    return this.prisma.user.findMany({
+      where: {
+        role: 'PATIENT',
+      },
+    });
+  }
 }

@@ -7,7 +7,7 @@ export class HorariosService {
 
   async getHorarios(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl }
+      where: { url: clinicaUrl },
     });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
@@ -19,7 +19,7 @@ export class HorariosService {
 
   async updateHorarios(clinicaUrl: string, horarios: any[]) {
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl }
+      where: { url: clinicaUrl },
     });
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');

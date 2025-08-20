@@ -7,8 +7,10 @@ async function main() {
   const password = await bcrypt.hash('123456', 10);
 
   // 1. Crea clínica
-  const clinica = await prisma.clinica.create({
-    data: {
+  const clinica = await prisma.clinica.upsert({
+    where: { url: 'clinica-demo' },
+    update: {},
+    create: {
       name: 'Clínica Demo',
       url: 'clinica-demo',
       colorPrimario: '#3B82F6',
@@ -40,7 +42,7 @@ async function main() {
   });
 
   // 4. Crea usuarios por rol
-  const roles = ['ADMIN', 'OWNER', 'SECRETARY', 'PROFESSIONAL', 'PATIENT'] as const;
+  const roles = ['ADMIN', 'SECRETARY', 'PROFESSIONAL', 'PATIENT'] as const;
 
   for (const role of roles) {
     for (let i = 1; i <= 2; i++) {
@@ -62,7 +64,26 @@ async function main() {
     }
   }
 
-  // 5. Crea profesionales
+  // 5. Crea usuarios OWNER (sin clinicaId)
+  for (let i = 1; i <= 2; i++) {
+    await prisma.user.upsert({
+      where: { email: `owner${i}@clinera.io` },
+      update: {},
+      create: {
+        email: `owner${i}@clinera.io`,
+        password,
+        role: 'OWNER',
+        name: `Owner ${i}`,
+        phone: `+54 11 5555-55${i}${i}`,
+        location: 'Buenos Aires',
+        bio: 'Soy un propietario del sistema',
+        clinicaId: null, // Los OWNER no tienen clínica específica
+        estado: 'activo',
+      },
+    });
+  }
+
+  // 6. Crea profesionales
   const professionalUsers = await prisma.user.findMany({
     where: { role: 'PROFESSIONAL' },
   });
@@ -81,7 +102,7 @@ async function main() {
     });
   }
 
-  // 6. Crea pacientes (relacionados con usuarios de rol PATIENT)
+  // 7. Crea pacientes (relacionados con usuarios de rol PATIENT)
   const patientUsers = await prisma.user.findMany({
     where: { role: 'PATIENT' },
   });

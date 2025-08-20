@@ -12,4 +12,4 @@ export class ClinicaLoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
-} 
+}

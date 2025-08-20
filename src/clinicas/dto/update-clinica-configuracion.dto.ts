@@ -24,4 +24,4 @@ export class UpdateClinicaConfiguracionDto {
     instagram?: string;
     facebook?: string;
   };
-} 
+}

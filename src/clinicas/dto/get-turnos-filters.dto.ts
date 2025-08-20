@@ -4,7 +4,7 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 export enum TurnoEstado {
   PENDIENTE = 'pendiente',
   CONFIRMADO = 'confirmado',
-  CANCELADO = 'cancelado'
+  CANCELADO = 'cancelado',
 }
 
 export class GetTurnosFiltersDto extends PaginationDto {
