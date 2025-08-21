@@ -3,6 +3,6 @@ import { IsString, IsNotEmpty, IsIn } from 'class-validator';
 export class UpdateClinicaEstadoDto {
   @IsString()
   @IsNotEmpty()
-  @IsIn(['activa', 'inactiva'])
-  estado: string;
+  @IsIn(['activo', 'inactiva'], { message: 'El estado debe ser "activo" o "inactiva"' })
+  estado: 'activo' | 'inactiva';
 }

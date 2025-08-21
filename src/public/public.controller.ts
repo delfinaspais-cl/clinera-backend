@@ -13,6 +13,8 @@ import {
 import type { Response } from 'express';
 import { ClinicasService } from '../clinicas/clinicas.service';
 import { CreateTurnoLandingDto } from './dto/create-turno-landing.dto';
+import { CreateClinicaPendienteDto } from './dto/create-clinica-pendiente.dto';
+import { PublicClinicasPendientesService } from './public-clinicas-pendientes.service';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfessionalsService } from '../professionals/professionals.service';
@@ -26,6 +28,7 @@ export class PublicController {
     private readonly authService: AuthService,
     private readonly prisma: PrismaService,
     private readonly professionalsService: ProfessionalsService,
+    private readonly publicClinicasPendientesService: PublicClinicasPendientesService,
   ) {}
 
   // ===== ENDPOINT DE REDIRECCIÓN TEMPORAL =====
@@ -59,6 +62,13 @@ export class PublicController {
   ) {
     // Este endpoint es público, no requiere autenticación
     return this.clinicasService.createTurnoFromLanding(clinicaUrl, dto);
+  }
+
+  // ===== NUEVO ENDPOINT PÚBLICO PARA CREAR CLÍNICAS PENDIENTES =====
+  @Post('clinicas-pendientes')
+  async createClinicaPendiente(@Body() dto: CreateClinicaPendienteDto) {
+    // Este endpoint es público, no requiere autenticación
+    return this.publicClinicasPendientesService.createClinicaPendiente(dto);
   }
 
   // ===== NUEVO ENDPOINT PÚBLICO PARA CREAR PROFESIONALES =====

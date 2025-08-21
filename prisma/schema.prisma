@@ -17,26 +17,28 @@ enum Role {
 }
 
 model Clinica {
-  id              String    @id @default(cuid())
-  name            String
-  url             String    @unique @map("slug")
-  address         String?
-  phone           String?
-  email           String?
-  logo            String?
-  colorPrimario   String?   @default("#3B82F6")
-  colorSecundario String?   @default("#1E40AF")
-  estado          String?   @default("activa")
-  estadoPago      String?   @default("pagado")
-  fechaCreacion   DateTime  @default(now())
-  ultimoPago      DateTime?
-  proximoPago     DateTime?
-  descripcion     String?
-  contacto        String? // JSON object
-  rating          Float?    @default(4.5)
-  stats           String? // JSON object
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  name                  String
+  url                   String    @unique @map("slug")
+  address               String?
+  phone                 String?
+  email                 String?
+  logo                  String?
+  colorPrimario         String?   @default("#3B82F6")
+  colorSecundario       String?   @default("#1E40AF")
+  estado                String?   @default("activa")
+  estadoPago            String?   @default("pagado")
+  fechaCreacion         DateTime  @default(now())
+  ultimoPago            DateTime?
+  proximoPago           DateTime?
+  descripcion           String?
+  contacto              String? // JSON object
+  rating                Float?    @default(4.5)
+  stats                 String? // JSON object
+  pendienteAprobacion   Boolean   @default(false)
+  fuente                String?   @default("owner_dashboard") // "landing_page" | "owner_dashboard"
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   users          User[]
   mensajes       Mensaje[]
