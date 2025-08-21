@@ -72,9 +72,9 @@ export class CreateClinicaPendienteDto {
 
   @IsString()
   @IsOptional()
-  estado?: string = 'inactiva';
+  estado?: string = 'activo';
 
   @IsBoolean()
   @IsOptional()
-  pendiente_aprobacion?: boolean = true;
+  pendiente_aprobacion?: boolean = false;
 }
