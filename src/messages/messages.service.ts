@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMensajeDto } from './dto/create-message.dto';
 import { UpdateMensajeDto } from './dto/update-message.dto';
@@ -9,15 +9,25 @@ export class MensajesService {
 
   async findAll(clinicaUrl: string) {
     try {
+      console.log(`Buscando clínica con URL: ${clinicaUrl}`);
+      
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
       });
-      if (!clinica) throw new NotFoundException('Clínica no encontrada');
+      
+      if (!clinica) {
+        console.log(`Clínica no encontrada para URL: ${clinicaUrl}`);
+        throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
+      }
+
+      console.log(`Clínica encontrada: ${clinica.id}, buscando mensajes...`);
 
       const mensajes = await this.prisma.mensaje.findMany({
         where: { clinicaId: clinica.id },
         orderBy: { createdAt: 'desc' },
       });
+
+      console.log(`Encontrados ${mensajes.length} mensajes para la clínica`);
 
       return {
         success: true,
@@ -33,7 +43,21 @@ export class MensajesService {
         })),
       };
     } catch (error) {
-      throw error;
+      console.error('Error en findAll mensajes:', error);
+      
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      if (error.code === 'P2025') {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+      
+      if (error.code === 'P2002') {
+        throw new InternalServerErrorException('Error de duplicación en la base de datos');
+      }
+      
+      throw new InternalServerErrorException('Error interno del servidor al cargar mensajes');
     }
   }
 

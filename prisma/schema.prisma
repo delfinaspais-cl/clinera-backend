@@ -42,6 +42,7 @@ model Clinica {
 
   users          User[]
   mensajes       Mensaje[]
+  conversations  Conversation[]
   notificaciones Notificacion[]
   turnos         Turno[]
   horarios       Horario[]
@@ -61,6 +62,53 @@ model Mensaje {
   updatedAt DateTime @updatedAt
 
   clinica Clinica? @relation(fields: [clinicaId], references: [id])
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  name          String
+  role          String   // "Paciente" | "Doctora" | "Staff" | "Admin"
+  avatar        String?  // Iniciales o URL de avatar
+  stage         String   @default("prospectos") // "prospectos" | "activas" | "agendados" | "completados" | "cerradas"
+  tags          String[] @default([])
+  isOnline      Boolean  @default(false)
+  phone         String?
+  email         String?
+  unreadCount   Int      @default(0)
+  clinicaId     String
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clinica   Clinica   @relation(fields: [clinicaId], references: [id])
+  messages  ChatMessage[]
+  turnos    Turno[]   // Relación con turnos si es un paciente
+
+  @@index([clinicaId])
+  @@index([stage])
+  @@index([lastMessageAt(sort: Desc)])
+}
+
+model ChatMessage {
+  id             String   @id @default(cuid())
+  content        String
+  isFromUser     Boolean  @default(false) // true = enviado por el usuario de la clínica, false = recibido
+  messageType    String   @default("text") // "text" | "whatsapp" | "email" | "system"
+  status         String   @default("sent") // "sent" | "delivered" | "read" | "failed"
+  conversationId String
+  userId         String?  // Usuario que envió el mensaje (si es fromUser = true)
+  whatsappMessageId String? // ID del mensaje de WhatsApp si aplica
+  metadata       String?  // JSON con datos adicionales
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+  whatsappMessage WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id])
+
+  @@index([conversationId])
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
 }
 
 model Notificacion {
@@ -108,24 +156,27 @@ model User {
   notificaciones  Notificacion[]   @relation("UserNotifications")
   pushTokens      PushNotificationToken[]
   whatsappMessages WhatsAppMessage[]
+  chatMessages    ChatMessage[]
 }
 
 model Turno {
-  id           String   @id @default(cuid())
-  paciente     String
-  email        String
-  telefono     String?
-  especialidad String
-  doctor       String
-  fecha        DateTime
-  hora         String
-  estado       String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
-  motivo       String?
-  clinicaId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(cuid())
+  paciente       String
+  email          String
+  telefono       String?
+  especialidad   String
+  doctor         String
+  fecha          DateTime
+  hora           String
+  estado         String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
+  motivo         String?
+  clinicaId      String
+  conversationId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  clinica Clinica @relation(fields: [clinicaId], references: [id])
+  clinica      Clinica        @relation(fields: [clinicaId], references: [id])
+  conversation Conversation?  @relation(fields: [conversationId], references: [id])
 }
 
 model Patient {
@@ -234,6 +285,7 @@ model WhatsAppMessage {
 
   clinica Clinica? @relation(fields: [clinicaId], references: [id])
   user    User?    @relation(fields: [userId], references: [id])
+  chatMessages ChatMessage[]
 
   @@index([to])
   @@index([status])
