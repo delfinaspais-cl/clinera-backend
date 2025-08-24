@@ -5,6 +5,7 @@ export enum TurnoEstado {
   PENDIENTE = 'pendiente',
   CONFIRMADO = 'confirmado',
   CANCELADO = 'cancelado',
+  COMPLETADO = 'completado',
 }
 
 export class GetTurnosFiltersDto extends PaginationDto {

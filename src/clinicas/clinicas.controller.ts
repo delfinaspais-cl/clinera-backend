@@ -194,6 +194,66 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/turnos/hoy')
+  @UseGuards(JwtAuthGuard)
+  async getTurnosHoy(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('=== DEBUG TURNOS HOY ===');
+    console.log('req.user:', req.user);
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('===================');
+
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      // OWNER puede acceder a cualquier clínica
+      return this.clinicasService.getTurnosHoy(clinicaUrl);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      // ADMIN solo puede acceder a su propia clínica
+      return this.clinicasService.getTurnosHoy(clinicaUrl);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
+  @Get(':clinicaUrl/calendario/stats')
+  @UseGuards(JwtAuthGuard)
+  async getCalendarioStats(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
+  ) {
+    console.log('=== DEBUG CALENDARIO STATS ===');
+    console.log('req.user:', req.user);
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('fechaDesde:', fechaDesde);
+    console.log('fechaHasta:', fechaHasta);
+    console.log('===================');
+
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      // OWNER puede acceder a cualquier clínica
+      return this.clinicasService.getCalendarioStats(clinicaUrl, fechaDesde, fechaHasta);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      // ADMIN solo puede acceder a su propia clínica
+      return this.clinicasService.getCalendarioStats(clinicaUrl, fechaDesde, fechaHasta);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
   // @Post(':clinicaUrl/turnos')
   // @UseGuards(JwtAuthGuard)
   // async createTurno(

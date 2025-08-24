@@ -160,23 +160,26 @@ model User {
 }
 
 model Turno {
-  id             String   @id @default(cuid())
-  paciente       String
-  email          String
-  telefono       String?
-  especialidad   String
-  doctor         String
-  fecha          DateTime
-  hora           String
-  estado         String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado"
-  motivo         String?
-  clinicaId      String
-  conversationId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(cuid())
+  paciente     String
+  email        String
+  telefono     String?
+  especialidad String
+  doctor       String
+  fecha        DateTime
+  hora         String
+  duracionMin  Int      @default(30) // Duración en minutos
+  estado       String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado" | "completado"
+  motivo       String?
+  notas        String?  // Notas/observaciones de la cita
+  servicio     String?  // Servicio/tratamiento específico
+  professionalId String? // Relación con el profesional
+  clinicaId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  clinica      Clinica        @relation(fields: [clinicaId], references: [id])
-  conversation Conversation?  @relation(fields: [conversationId], references: [id])
+  clinica      Clinica @relation(fields: [clinicaId], references: [id])
+  professional Professional? @relation(fields: [professionalId], references: [id])
 }
 
 model Patient {
@@ -203,6 +206,7 @@ model Professional {
 
   user    User     @relation(fields: [userId], references: [id])
   agendas Agenda[]
+  turnos  Turno[]  // Relación con turnos
 }
 
 model Agenda {

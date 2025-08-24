@@ -6,6 +6,9 @@ import {
   IsEmail,
   Matches,
   MinLength,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 
 export class CreateTurnoDto {
@@ -59,8 +62,26 @@ export class CreateTurnoDto {
   })
   hora: string;
 
+  @IsInt({ message: 'La duración debe ser un número entero' })
+  @Min(15, { message: 'La duración mínima es 15 minutos' })
+  @Max(480, { message: 'La duración máxima es 8 horas (480 minutos)' })
+  @IsOptional()
+  duracionMin?: number;
+
   @IsString()
   @IsOptional()
   @MinLength(10, { message: 'El motivo debe tener al menos 10 caracteres' })
   motivo?: string;
+
+  @IsString()
+  @IsOptional()
+  notas?: string;
+
+  @IsString()
+  @IsOptional()
+  servicio?: string;
+
+  @IsString()
+  @IsOptional()
+  professionalId?: string;
 }

@@ -332,6 +332,18 @@ export class ClinicasService {
             orderBy,
             skip,
             take: limit,
+            include: {
+              professional: {
+                include: {
+                  user: {
+                    select: {
+                      name: true,
+                      email: true,
+                    }
+                  }
+                }
+              }
+            },
           }),
           this.prisma.turno.count({ where: whereClause }),
         ]);
@@ -348,9 +360,9 @@ export class ClinicasService {
 
       // Obtener estadísticas de forma simplificada (sin groupBy)
       console.log('Ejecutando consultas de estadísticas...');
-      let confirmados, pendientes, cancelados;
+      let confirmados, pendientes, cancelados, completados;
       try {
-        [confirmados, pendientes, cancelados] = await Promise.all([
+        [confirmados, pendientes, cancelados, completados] = await Promise.all([
           this.prisma.turno.count({
             where: {
               clinicaId: clinica.id,
@@ -369,12 +381,19 @@ export class ClinicasService {
               estado: 'cancelado',
             },
           }),
+          this.prisma.turno.count({
+            where: {
+              clinicaId: clinica.id,
+              estado: 'completado',
+            },
+          }),
         ]);
 
         console.log('Stats obtenidas:', {
           confirmados,
           pendientes,
           cancelados,
+          completados,
         });
       } catch (statsError) {
         console.error('Error en consultas de estadísticas:', statsError);
@@ -389,24 +408,43 @@ export class ClinicasService {
         confirmados: confirmados,
         pendientes: pendientes,
         cancelados: cancelados,
+        completados: completados,
       };
 
       // Transformar los datos para el formato requerido
       console.log('Transformando datos de turnos...');
       let turnosFormateados;
       try {
-        turnosFormateados = turnos.map((turno) => ({
-          id: turno.id,
-          paciente: turno.paciente,
-          email: turno.email,
-          telefono: turno.telefono,
-          especialidad: turno.especialidad,
-          doctor: turno.doctor,
-          fecha: turno.fecha.toISOString().split('T')[0],
-          hora: turno.hora,
-          estado: turno.estado,
-          motivo: turno.motivo,
-        }));
+        turnosFormateados = turnos.map((turno) => {
+          // Calcular hora de fin basada en la duración
+          const horaInicio = new Date(`2000-01-01T${turno.hora}`);
+          const horaFin = new Date(horaInicio.getTime() + (turno.duracionMin || 30) * 60000);
+          const horaFinStr = horaFin.toTimeString().slice(0, 5);
+          
+          return {
+            id: turno.id,
+            paciente: turno.paciente,
+            email: turno.email,
+            telefono: turno.telefono,
+            especialidad: turno.especialidad,
+            doctor: turno.doctor,
+            fecha: turno.fecha.toISOString().split('T')[0],
+            hora: turno.hora,
+            horaFin: horaFinStr,
+            duracionMin: turno.duracionMin || 30,
+            estado: turno.estado,
+            motivo: turno.motivo,
+            notas: turno.notas,
+            servicio: turno.servicio,
+            professionalId: turno.professionalId,
+            professional: turno.professional ? {
+              id: turno.professional.id,
+              name: turno.professional.name,
+              specialties: turno.professional.specialties,
+              user: turno.professional.user,
+            } : null,
+          };
+        });
         console.log('Datos transformados exitosamente');
       } catch (transformError) {
         console.error('Error transformando datos:', transformError);
@@ -433,6 +471,184 @@ export class ClinicasService {
       return result;
     } catch (error) {
       console.error('Error al obtener turnos de clínica:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getTurnosHoy(clinicaUrl: string) {
+    try {
+      console.log('=== GET TURNOS HOY ===');
+      console.log('clinicaUrl:', clinicaUrl);
+
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Obtener la fecha de hoy
+      const hoy = new Date();
+      const fechaHoy = hoy.toISOString().split('T')[0];
+
+      console.log('Fecha de hoy:', fechaHoy);
+
+      // Obtener turnos de hoy
+      const turnosHoy = await this.prisma.turno.findMany({
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: new Date(fechaHoy),
+            lt: new Date(new Date(fechaHoy).getTime() + 24 * 60 * 60 * 1000),
+          },
+        },
+        orderBy: [
+          { hora: 'asc' },
+        ],
+        include: {
+          professional: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                }
+              }
+            }
+          }
+        },
+      });
+
+      console.log('Turnos de hoy encontrados:', turnosHoy.length);
+
+      // Transformar los datos para el formato requerido
+      const turnosFormateados = turnosHoy.map((turno) => {
+        // Calcular hora de fin basada en la duración
+        const horaInicio = new Date(`2000-01-01T${turno.hora}`);
+        const horaFin = new Date(horaInicio.getTime() + (turno.duracionMin || 30) * 60000);
+        const horaFinStr = horaFin.toTimeString().slice(0, 5);
+        
+        return {
+          id: turno.id,
+          paciente: turno.paciente,
+          email: turno.email,
+          telefono: turno.telefono,
+          especialidad: turno.especialidad,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toISOString().split('T')[0],
+          hora: turno.hora,
+          horaFin: horaFinStr,
+          duracionMin: turno.duracionMin || 30,
+          estado: turno.estado,
+          motivo: turno.motivo,
+          notas: turno.notas,
+          servicio: turno.servicio,
+          professionalId: turno.professionalId,
+          professional: turno.professional ? {
+            id: turno.professional.id,
+            name: turno.professional.name,
+            specialties: turno.professional.specialties,
+            user: turno.professional.user,
+          } : null,
+        };
+      });
+
+      const result = {
+        success: true,
+        turnos: turnosFormateados,
+        total: turnosFormateados.length,
+        fecha: fechaHoy,
+      };
+
+      console.log('Resultado final:', result);
+      return result;
+    } catch (error) {
+      console.error('Error al obtener turnos de hoy:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getCalendarioStats(clinicaUrl: string, fechaDesde?: string, fechaHasta?: string) {
+    try {
+      console.log('=== GET CALENDARIO STATS ===');
+      console.log('clinicaUrl:', clinicaUrl);
+      console.log('fechaDesde:', fechaDesde);
+      console.log('fechaHasta:', fechaHasta);
+
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros de fecha
+      const whereClause: any = {
+        clinicaId: clinica.id,
+      };
+
+      if (fechaDesde || fechaHasta) {
+        whereClause.fecha = {};
+        if (fechaDesde) {
+          whereClause.fecha.gte = new Date(fechaDesde);
+        }
+        if (fechaHasta) {
+          whereClause.fecha.lte = new Date(fechaHasta);
+        }
+      }
+
+      // Obtener turnos agrupados por fecha
+      const turnosPorFecha = await this.prisma.turno.groupBy({
+        by: ['fecha', 'estado'],
+        where: whereClause,
+        _count: {
+          id: true,
+        },
+      });
+
+      // Transformar datos para el formato requerido
+      const calendarioData = turnosPorFecha.reduce((acc, item) => {
+        const fecha = item.fecha.toISOString().split('T')[0];
+        const estado = item.estado;
+        const count = item._count.id;
+
+        if (!acc[fecha]) {
+          acc[fecha] = {
+            fecha,
+            total: 0,
+            confirmados: 0,
+            pendientes: 0,
+            cancelados: 0,
+            completados: 0,
+          };
+        }
+
+        acc[fecha].total += count;
+        acc[fecha][estado + 's'] += count; // confirmados, pendientes, etc.
+
+        return acc;
+      }, {});
+
+      const result = {
+        success: true,
+        calendario: Object.values(calendarioData),
+        totalDias: Object.keys(calendarioData).length,
+      };
+
+      console.log('Resultado final:', result);
+      return result;
+    } catch (error) {
+      console.error('Error al obtener estadísticas del calendario:', error);
       if (error instanceof BadRequestException) {
         throw error;
       }
@@ -1054,7 +1270,11 @@ export class ClinicasService {
         doctor: dto.doctor,
         fecha: new Date(dto.fecha),
         hora: dto.hora,
+        duracionMin: dto.duracionMin || 30,
         motivo: dto.motivo,
+        notas: dto.notas,
+        servicio: dto.servicio,
+        professionalId: dto.professionalId,
         clinicaId: clinica.id,
       },
     });
@@ -1099,7 +1319,11 @@ export class ClinicasService {
           doctor: dto.doctor,
           fecha: new Date(dto.fecha),
           hora: dto.hora,
+          duracionMin: dto.duracionMin || 30,
           motivo: dto.motivo,
+          notas: dto.notas,
+          servicio: dto.servicio,
+          professionalId: dto.professionalId,
           updatedAt: new Date(),
         },
       });
@@ -1115,8 +1339,12 @@ export class ClinicasService {
           doctor: turnoActualizado.doctor,
           fecha: turnoActualizado.fecha.toISOString().split('T')[0],
           hora: turnoActualizado.hora,
+          duracionMin: turnoActualizado.duracionMin,
           estado: turnoActualizado.estado,
           motivo: turnoActualizado.motivo,
+          notas: turnoActualizado.notas,
+          servicio: turnoActualizado.servicio,
+          professionalId: turnoActualizado.professionalId,
         },
       };
     } catch (error) {
