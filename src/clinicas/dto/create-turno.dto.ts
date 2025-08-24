@@ -39,14 +39,14 @@ export class CreateTurnoDto {
   especialidad: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'El doctor es requerido' })
+  @IsNotEmpty({ message: 'El profesional es requerido' })
   @MinLength(2, {
-    message: 'El nombre del doctor debe tener al menos 2 caracteres',
+    message: 'El nombre del profesional debe tener al menos 2 caracteres',
   })
   @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, {
-    message: 'El nombre del doctor solo puede contener letras y espacios',
+    message: 'El nombre del profesional solo puede contener letras y espacios',
   })
-  doctor: string;
+  profesional: string;
 
   @IsDateString(
     {},
@@ -66,7 +66,7 @@ export class CreateTurnoDto {
   @Min(15, { message: 'La duración mínima es 15 minutos' })
   @Max(480, { message: 'La duración máxima es 8 horas (480 minutos)' })
   @IsOptional()
-  duracionMin?: number;
+  duracion?: number;
 
   @IsString()
   @IsOptional()
@@ -79,7 +79,7 @@ export class CreateTurnoDto {
 
   @IsString()
   @IsOptional()
-  servicio?: string;
+  tratamiento?: string;
 
   @IsString()
   @IsOptional()
