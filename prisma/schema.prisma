@@ -180,6 +180,8 @@ model Turno {
 
   clinica      Clinica @relation(fields: [clinicaId], references: [id])
   professional Professional? @relation(fields: [professionalId], references: [id])
+  conversation Conversation? @relation(fields: [conversationId], references: [id])
+  conversationId String?
 }
 
 model Patient {
