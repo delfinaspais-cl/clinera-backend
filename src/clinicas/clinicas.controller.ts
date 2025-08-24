@@ -29,6 +29,7 @@ import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
+import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dto';
 import { CreateNotificacionDto } from './dto/create-notificacion.dto';
@@ -847,6 +848,86 @@ export class ClinicasController {
     } else {
       throw new UnauthorizedException(
         'Acceso denegado. No tienes permisos para crear turnos en esta clínica.',
+      );
+    }
+  }
+
+  @Get(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener detalles de un turno específico' })
+  @ApiResponse({ status: 200, description: 'Detalles del turno obtenidos exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
+  async getTurnoById(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.getTurnoById(clinicaUrl, turnoId);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.getTurnoById(clinicaUrl, turnoId);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+      );
+    }
+  }
+
+  @Put(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Actualizar un turno existente' })
+  @ApiResponse({ status: 200, description: 'Turno actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
+  async updateTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+    @Body() dto: UpdateTurnoDto,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para editar turnos en esta clínica.',
+      );
+    }
+  }
+
+  @Delete(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Eliminar un turno' })
+  @ApiResponse({ status: 200, description: 'Turno eliminado exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
+  async deleteTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.',
       );
     }
   }

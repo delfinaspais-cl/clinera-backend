@@ -9,6 +9,7 @@ import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracio
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
 import * as bcrypt from 'bcrypt';
 import { CreateTurnoDto } from './dto/create-turno.dto';
+import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 
 @Injectable()
@@ -1252,6 +1253,87 @@ export class ClinicasService {
     }
   }
 
+  async getTurnoById(clinicaUrl: string, turnoId: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el turno específico
+      const turno = await this.prisma.turno.findFirst({
+        where: {
+          id: turnoId,
+          clinicaId: clinica.id,
+        },
+        include: {
+          professional: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                }
+              }
+            }
+          }
+        },
+      });
+
+      if (!turno) {
+        throw new BadRequestException('Turno no encontrado');
+      }
+
+      // Calcular hora de fin basada en la duración
+      const horaInicio = new Date(`2000-01-01T${turno.hora}`);
+      const horaFin = new Date(horaInicio.getTime() + (turno.duracionMin || 30) * 60000);
+      const horaFinStr = horaFin.toTimeString().slice(0, 5);
+
+      // Transformar los datos para el formato requerido
+      const turnoFormateado = {
+        id: turno.id,
+        paciente: turno.paciente,
+        email: turno.email,
+        telefono: turno.telefono,
+        especialidad: turno.especialidad,
+        doctor: turno.doctor,
+        fecha: turno.fecha.toISOString().split('T')[0],
+        hora: turno.hora,
+        horaFin: horaFinStr,
+        duracionMin: turno.duracionMin || 30,
+        estado: turno.estado,
+        motivo: turno.motivo,
+        notas: turno.notas,
+        servicio: turno.servicio,
+        professionalId: turno.professionalId,
+        professional: turno.professional ? {
+          id: turno.professional.id,
+          name: turno.professional.name,
+          specialties: turno.professional.specialties,
+          user: turno.professional.user,
+        } : null,
+        clinicaId: turno.clinicaId,
+        createdAt: turno.createdAt,
+        updatedAt: turno.updatedAt,
+      };
+
+      return {
+        success: true,
+        turno: turnoFormateado,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener turno por ID:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
   async createTurno(clinicaUrl: string, dto: CreateTurnoDto) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
@@ -1285,7 +1367,7 @@ export class ClinicasService {
     };
   }
 
-  async updateTurno(clinicaUrl: string, turnoId: string, dto: CreateTurnoDto) {
+  async updateTurno(clinicaUrl: string, turnoId: string, dto: UpdateTurnoDto) {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
@@ -1324,6 +1406,7 @@ export class ClinicasService {
           notas: dto.notas,
           servicio: dto.tratamiento,
           professionalId: dto.professionalId,
+          estado: dto.estado || 'pendiente',
           updatedAt: new Date(),
         },
       });
