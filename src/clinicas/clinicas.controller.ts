@@ -261,26 +261,10 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl')
-  @UseGuards(JwtAuthGuard)
   async getClinicaInfo(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      // OWNER puede acceder a cualquier clínica
-      return this.clinicasService.getClinicaInfo(clinicaUrl);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede acceder a su propia clínica
-      return this.clinicasService.getClinicaInfo(clinicaUrl);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
-    }
+    return this.clinicasService.getClinicaInfo(clinicaUrl);
   }
 
   @Get(':clinicaUrl/configuracion')
@@ -403,29 +387,14 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/turnos')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener turnos de la clínica' })
   @ApiResponse({ status: 200, description: 'Turnos obtenidos exitosamente' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async getTurnos(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() filters: GetTurnosFiltersDto,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.getTurnos(clinicaUrl, filters);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.getTurnos(clinicaUrl, filters);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
-    }
+    return this.clinicasService.getTurnos(clinicaUrl, filters);
   }
 
   @Post(':clinicaUrl/turnos')
@@ -542,29 +511,14 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/notificaciones')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener notificaciones de la clínica' })
   @ApiResponse({ status: 200, description: 'Notificaciones obtenidas exitosamente' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async getNotificaciones(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() filters: GetNotificacionesFiltersDto,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.getNotificaciones(clinicaUrl, filters);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.getNotificaciones(clinicaUrl, filters);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
-    }
+    return this.clinicasService.getNotificaciones(clinicaUrl, filters);
   }
 
   @Post(':clinicaUrl/notificaciones')

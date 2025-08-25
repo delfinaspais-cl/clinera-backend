@@ -13,7 +13,6 @@ import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
-@UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/profesionales')
 export class ProfessionalsController {
   constructor(private readonly professionalsService: ProfessionalsService) {}

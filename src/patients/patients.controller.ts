@@ -24,7 +24,6 @@ import { UpdatePatientDto } from './dto/update-client.dto';
 import { SearchPatientsDto } from './dto/search-patients.dto';
 
 @ApiTags('Gestión de Pacientes')
-@UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/pacientes')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
