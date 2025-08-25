@@ -172,10 +172,10 @@ export class AuthService {
         throw new BadRequestException('La clínica está inactiva. Contacta al administrador del sistema.');
       }
 
-      // Buscar usuario por username (email) y clínica
+      // Buscar usuario por email y clínica
       const user = await this.prisma.user.findFirst({
         where: {
-          email: dto.username,
+          email: dto.email,
           clinicaId: clinica.id,
         },
         include: {

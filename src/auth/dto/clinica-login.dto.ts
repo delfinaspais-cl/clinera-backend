@@ -7,7 +7,7 @@ export class ClinicaLoginDto {
 
   @IsString()
   @IsNotEmpty()
-  username: string;
+  email: string;
 
   @IsString()
   @IsNotEmpty()
