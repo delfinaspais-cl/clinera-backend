@@ -201,6 +201,81 @@ export class ClinicasController {
     }
   }
 
+  @Post(':clinicaUrl/turnos/:turnoId/confirm')
+  @UseGuards(JwtAuthGuard)
+  async confirmTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    // Si es ADMIN de la clínica o OWNER, puede acceder
+    if (req.user.role === 'OWNER') {
+      // OWNER puede acceder a cualquier clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'confirmado' });
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      // ADMIN solo puede acceder a su propia clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'confirmado' });
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para confirmar turnos en esta clínica.',
+      );
+    }
+  }
+
+  @Post(':clinicaUrl/turnos/:turnoId/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    // Si es ADMIN de la clínica o OWNER, puede acceder
+    if (req.user.role === 'OWNER') {
+      // OWNER puede acceder a cualquier clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'cancelado' });
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      // ADMIN solo puede acceder a su propia clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'cancelado' });
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para cancelar turnos en esta clínica.',
+      );
+    }
+  }
+
+  @Post(':clinicaUrl/turnos/:turnoId/complete')
+  @UseGuards(JwtAuthGuard)
+  async completeTurno(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('turnoId') turnoId: string,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    // Si es ADMIN de la clínica o OWNER, puede acceder
+    if (req.user.role === 'OWNER') {
+      // OWNER puede acceder a cualquier clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'completado' });
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      // ADMIN solo puede acceder a su propia clínica
+      return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'completado' });
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para completar turnos en esta clínica.',
+      );
+    }
+  }
+
   @Get(':clinicaUrl/turnos/stats')
   @UseGuards(JwtAuthGuard)
   async getTurnosStats(
