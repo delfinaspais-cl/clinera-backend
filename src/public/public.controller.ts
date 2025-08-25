@@ -33,15 +33,16 @@ export class PublicController {
 
   // ===== ENDPOINT DE REDIRECCIÓN TEMPORAL =====
   // Para manejar URLs sin /api/ desde el frontend
-  @Get('redirect/:clinicaUrl/exists')
-  async redirectClinicaExists(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Res() res: Response,
-  ) {
-    // Redirigir a la URL correcta
-    const correctUrl = `/api/public/clinica/${clinicaUrl}/exists`;
-    return res.redirect(HttpStatus.MOVED_PERMANENTLY, correctUrl);
-  }
+  // REMOVIDO: Este endpoint causaba redirección infinita
+  // @Get('redirect/:clinicaUrl/exists')
+  // async redirectClinicaExists(
+  //   @Param('clinicaUrl') clinicaUrl: string,
+  //   @Res() res: Response,
+  // ) {
+  //   // Redirigir a la URL correcta
+  //   const correctUrl = `/api/public/clinica/${clinicaUrl}/exists`;
+  //   return res.redirect(HttpStatus.MOVED_PERMANENTLY, correctUrl);
+  // }
 
   @Get('clinica/:clinicaUrl/landing')
   async getClinicaLanding(@Param('clinicaUrl') clinicaUrl: string) {
