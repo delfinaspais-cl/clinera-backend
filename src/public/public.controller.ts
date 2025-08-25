@@ -21,7 +21,7 @@ import { ProfessionalsService } from '../professionals/professionals.service';
 import { CreateProfessionalDto } from '../professionals/dto/create-professional.dto';
 import { UpdateProfessionalDto } from '../professionals/dto/update-professional.dto';
 
-@Controller('api/public')
+@Controller('public')
 export class PublicController {
   constructor(
     private readonly clinicasService: ClinicasService,
@@ -54,24 +54,91 @@ export class PublicController {
   async checkClinicaExists(@Param('clinicaUrl') clinicaUrl: string) {
     // Este endpoint es público, no requiere autenticación
     console.log('🔍 Verificando existencia de clínica:', clinicaUrl);
+    console.log('📝 URL completa:', `/api/public/clinica/${clinicaUrl}/exists`);
+    
     try {
+      // Validar que clinicaUrl no esté vacío
+      if (!clinicaUrl || clinicaUrl.trim() === '') {
+        console.error('❌ clinicaUrl está vacío o es inválido');
+        return {
+          success: false,
+          exists: false,
+          message: 'URL de clínica inválida',
+        };
+      }
+
       const result = await this.clinicasService.checkClinicaExists(clinicaUrl);
       console.log('✅ Resultado:', result);
-      return result;
+      
+      // Agregar headers para evitar cache
+      return {
+        ...result,
+        timestamp: new Date().toISOString(),
+        debug: {
+          requestedUrl: clinicaUrl,
+          endpoint: '/api/public/clinica/:clinicaUrl/exists'
+        }
+      };
     } catch (error) {
       console.error('❌ Error en checkClinicaExists:', error);
-      throw error;
+      return {
+        success: false,
+        exists: false,
+        message: 'Error interno del servidor',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
     }
   }
 
   // Endpoint de prueba simple
   @Get('test')
   async testEndpoint() {
+    // 🔧 CAMBIO TEMPORAL PARA FORZAR DEPLOY - REMOVER DESPUÉS
     return {
       success: true,
-      message: 'Endpoint de prueba funcionando',
-      timestamp: new Date().toISOString()
+      message: 'Endpoint de prueba funcionando - DEPLOY FORZADO',
+      timestamp: new Date().toISOString(),
+      version: '1.0.1'
     };
+  }
+
+  // Endpoint de prueba específico para el problema de redirección
+  @Get('debug-redirect')
+  async debugRedirect() {
+    return {
+      success: true,
+      message: 'Debug endpoint funcionando correctamente',
+      timestamp: new Date().toISOString(),
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    };
+  }
+
+  // Endpoint de prueba específico para clinica-cuyo
+  @Get('debug-clinica-cuyo')
+  async debugClinicaCuyo() {
+    try {
+      const result = await this.clinicasService.checkClinicaExists('clinica-cuyo');
+      return {
+        success: true,
+        message: 'Debug específico para clinica-cuyo',
+        result,
+        timestamp: new Date().toISOString(),
+        endpoint: '/api/public/debug-clinica-cuyo'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error en debug de clinica-cuyo',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 
   @Post('clinica/:clinicaUrl/landing/turnos')

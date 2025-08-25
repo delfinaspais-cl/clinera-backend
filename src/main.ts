@@ -18,6 +18,20 @@ async function bootstrap() {
     transform: true,
   }));
 
+  // Interceptor global para manejar respuestas
+  app.useGlobalInterceptors(new (class {
+    intercept(context: any, next: any) {
+      const response = context.switchToHttp().getResponse();
+      
+      // Agregar headers para evitar cache en endpoints públicos
+      response.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.header('Pragma', 'no-cache');
+      response.header('Expires', '0');
+      
+      return next.handle();
+    }
+  })());
+
   // Configuración de CORS más permisiva para desarrollo
   const isProduction = config.get<string>('NODE_ENV') === 'production';
 
@@ -42,9 +56,34 @@ async function bootstrap() {
       'X-Requested-With',
       'Accept',
     ],
+    // Agregar configuración para evitar redirecciones automáticas
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   };
 
   app.enableCors(corsOptions);
+
+  // Middleware personalizado para evitar redirecciones infinitas
+  app.use((req, res, next) => {
+    // Log de todas las requests para debugging
+    console.log(`🌐 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+    
+    // Verificar si hay redirecciones infinitas
+    const redirectCount = req.headers['x-redirect-count'] || 0;
+    if (redirectCount > 5) {
+      console.error('🚫 Redirección infinita detectada:', req.url);
+      return res.status(500).json({
+        error: 'Redirección infinita detectada',
+        url: req.url,
+        method: req.method
+      });
+    }
+    
+    // Agregar contador de redirecciones
+    req.headers['x-redirect-count'] = (parseInt(redirectCount.toString()) + 1).toString();
+    
+    next();
+  });
 
   // Configuración de Swagger
   const swaggerConfig = new DocumentBuilder()

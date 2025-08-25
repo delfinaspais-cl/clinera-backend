@@ -18,7 +18,7 @@ import { ContactosService } from './contactos.service';
 import { CreateContactoDto } from './dto/create-contacto.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
-@Controller('api/contact')
+@Controller('contact')
 export class ContactosController {
   constructor(private readonly contactosService: ContactosService) {}
 
