@@ -422,29 +422,14 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/turnos/:turnoId')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener detalles de un turno específico' })
   @ApiResponse({ status: 200, description: 'Detalles del turno obtenidos exitosamente' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
   async getTurnoById(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.getTurnoById(clinicaUrl, turnoId);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.getTurnoById(clinicaUrl, turnoId);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
-    }
+    return this.clinicasService.getTurnoById(clinicaUrl, turnoId);
   }
 
   @Put(':clinicaUrl/turnos/:turnoId')
@@ -476,29 +461,14 @@ export class ClinicasController {
   }
 
   @Delete(':clinicaUrl/turnos/:turnoId')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Eliminar un turno' })
   @ApiResponse({ status: 200, description: 'Turno eliminado exitosamente' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
   async deleteTurno(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para eliminar turnos en esta clínica.',
-      );
-    }
+    return this.clinicasService.deleteTurno(clinicaUrl, turnoId);
   }
 
   @Get(':clinicaUrl/notificaciones')
