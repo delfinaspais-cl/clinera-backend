@@ -53,7 +53,25 @@ export class PublicController {
   @Get('clinica/:clinicaUrl/exists')
   async checkClinicaExists(@Param('clinicaUrl') clinicaUrl: string) {
     // Este endpoint es público, no requiere autenticación
-    return this.clinicasService.checkClinicaExists(clinicaUrl);
+    console.log('🔍 Verificando existencia de clínica:', clinicaUrl);
+    try {
+      const result = await this.clinicasService.checkClinicaExists(clinicaUrl);
+      console.log('✅ Resultado:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error en checkClinicaExists:', error);
+      throw error;
+    }
+  }
+
+  // Endpoint de prueba simple
+  @Get('test')
+  async testEndpoint() {
+    return {
+      success: true,
+      message: 'Endpoint de prueba funcionando',
+      timestamp: new Date().toISOString()
+    };
   }
 
   @Post('clinica/:clinicaUrl/landing/turnos')
