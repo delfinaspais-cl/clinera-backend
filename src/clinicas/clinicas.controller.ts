@@ -440,6 +440,12 @@ export class ClinicasController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() dto: CreateTurnoDto,
   ) {
+    console.log('=== DEBUG CONTROLLER CREATE TURNO ===');
+    console.log('req.user:', req.user);
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('dto recibido:', JSON.stringify(dto, null, 2));
+    console.log('=====================================');
+
     // Verificar que el usuario tenga acceso a esta clínica
     if (req.user.role === 'OWNER') {
       return this.clinicasService.createTurno(clinicaUrl, dto);

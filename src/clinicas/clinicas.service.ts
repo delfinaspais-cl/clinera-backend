@@ -1335,16 +1335,24 @@ export class ClinicasService {
   }
 
   async createTurno(clinicaUrl: string, dto: CreateTurnoDto) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
+    try {
+      console.log('=== DEBUG CREATE TURNO ===');
+      console.log('clinicaUrl:', clinicaUrl);
+      console.log('dto:', JSON.stringify(dto, null, 2));
+      console.log('========================');
 
-    if (!clinica) {
-      throw new BadRequestException('Clínica no encontrada');
-    }
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
 
-    const turno = await this.prisma.turno.create({
-      data: {
+      if (!clinica) {
+        console.log('Clínica no encontrada:', clinicaUrl);
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      console.log('Clínica encontrada:', clinica.id);
+
+      const turnoData = {
         paciente: dto.paciente,
         email: dto.email || `${dto.paciente.toLowerCase().replace(/\s+/g, '.')}@email.com`,
         telefono: dto.telefono,
@@ -1358,13 +1366,33 @@ export class ClinicasService {
         servicio: dto.tratamiento,
         professionalId: dto.professionalId,
         clinicaId: clinica.id,
-      },
-    });
+      };
 
-    return {
-      success: true,
-      turno,
-    };
+      console.log('Datos del turno a crear:', JSON.stringify(turnoData, null, 2));
+
+      const turno = await this.prisma.turno.create({
+        data: turnoData,
+      });
+
+      console.log('Turno creado exitosamente:', turno.id);
+
+      return {
+        success: true,
+        turno,
+      };
+    } catch (error) {
+      console.error('=== ERROR CREATE TURNO ===');
+      console.error('Error completo:', error);
+      console.error('Error message:', error.message);
+      console.error('Error code:', error.code);
+      console.error('Error meta:', error.meta);
+      console.error('========================');
+
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Error interno del servidor al crear el turno: ${error.message}`);
+    }
   }
 
   async updateTurno(clinicaUrl: string, turnoId: string, dto: UpdateTurnoDto) {
