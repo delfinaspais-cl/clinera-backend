@@ -405,36 +405,20 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear nuevo turno' })
   @ApiResponse({ status: 201, description: 'Turno creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async createTurno(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() dto: CreateTurnoDto,
   ) {
     console.log('=== DEBUG CONTROLLER CREATE TURNO ===');
-    console.log('req.user:', req.user);
     console.log('clinicaUrl:', clinicaUrl);
     console.log('dto recibido:', JSON.stringify(dto, null, 2));
     console.log('=====================================');
 
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.createTurno(clinicaUrl, dto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.createTurno(clinicaUrl, dto);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para crear turnos en esta clínica.',
-      );
-    }
+    return this.clinicasService.createTurno(clinicaUrl, dto);
   }
 
   @Get(':clinicaUrl/turnos/:turnoId')
