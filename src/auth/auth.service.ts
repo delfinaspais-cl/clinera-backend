@@ -162,6 +162,16 @@ export class AuthService {
         throw new UnauthorizedException('Clínica no encontrada');
       }
 
+      // Verificar si la clínica está pendiente de aprobación
+      if (clinica.pendienteAprobacion) {
+        throw new BadRequestException('La clínica está pendiente de aprobación. Contacta al administrador del sistema.');
+      }
+
+      // Verificar si la clínica está inactiva
+      if (clinica.estado === 'inactiva') {
+        throw new BadRequestException('La clínica está inactiva. Contacta al administrador del sistema.');
+      }
+
       // Buscar usuario por username (email) y clínica
       const user = await this.prisma.user.findFirst({
         where: {
