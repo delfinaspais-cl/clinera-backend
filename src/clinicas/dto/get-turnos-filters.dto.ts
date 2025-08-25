@@ -28,6 +28,10 @@ export class GetTurnosFiltersDto extends PaginationDto {
   fechaHasta?: string;
 
   @IsOptional()
+  @IsDateString()
+  fecha?: string;
+
+  @IsOptional()
   paciente?: string;
 
   @IsOptional()
