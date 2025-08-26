@@ -46,8 +46,8 @@ export class UpdateTurnoDto {
   @MinLength(2, {
     message: 'El nombre del profesional debe tener al menos 2 caracteres',
   })
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, {
-    message: 'El nombre del profesional solo puede contener letras y espacios',
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\.]+$/, {
+    message: 'El nombre del profesional solo puede contener letras, espacios y puntos',
   })
   profesional: string;
 
