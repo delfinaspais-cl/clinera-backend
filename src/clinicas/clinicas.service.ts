@@ -1366,6 +1366,13 @@ export class ClinicasService {
         servicio: dto.tratamiento,
         professionalId: dto.professionalId,
         clinicaId: clinica.id,
+        // Nuevos campos para datos de pago
+        montoTotal: dto.montoTotal,
+        estadoPago: dto.estadoPago || 'pendiente',
+        medioPago: dto.medioPago,
+        // Nuevos campos adicionales
+        origen: dto.origen,
+        ate: dto.ate,
       };
 
       console.log('Datos del turno a crear:', JSON.stringify(turnoData, null, 2));
@@ -1435,6 +1442,13 @@ export class ClinicasService {
           servicio: dto.tratamiento,
           professionalId: dto.professionalId,
           estado: dto.estado || 'pendiente',
+          // Nuevos campos para datos de pago
+          montoTotal: dto.montoTotal,
+          estadoPago: dto.estadoPago,
+          medioPago: dto.medioPago,
+          // Nuevos campos adicionales
+          origen: dto.origen,
+          ate: dto.ate,
           updatedAt: new Date(),
         },
       });

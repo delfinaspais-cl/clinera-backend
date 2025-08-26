@@ -175,6 +175,16 @@ model Turno {
   servicio     String?  // Servicio/tratamiento específico
   professionalId String? // Relación con el profesional
   clinicaId    String
+  
+  // Nuevos campos para datos de pago
+  montoTotal   String?  // Monto total del tratamiento
+  estadoPago   String   @default("pendiente") // "pagado" | "parcial" | "pendiente"
+  medioPago    String?  // "transferencia" | "efectivo" | "tarjeta"
+  
+  // Nuevos campos adicionales
+  origen       String?  // "instagram" | "organico" | "google-ads" | "whatsapp"
+  ate          String?  // Campo ATE (Asistencia Técnica Especializada)
+  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

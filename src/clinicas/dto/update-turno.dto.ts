@@ -10,6 +10,7 @@ import {
   Min,
   Max,
   IsEnum,
+  IsIn,
 } from 'class-validator';
 import { TurnoEstado } from './get-turnos-filters.dto';
 
@@ -90,4 +91,35 @@ export class UpdateTurnoDto {
   @IsEnum(TurnoEstado, { message: 'Estado inválido' })
   @IsOptional()
   estado?: TurnoEstado;
+
+  // Nuevos campos para datos de pago
+  @IsString()
+  @IsOptional()
+  montoTotal?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['pagado', 'parcial', 'pendiente'], {
+    message: 'El estado de pago debe ser: pagado, parcial o pendiente',
+  })
+  estadoPago?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['transferencia', 'efectivo', 'tarjeta'], {
+    message: 'El medio de pago debe ser: transferencia, efectivo o tarjeta',
+  })
+  medioPago?: string;
+
+  // Nuevos campos adicionales
+  @IsString()
+  @IsOptional()
+  @IsIn(['instagram', 'organico', 'google-ads', 'whatsapp'], {
+    message: 'El origen debe ser: instagram, organico, google-ads o whatsapp',
+  })
+  origen?: string;
+
+  @IsString()
+  @IsOptional()
+  ate?: string;
 }

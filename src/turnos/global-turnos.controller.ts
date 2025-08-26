@@ -163,6 +163,13 @@ export class GlobalTurnosController {
           hora: createTurnoDto.hora,
           motivo: createTurnoDto.motivo,
           clinicaId: createTurnoDto.clinicaId,
+          // Nuevos campos para datos de pago
+          montoTotal: createTurnoDto.montoTotal,
+          estadoPago: createTurnoDto.estadoPago || 'pendiente',
+          medioPago: createTurnoDto.medioPago,
+          // Nuevos campos adicionales
+          origen: createTurnoDto.origen,
+          ate: createTurnoDto.ate,
         },
         include: {
           clinica: {
@@ -213,6 +220,13 @@ export class GlobalTurnosController {
           hora: updateTurnoDto.hora,
           motivo: updateTurnoDto.motivo,
           estado: updateTurnoDto.estado,
+          // Nuevos campos para datos de pago
+          montoTotal: updateTurnoDto.montoTotal,
+          estadoPago: updateTurnoDto.estadoPago,
+          medioPago: updateTurnoDto.medioPago,
+          // Nuevos campos adicionales
+          origen: updateTurnoDto.origen,
+          ate: updateTurnoDto.ate,
         },
         include: {
           clinica: {
