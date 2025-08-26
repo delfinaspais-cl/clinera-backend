@@ -1373,6 +1373,8 @@ export class ClinicasService {
         // Nuevos campos adicionales
         origen: dto.origen,
         ate: dto.ate,
+        sucursal: dto.sucursal,
+        updatedAt: new Date(),
       };
 
       console.log('Datos del turno a crear:', JSON.stringify(turnoData, null, 2));
@@ -1449,6 +1451,7 @@ export class ClinicasService {
           // Nuevos campos adicionales
           origen: dto.origen,
           ate: dto.ate,
+          sucursal: dto.sucursal,
           updatedAt: new Date(),
         },
       });

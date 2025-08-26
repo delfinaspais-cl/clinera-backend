@@ -122,4 +122,8 @@ export class UpdateTurnoDto {
   @IsString()
   @IsOptional()
   ate?: string;
+
+  @IsString()
+  @IsOptional()
+  sucursal?: string;
 }

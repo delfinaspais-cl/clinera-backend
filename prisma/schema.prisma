@@ -184,6 +184,7 @@ model Turno {
   // Nuevos campos adicionales
   origen       String?  // "instagram" | "organico" | "google-ads" | "whatsapp"
   ate          String?  // Campo ATE (Asistencia Técnica Especializada)
+  sucursal     String?  // Sucursal donde se realizará el turno
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

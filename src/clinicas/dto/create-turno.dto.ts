@@ -116,4 +116,8 @@ export class CreateTurnoDto {
   @IsString()
   @IsOptional()
   ate?: string;
+
+  @IsString()
+  @IsOptional()
+  sucursal?: string;
 }
