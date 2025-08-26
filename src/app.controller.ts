@@ -52,7 +52,18 @@ Disallow: /api/admin/`;
 
   @Get('favicon.ico')
   getFavicon(@Res() res: Response) {
-    res.status(204).send(); // No content
+    // Crear un favicon SVG básico
+    const svgFavicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+      <rect width="32" height="32" fill="#3B82F6"/>
+      <text x="16" y="22" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="18" font-weight="bold">C</text>
+    </svg>`;
+    
+    res.status(200)
+       .set({
+         'Content-Type': 'image/svg+xml',
+         'Cache-Control': 'public, max-age=31536000', // Cache por 1 año
+       })
+       .send(svgFavicon);
   }
 }
 
