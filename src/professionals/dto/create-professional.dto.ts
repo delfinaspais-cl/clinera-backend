@@ -16,12 +16,14 @@ export class CreateProfessionalDto {
   password: string;
 
   // Campos para Professional
-  @IsString()
-  especialidad: string; // Campo de texto libre para especialidad
+  @IsArray()
+  @IsString({ each: true })
+  especialidad: string[]; // Array de especialidades
 
   @IsOptional()
-  @IsString()
-  tratamientos?: string; // Campo de texto libre para tratamientos
+  @IsArray()
+  @IsString({ each: true })
+  tratamientos?: string[]; // Array de tratamientos
 
   @IsOptional()
   @IsString()

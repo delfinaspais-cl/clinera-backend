@@ -38,8 +38,8 @@ export class ProfessionalsService {
 
       return {
         ...prof,
-        especialidad: prof.specialties[0] || null, // Tomar la primera especialidad
-        tratamientos: prof.notes, // Usar notes para tratamientos temporalmente
+        especialidad: prof.specialties, // Retornar array completo de especialidades
+        tratamientos: prof.notes ? [prof.notes] : [], // Convertir notes a array temporalmente
         horarios: {
           dias: horarios.map(h => h.dia),
           horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
@@ -78,7 +78,7 @@ export class ProfessionalsService {
       data: {
         userId: user.id,
         name: dto.name,
-        specialties: [dto.especialidad], // Convertir especialidad a array
+        specialties: dto.especialidad, // Ya es un array
         defaultDurationMin: dto.defaultDurationMin ?? 30,
         bufferMin: dto.bufferMin ?? 10,
         notes: dto.notes,
@@ -105,7 +105,7 @@ export class ProfessionalsService {
     return {
       ...professional,
       especialidad: dto.especialidad,
-      tratamientos: dto.tratamientos,
+      tratamientos: dto.tratamientos || [],
       sucursal: dto.sucursal,
       horarios: dto.horarios,
     };
@@ -132,8 +132,8 @@ export class ProfessionalsService {
 
     return {
       ...prof,
-      especialidad: prof.specialties[0] || null, // Tomar la primera especialidad
-      tratamientos: prof.notes, // Usar notes para tratamientos temporalmente
+      especialidad: prof.specialties, // Retornar array completo de especialidades
+      tratamientos: prof.notes ? [prof.notes] : [], // Convertir notes a array temporalmente
       horarios: {
         dias: horarios.map(h => h.dia),
         horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
@@ -171,7 +171,7 @@ export class ProfessionalsService {
       // Preparar datos para actualizar el profesional
       const professionalData: any = {};
       if (dto.name) professionalData.name = dto.name;
-      if (dto.especialidad) professionalData.specialties = [dto.especialidad];
+      if (dto.especialidad) professionalData.specialties = dto.especialidad; // Ya es un array
       if (dto.specialties) professionalData.specialties = dto.specialties;
       if (dto.defaultDurationMin !== undefined) professionalData.defaultDurationMin = dto.defaultDurationMin;
       if (dto.bufferMin !== undefined) professionalData.bufferMin = dto.bufferMin;
@@ -226,7 +226,7 @@ export class ProfessionalsService {
         return {
           ...finalProfessional,
           especialidad: dto.especialidad,
-          tratamientos: dto.tratamientos,
+          tratamientos: dto.tratamientos || [],
           sucursal: dto.sucursal,
           horarios: dto.horarios,
         };
@@ -235,7 +235,7 @@ export class ProfessionalsService {
       return {
         ...updatedProfessional,
         especialidad: dto.especialidad,
-        tratamientos: dto.tratamientos,
+        tratamientos: dto.tratamientos || [],
         sucursal: dto.sucursal,
         horarios: dto.horarios,
       };
