@@ -26,18 +26,34 @@ export class ReportsService {
     });
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    // Simulación de ingresos: 10.000 por turno confirmado
-    const count = await this.prisma.turno.count({
+    // Obtener turnos con montoTotal real
+    const turnos = await this.prisma.turno.findMany({
       where: {
         clinicaId: clinica.id,
         estado: 'confirmado',
+        montoTotal: { not: null },
+      },
+      select: {
+        montoTotal: true,
+        estadoPago: true,
       },
     });
 
+    // Calcular total real de ingresos
+    const total = turnos.reduce((sum, turno) => {
+      const monto = parseFloat(turno.montoTotal || '0');
+      return sum + monto;
+    }, 0);
+
+    // Contar turnos pagados
+    const turnosPagados = turnos.filter(turno => turno.estadoPago === 'pagado').length;
+
     return {
-      total: count * 10000,
+      total: total,
       moneda: 'ARS',
-      descripcion: 'Simulación basada en turnos confirmados',
+      descripcion: `Total real basado en ${turnosPagados} turnos pagados`,
+      turnosPagados: turnosPagados,
+      turnosTotales: turnos.length,
     };
   }
 
@@ -118,8 +134,17 @@ export class ReportsService {
       especialidad: turno.especialidad,
       fecha: turno.fecha.toISOString().split('T')[0],
       hora: turno.hora,
+      duracionMin: turno.duracionMin,
       estado: turno.estado,
       motivo: turno.motivo,
+      notas: turno.notas,
+      servicio: turno.servicio,
+      montoTotal: turno.montoTotal,
+      estadoPago: turno.estadoPago,
+      medioPago: turno.medioPago,
+      origen: turno.origen,
+      ate: turno.ate,
+      sucursal: turno.sucursal,
     }));
   }
 

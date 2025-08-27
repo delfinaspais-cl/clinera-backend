@@ -508,4 +508,15 @@ export class ClinicasController {
       );
     }
   }
+
+  @Get(':clinicaUrl/ventas')
+  @ApiOperation({ summary: 'Obtener turnos para panel de ventas con información completa de pago' })
+  @ApiResponse({ status: 200, description: 'Datos de ventas obtenidos exitosamente' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getVentas(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: GetTurnosFiltersDto,
+  ) {
+    return this.clinicasService.getVentas(clinicaUrl, filters);
+  }
 }

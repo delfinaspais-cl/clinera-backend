@@ -438,6 +438,15 @@ export class ClinicasService {
             notas: turno.notas,
             servicio: turno.servicio,
             professionalId: turno.professionalId,
+            clinicaId: turno.clinicaId,
+            montoTotal: turno.montoTotal,
+            estadoPago: turno.estadoPago,
+            medioPago: turno.medioPago,
+            origen: turno.origen,
+            ate: turno.ate,
+            sucursal: turno.sucursal,
+            createdAt: turno.createdAt,
+            updatedAt: turno.updatedAt,
             professional: turno.professional ? {
               id: turno.professional.id,
               name: turno.professional.name,
@@ -1903,9 +1912,21 @@ export class ClinicasService {
         especialidad: turno.especialidad,
         fecha: turno.fecha.toISOString().split('T')[0],
         hora: turno.hora,
+        duracionMin: turno.duracionMin,
         estado: turno.estado,
         motivo: turno.motivo || '',
+        notas: turno.notas,
+        servicio: turno.servicio,
+        professionalId: turno.professionalId,
+        clinicaId: turno.clinicaId,
+        montoTotal: turno.montoTotal,
+        estadoPago: turno.estadoPago,
+        medioPago: turno.medioPago,
+        origen: turno.origen,
+        ate: turno.ate,
+        sucursal: turno.sucursal,
         createdAt: turno.createdAt.toISOString(),
+        updatedAt: turno.updatedAt,
       }));
 
       return {
@@ -2110,9 +2131,19 @@ export class ClinicasService {
           doctor: turno.doctor,
           fecha: turno.fecha.toISOString().split('T')[0],
           hora: turno.hora,
+          duracionMin: turno.duracionMin,
           estado: turno.estado,
           motivo: turno.motivo,
+          notas: turno.notas,
+          servicio: turno.servicio,
+          professionalId: turno.professionalId,
           clinicaId: turno.clinicaId,
+          montoTotal: turno.montoTotal,
+          estadoPago: turno.estadoPago,
+          medioPago: turno.medioPago,
+          origen: turno.origen,
+          ate: turno.ate,
+          sucursal: turno.sucursal,
           createdAt: turno.createdAt,
           updatedAt: turno.updatedAt,
         })),
@@ -2298,6 +2329,114 @@ export class ClinicasService {
         throw error;
       }
       console.error('Error al crear notificación:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getVentas(clinicaUrl: string, filters: any) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Construir filtros
+      const where: any = {
+        clinicaId: clinica.id,
+      };
+
+      if (filters.fecha) {
+        where.fecha = {
+          gte: new Date(filters.fecha),
+          lt: new Date(new Date(filters.fecha).getTime() + 24 * 60 * 60 * 1000),
+        };
+      }
+
+      if (filters.estado) {
+        where.estado = filters.estado;
+      }
+
+      if (filters.doctor) {
+        where.doctor = { contains: filters.doctor, mode: 'insensitive' };
+      }
+
+      if (filters.especialidad) {
+        where.especialidad = { contains: filters.especialidad, mode: 'insensitive' };
+      }
+
+      // Paginación
+      const page = filters.page || 1;
+      const limit = filters.limit || 20;
+      const skip = (page - 1) * limit;
+
+      // Obtener turnos con información completa
+      const [turnos, total] = await Promise.all([
+        this.prisma.turno.findMany({
+          where,
+          orderBy: { fecha: 'desc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.turno.count({ where }),
+      ]);
+
+      // Calcular estadísticas básicas
+      const totalIngresos = turnos.reduce((sum, turno) => {
+        const monto = parseFloat(turno.montoTotal || '0');
+        return sum + monto;
+      }, 0);
+
+      const turnosPagados = turnos.filter(turno => turno.estadoPago === 'pagado').length;
+      const turnosPendientes = turnos.filter(turno => turno.estadoPago === 'pendiente').length;
+
+      return {
+        success: true,
+        ventas: turnos.map(turno => ({
+          id: turno.id,
+          paciente: turno.paciente,
+          email: turno.email,
+          telefono: turno.telefono,
+          especialidad: turno.especialidad,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toISOString().split('T')[0],
+          hora: turno.hora,
+          duracionMin: turno.duracionMin,
+          estado: turno.estado,
+          motivo: turno.motivo,
+          notas: turno.notas,
+          servicio: turno.servicio,
+          professionalId: turno.professionalId,
+          clinicaId: turno.clinicaId,
+          montoTotal: turno.montoTotal,
+          estadoPago: turno.estadoPago,
+          medioPago: turno.medioPago,
+          origen: turno.origen,
+          ate: turno.ate,
+          sucursal: turno.sucursal,
+          createdAt: turno.createdAt,
+          updatedAt: turno.updatedAt,
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+        stats: {
+          totalIngresos,
+          totalTurnos: total,
+          turnosPagados,
+          turnosPendientes,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener ventas:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
