@@ -1,5 +1,5 @@
 // src/professionals/dto/create-professional.dto.ts
-import { IsArray, IsInt, IsOptional, IsString, IsEmail } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, IsEmail, IsObject } from 'class-validator';
 
 export class CreateProfessionalDto {
   // Campos para User
@@ -16,8 +16,16 @@ export class CreateProfessionalDto {
   password: string;
 
   // Campos para Professional
-  @IsArray()
-  specialties: string[];
+  @IsString()
+  especialidad: string; // Campo de texto libre para especialidad
+
+  @IsOptional()
+  @IsString()
+  tratamientos?: string; // Campo de texto libre para tratamientos
+
+  @IsOptional()
+  @IsString()
+  sucursal?: string; // ID de la sucursal seleccionada
 
   @IsOptional()
   @IsString()
@@ -30,4 +38,13 @@ export class CreateProfessionalDto {
   @IsOptional()
   @IsInt()
   bufferMin?: number;
+
+  // Horarios de atención
+  @IsOptional()
+  @IsObject()
+  horarios?: {
+    dias: string[]; // Array de días seleccionados: ["Lunes", "Martes", etc.]
+    horaInicio?: string; // "08:00"
+    horaFin?: string; // "18:00"
+  };
 }

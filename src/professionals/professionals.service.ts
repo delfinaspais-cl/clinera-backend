@@ -19,9 +19,33 @@ export class ProfessionalsService {
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    return this.prisma.professional.findMany({
+    const professionals = await this.prisma.professional.findMany({
       where: { user: { clinicaId: clinica.id } },
-      include: { user: true },
+      include: { 
+        user: true,
+        agendas: true,
+      },
+    });
+
+    // Formatear cada profesional con información adicional
+    return professionals.map(prof => {
+      const horarios = prof.agendas.map(agenda => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+        duracionMin: agenda.duracionMin,
+      }));
+
+      return {
+        ...prof,
+        especialidad: prof.specialties[0] || null, // Tomar la primera especialidad
+        tratamientos: prof.notes, // Usar notes para tratamientos temporalmente
+        horarios: {
+          dias: horarios.map(h => h.dia),
+          horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
+          horaFin: horarios.length > 0 ? horarios[0].horaFin : null,
+        },
+      };
     });
   }
 
@@ -49,27 +73,73 @@ export class ProfessionalsService {
       },
     });
 
-    return this.prisma.professional.create({
+    // Crear el profesional con los nuevos campos
+    const professional = await this.prisma.professional.create({
       data: {
         userId: user.id,
         name: dto.name,
-        specialties: dto.specialties,
+        specialties: [dto.especialidad], // Convertir especialidad a array
         defaultDurationMin: dto.defaultDurationMin ?? 30,
         bufferMin: dto.bufferMin ?? 10,
+        notes: dto.notes,
       },
       include: { user: true },
     });
+
+    // Crear horarios de atención si se proporcionan
+    if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+      const horariosData = dto.horarios.dias.map(dia => ({
+        professionalId: professional.id,
+        dia: dia.toUpperCase(),
+        horaInicio: dto.horarios?.horaInicio || '08:00',
+        horaFin: dto.horarios?.horaFin || '18:00',
+        duracionMin: dto.defaultDurationMin ?? 30,
+      }));
+
+      await this.prisma.agenda.createMany({
+        data: horariosData,
+      });
+    }
+
+    // Retornar el profesional con información adicional
+    return {
+      ...professional,
+      especialidad: dto.especialidad,
+      tratamientos: dto.tratamientos,
+      sucursal: dto.sucursal,
+      horarios: dto.horarios,
+    };
   }
 
   async findOne(clinicaUrl: string, id: string) {
     const prof = await this.prisma.professional.findUnique({
       where: { id },
-      include: { user: true },
+      include: { 
+        user: true,
+        agendas: true,
+      },
     });
 
     if (!prof) throw new NotFoundException('Profesional no encontrado');
 
-    return prof;
+    // Formatear horarios para el frontend
+    const horarios = prof.agendas.map(agenda => ({
+      dia: agenda.dia,
+      horaInicio: agenda.horaInicio,
+      horaFin: agenda.horaFin,
+      duracionMin: agenda.duracionMin,
+    }));
+
+    return {
+      ...prof,
+      especialidad: prof.specialties[0] || null, // Tomar la primera especialidad
+      tratamientos: prof.notes, // Usar notes para tratamientos temporalmente
+      horarios: {
+        dias: horarios.map(h => h.dia),
+        horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
+        horaFin: horarios.length > 0 ? horarios[0].horaFin : null,
+      },
+    };
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdateProfessionalDto) {
@@ -101,6 +171,7 @@ export class ProfessionalsService {
       // Preparar datos para actualizar el profesional
       const professionalData: any = {};
       if (dto.name) professionalData.name = dto.name;
+      if (dto.especialidad) professionalData.specialties = [dto.especialidad];
       if (dto.specialties) professionalData.specialties = dto.specialties;
       if (dto.defaultDurationMin !== undefined) professionalData.defaultDurationMin = dto.defaultDurationMin;
       if (dto.bufferMin !== undefined) professionalData.bufferMin = dto.bufferMin;
@@ -118,6 +189,27 @@ export class ProfessionalsService {
         include: { user: true },
       });
 
+      // Actualizar horarios si se proporcionan
+      if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+        // Eliminar horarios existentes
+        await this.prisma.agenda.deleteMany({
+          where: { professionalId: id },
+        });
+
+        // Crear nuevos horarios
+        const horariosData = dto.horarios.dias.map(dia => ({
+          professionalId: id,
+          dia: dia.toUpperCase(),
+          horaInicio: dto.horarios?.horaInicio || '08:00',
+          horaFin: dto.horarios?.horaFin || '18:00',
+          duracionMin: dto.defaultDurationMin ?? 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+      }
+
       // Actualizar el usuario si hay datos de usuario
       if (Object.keys(userData).length > 0) {
         await this.prisma.user.update({
@@ -126,13 +218,27 @@ export class ProfessionalsService {
         });
 
         // Obtener el profesional actualizado con el usuario actualizado
-        return this.prisma.professional.findUnique({
+        const finalProfessional = await this.prisma.professional.findUnique({
           where: { id },
           include: { user: true },
         });
+
+        return {
+          ...finalProfessional,
+          especialidad: dto.especialidad,
+          tratamientos: dto.tratamientos,
+          sucursal: dto.sucursal,
+          horarios: dto.horarios,
+        };
       }
 
-      return updatedProfessional;
+      return {
+        ...updatedProfessional,
+        especialidad: dto.especialidad,
+        tratamientos: dto.tratamientos,
+        sucursal: dto.sucursal,
+        horarios: dto.horarios,
+      };
     } catch (error) {
       console.error('Error actualizando profesional:', error);
       throw error;
