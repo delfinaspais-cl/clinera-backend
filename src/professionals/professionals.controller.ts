@@ -30,6 +30,48 @@ export class ProfessionalsController {
     return this.professionalsService.create(clinicaUrl, dto);
   }
 
+  @Post('test')
+  async testCreate(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: any,
+  ) {
+    try {
+      console.log('🧪 Test endpoint - Datos recibidos:', JSON.stringify(dto, null, 2));
+      console.log('🧪 Test endpoint - Clinica URL:', clinicaUrl);
+      
+      // Validar datos básicos
+      if (!dto.name || !dto.email || !dto.password) {
+        return {
+          error: 'Datos requeridos faltantes',
+          received: dto
+        };
+      }
+
+      // Verificar estructura de specialties
+      if (!Array.isArray(dto.specialties)) {
+        return {
+          error: 'specialties debe ser un array',
+          received: dto.specialties,
+          type: typeof dto.specialties
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Datos válidos recibidos',
+        data: dto
+      };
+      
+    } catch (error) {
+      console.error('❌ Error en test endpoint:', error);
+      return {
+        error: 'Error interno',
+        message: error.message,
+        stack: error.stack
+      };
+    }
+  }
+
   @Get(':id')
   findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.professionalsService.findOne(clinicaUrl, id);

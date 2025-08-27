@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @ApiTags('Profesionales Globales')
 @Controller('profesionales')
@@ -171,11 +172,14 @@ export class GlobalProfessionalsController {
         throw new BadRequestException('Clínica no encontrada');
       }
 
+      // Hash de la contraseña
+      const hashedPassword = await bcrypt.hash(createProfesionalDto.password || 'defaultPassword123', 10);
+
       // Crear usuario primero
       const user = await this.prisma.user.create({
         data: {
           email: createProfesionalDto.email,
-          password: createProfesionalDto.password || 'defaultPassword123', // En producción, generar password seguro
+          password: hashedPassword,
           name: createProfesionalDto.name,
           phone: createProfesionalDto.phone,
           role: 'PROFESSIONAL',

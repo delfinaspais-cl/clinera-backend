@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { ProfessionalsModule } from '../src/professionals/professionals.module';
+import { ProfessionalsModule } from './professionals/professionals.module';
 import { PatientsModule } from './patients/patients.module';
 import { UsersModule } from './users/users.module';
 import { OwnersModule } from './owners/owners.module';

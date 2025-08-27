@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  // Fresh start - Railway deployment 
 }
 
 datasource db {
@@ -8,81 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  PATIENT
-  PROFESSIONAL
-  ADMIN
-  OWNER
-  SECRETARY
-}
-
 model Clinica {
-  id                    String    @id @default(cuid())
-  name                  String
-  url                   String    @unique @map("slug")
-  address               String?
-  phone                 String?
-  email                 String?
-  logo                  String?
-  colorPrimario         String?   @default("#3B82F6")
-  colorSecundario       String?   @default("#1E40AF")
-  estado                String?   @default("activo")
-  estadoPago            String?   @default("pagado")
-  fechaCreacion         DateTime  @default(now())
-  ultimoPago            DateTime?
-  proximoPago           DateTime?
-  descripcion           String?
-  contacto              String? // JSON object
-  rating                Float?    @default(4.5)
-  stats                 String? // JSON object
-  pendienteAprobacion   Boolean   @default(false)
-  fuente                String?   @default("owner_dashboard") // "landing_page" | "owner_dashboard"
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  users          User[]
-  mensajes       Mensaje[]
-  conversations  Conversation[]
-  notificaciones Notificacion[]
-  turnos         Turno[]
-  horarios       Horario[]
-  especialidades Especialidad[]
-  whatsappMessages WhatsAppMessage[]
-  whatsappTemplates WhatsAppTemplate[]
+  id                  String             @id @default(cuid())
+  name                String
+  address             String?
+  phone               String?
+  email               String?
+  logo                String?
+  colorPrimario       String?            @default("#3B82F6")
+  colorSecundario     String?            @default("#1E40AF")
+  estado              String?            @default("activo")
+  estadoPago          String?            @default("pagado")
+  fechaCreacion       DateTime           @default(now())
+  ultimoPago          DateTime?
+  proximoPago         DateTime?
+  descripcion         String?
+  contacto            String?
+  rating              Float?             @default(4.5)
+  stats               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  url                 String             @unique @map("slug")
+  fuente              String?            @default("owner_dashboard")
+  pendienteAprobacion Boolean            @default(false)
+  conversations       Conversation[]
+  especialidades      Especialidad[]
+  horarios            Horario[]
+  mensajes            Mensaje[]
+  notificaciones      Notificacion[]
+  turnos              Turno[]
+  users               User[]
+  whatsappMessages    WhatsAppMessage[]
+  whatsappTemplates   WhatsAppTemplate[]
 }
 
 model Mensaje {
   id        String   @id @default(cuid())
   asunto    String
   mensaje   String
-  tipo      String // "pago" | "soporte" | "general"
+  tipo      String
   leido     Boolean  @default(false)
   clinicaId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+  clinica   Clinica? @relation(fields: [clinicaId], references: [id])
 }
 
 model Conversation {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String
-  role          String   // "Paciente" | "Doctora" | "Staff" | "Admin"
-  avatar        String?  // Iniciales o URL de avatar
-  stage         String   @default("prospectos") // "prospectos" | "activas" | "agendados" | "completados" | "cerradas"
-  tags          String[] @default([])
-  isOnline      Boolean  @default(false)
+  role          String
+  avatar        String?
+  stage         String        @default("prospectos")
+  tags          String[]      @default([])
+  isOnline      Boolean       @default(false)
   phone         String?
   email         String?
-  unreadCount   Int      @default(0)
+  unreadCount   Int           @default(0)
   clinicaId     String
-  lastMessageAt DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  clinica   Clinica   @relation(fields: [clinicaId], references: [id])
-  messages  ChatMessage[]
-  turnos    Turno[]   // Relación con turnos si es un paciente
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  messages      ChatMessage[]
+  clinica       Clinica       @relation(fields: [clinicaId], references: [id])
+  turnos        Turno[]
 
   @@index([clinicaId])
   @@index([stage])
@@ -90,21 +78,20 @@ model Conversation {
 }
 
 model ChatMessage {
-  id             String   @id @default(cuid())
-  content        String
-  isFromUser     Boolean  @default(false) // true = enviado por el usuario de la clínica, false = recibido
-  messageType    String   @default("text") // "text" | "whatsapp" | "email" | "system"
-  status         String   @default("sent") // "sent" | "delivered" | "read" | "failed"
-  conversationId String
-  userId         String?  // Usuario que envió el mensaje (si es fromUser = true)
-  whatsappMessageId String? // ID del mensaje de WhatsApp si aplica
-  metadata       String?  // JSON con datos adicionales
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User?        @relation(fields: [userId], references: [id])
-  whatsappMessage WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id])
+  id                String           @id @default(cuid())
+  content           String
+  isFromUser        Boolean          @default(false)
+  messageType       String           @default("text")
+  status            String           @default("sent")
+  conversationId    String
+  userId            String?
+  whatsappMessageId String?
+  metadata          String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user              User?            @relation(fields: [userId], references: [id])
+  whatsappMessage   WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id])
 
   @@index([conversationId])
   @@index([createdAt(sort: Desc)])
@@ -112,87 +99,77 @@ model ChatMessage {
 }
 
 model Notificacion {
-  id              String    @id @default(cuid())
-  titulo          String
-  mensaje         String
-  tipo            String    @default("info") // "info" | "warning" | "error" | "success"
-  prioridad       String    @default("media") // "baja" | "media" | "alta"
-  leida           Boolean   @default(false)
-  clinicaId       String
-  destinatarioId  String?   // Si es null, es para todos los usuarios de la clínica
+  id               String    @id @default(cuid())
+  titulo           String
+  mensaje          String
+  tipo             String    @default("info")
+  prioridad        String    @default("media")
+  leida            Boolean   @default(false)
+  clinicaId        String
+  destinatarioId   String?
   fechaVencimiento DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  clinica      Clinica? @relation(fields: [clinicaId], references: [id])
-  destinatario User?    @relation("UserNotifications", fields: [destinatarioId], references: [id])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  clinica          Clinica   @relation(fields: [clinicaId], references: [id])
+  destinatario     User?     @relation("UserNotifications", fields: [destinatarioId], references: [id])
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  phone     String?
-  location  String?
-  bio       String?
-  role      Role
-  clinicaId String?
-  estado    String?  @default("activo")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Campos adicionales para configuración del propietario
-  whatsapp     String?
-  facebook     String?
-  instagram    String?
-  website      String?
-  avatar_url   String?
-  configuracion String? // JSON object
-
-  clinica         Clinica?         @relation(fields: [clinicaId], references: [id])
-  patient         Patient?
-  professional    Professional?
-  notificaciones  Notificacion[]   @relation("UserNotifications")
-  pushTokens      PushNotificationToken[]
+  id               String                  @id @default(cuid())
+  email            String                  @unique
+  password         String
+  name             String?
+  phone            String?
+  location         String?
+  bio              String?
+  role             Role
+  clinicaId        String?
+  estado           String?                 @default("activo")
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  avatar_url       String?
+  configuracion    String?
+  facebook         String?
+  instagram        String?
+  website          String?
+  whatsapp         String?
+  chatMessages     ChatMessage[]
+  notificaciones   Notificacion[]          @relation("UserNotifications")
+  patient          Patient?
+  professional     Professional?
+  pushTokens       PushNotificationToken[]
+  clinica          Clinica?                @relation(fields: [clinicaId], references: [id])
   whatsappMessages WhatsAppMessage[]
-  chatMessages    ChatMessage[]
 }
 
 model Turno {
-  id           String   @id @default(cuid())
-  paciente     String
-  email        String
-  telefono     String?
-  especialidad String
-  doctor       String
-  fecha        DateTime
-  hora         String
-  duracionMin  Int      @default(30) // Duración en minutos
-  estado       String   @default("pendiente") // "pendiente" | "confirmado" | "cancelado" | "completado"
-  motivo       String?
-  notas        String?  // Notas/observaciones de la cita
-  servicio     String?  // Servicio/tratamiento específico
-  professionalId String? // Relación con el profesional
-  clinicaId    String
-  
-  // Nuevos campos para datos de pago
-  montoTotal   String?  // Monto total del tratamiento
-  estadoPago   String   @default("pendiente") // "pagado" | "parcial" | "pendiente"
-  medioPago    String?  // "transferencia" | "efectivo" | "tarjeta"
-  
-  // Nuevos campos adicionales
-  origen       String?  // "instagram" | "organico" | "google-ads" | "whatsapp"
-  ate          String?  // Campo ATE (Asistencia Técnica Especializada)
-  sucursal     String?  // Sucursal donde se realizará el turno
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  clinica      Clinica @relation(fields: [clinicaId], references: [id])
-  professional Professional? @relation(fields: [professionalId], references: [id])
-  conversation Conversation? @relation(fields: [conversationId], references: [id])
+  id             String        @id @default(cuid())
+  paciente       String
+  email          String
+  telefono       String?
+  especialidad   String
+  doctor         String
+  fecha          DateTime
+  hora           String
+  estado         String        @default("pendiente")
+  motivo         String?
+  clinicaId      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  duracionMin    Int           @default(30)
+  notas          String?
+  professionalId String?
+  servicio       String?
   conversationId String?
+  ate            String?
+  estadoPago     String        @default("pendiente")
+  medioPago      String?
+  montoTotal     String?
+  origen         String?
+  sucursal       String?
+  clinica        Clinica       @relation(fields: [clinicaId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  professional   Professional? @relation(fields: [professionalId], references: [id])
 }
 
 model Patient {
@@ -203,8 +180,7 @@ model Patient {
   phone     String?
   notes     String?
   createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Professional {
@@ -214,24 +190,23 @@ model Professional {
   specialties        String[]
   defaultDurationMin Int      @default(30)
   bufferMin          Int      @default(10)
-  notes              String? // 👈 AGREGÁ ESTA LÍNEA
+  notes              String?
   createdAt          DateTime @default(now())
-
-  user    User     @relation(fields: [userId], references: [id])
-  agendas Agenda[]
-  turnos  Turno[]  // Relación con turnos
+  tratamientos       String[] @default([])
+  agendas            Agenda[]
+  user               User     @relation(fields: [userId], references: [id])
+  turnos             Turno[]
 }
 
 model Agenda {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   professionalId String
-  dia            String // Ej: "LUNES", "MARTES"
-  horaInicio     String // "08:00"
-  horaFin        String // "12:00"
+  dia            String
+  horaInicio     String
+  horaFin        String
   duracionMin    Int
-  createdAt      DateTime @default(now())
-
-  professional Professional @relation(fields: [professionalId], references: [id])
+  createdAt      DateTime     @default(now())
+  professional   Professional @relation(fields: [professionalId], references: [id])
 }
 
 model Horario {
@@ -266,13 +241,12 @@ model PushNotificationToken {
   id        String   @id @default(cuid())
   userId    String
   token     String   @unique
-  platform  String   // "android" | "ios" | "web"
-  deviceId  String?  // Identificador único del dispositivo
+  platform  String
+  deviceId  String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -280,29 +254,28 @@ model PushNotificationToken {
 }
 
 model WhatsAppMessage {
-  id              String   @id @default(cuid())
-  phoneNumberId   String   // ID del número de teléfono de WhatsApp Business
-  to              String   // Número de teléfono del destinatario
-  from            String   // Número de teléfono del remitente (WhatsApp Business)
-  messageType     String   // "text" | "template" | "image" | "document" | "audio" | "video"
-  messageText     String?  // Contenido del mensaje de texto
-  templateName    String?  // Nombre de la plantilla (si es template)
-  templateParams  String?  // Parámetros de la plantilla en JSON
-  mediaUrl        String?  // URL del archivo multimedia
-  mediaId         String?  // ID del archivo multimedia en WhatsApp
-  wamid           String?  // WhatsApp Message ID
-  status          String   @default("pending") // "pending" | "sent" | "delivered" | "read" | "failed"
-  errorCode       String?  // Código de error si falló
-  errorMessage    String?  // Mensaje de error si falló
-  clinicaId       String?
-  userId          String?  // Usuario que envió el mensaje
-  metadata        String?  // Datos adicionales en JSON
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  clinica Clinica? @relation(fields: [clinicaId], references: [id])
-  user    User?    @relation(fields: [userId], references: [id])
-  chatMessages ChatMessage[]
+  id             String        @id @default(cuid())
+  phoneNumberId  String
+  to             String
+  from           String
+  messageType    String
+  messageText    String?
+  templateName   String?
+  templateParams String?
+  mediaUrl       String?
+  mediaId        String?
+  wamid          String?
+  status         String        @default("pending")
+  errorCode      String?
+  errorMessage   String?
+  clinicaId      String?
+  userId         String?
+  metadata       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  chatMessages   ChatMessage[]
+  clinica        Clinica?      @relation(fields: [clinicaId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
 
   @@index([to])
   @@index([status])
@@ -312,18 +285,17 @@ model WhatsAppMessage {
 }
 
 model WhatsAppTemplate {
-  id          String   @id @default(cuid())
-  name        String   // Nombre de la plantilla
-  language    String   @default("es") // Código de idioma
-  category    String   // "marketing" | "utility" | "authentication"
-  status      String   @default("pending") // "pending" | "approved" | "rejected"
-  components  String   // Componentes de la plantilla en JSON
-  example     String?  // Ejemplo de uso
-  clinicaId   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  clinica Clinica? @relation(fields: [clinicaId], references: [id])
+  id         String   @id @default(cuid())
+  name       String
+  language   String   @default("es")
+  category   String
+  status     String   @default("pending")
+  components String
+  example    String?
+  clinicaId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  clinica    Clinica? @relation(fields: [clinicaId], references: [id])
 
   @@index([name])
   @@index([status])
@@ -331,20 +303,20 @@ model WhatsAppTemplate {
 }
 
 model Contacto {
-  id            String   @id @default(cuid())
-  nombre        String
-  email         String
-  telefono      String?
-  empresa       String?
-  tipoConsulta  String
-  plan          String?
-  mensaje       String
-  estado        String   @default("nuevo")
-  procesado     Boolean  @default(false)
-  notas         String?
-  metadata      String?  // JSON object
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  nombre       String
+  email        String
+  telefono     String?
+  empresa      String?
+  tipoConsulta String
+  plan         String?
+  mensaje      String
+  estado       String   @default("nuevo")
+  procesado    Boolean  @default(false)
+  notas        String?
+  metadata     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([estado])
   @@index([tipoConsulta])
@@ -354,8 +326,8 @@ model Contacto {
 
 model WhatsAppWebhook {
   id        String   @id @default(cuid())
-  eventType String   // "message" | "message_status" | "template_status"
-  payload   String   // Payload completo del webhook en JSON
+  eventType String
+  payload   String
   processed Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -363,9 +335,10 @@ model WhatsAppWebhook {
   @@index([processed])
 }
 
-// model Admin {
-//   id        String   @id @default(uuid())
-//   userId    String   @unique
-//   clinicId  String?
-//   user      User     @relation(fields: [userId], references: [id])
-// }
+enum Role {
+  PATIENT
+  PROFESSIONAL
+  ADMIN
+  OWNER
+  SECRETARY
+}

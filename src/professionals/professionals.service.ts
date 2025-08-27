@@ -39,7 +39,7 @@ export class ProfessionalsService {
       return {
         ...prof,
         especialidad: prof.specialties, // Retornar array completo de especialidades
-        tratamientos: prof.notes ? [prof.notes] : [], // Convertir notes a array temporalmente
+        tratamientos: prof.tratamientos || [], // Retornar tratamientos reales
         horarios: {
           dias: horarios.map(h => h.dia),
           horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
@@ -50,65 +50,117 @@ export class ProfessionalsService {
   }
 
   async create(clinicaUrl: string, dto: CreateProfessionalDto) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-      include: {
-        especialidades: true,
-        horarios: true,
-      },
-    });
+    try {
+      console.log('🔍 Creando profesional con datos:', JSON.stringify(dto, null, 2));
+      console.log('🔍 Clinica URL:', clinicaUrl);
+      
+      // Validar datos requeridos
+      if (!dto.name || !dto.email || !dto.password) {
+        throw new Error('Datos requeridos faltantes: name, email, password');
+      }
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+      if (!Array.isArray(dto.specialties)) {
+        throw new Error('specialties debe ser un array');
+      }
+      
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        include: {
+          especialidades: true,
+          horarios: true,
+        },
+      });
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    const user = await this.prisma.user.create({
-      data: {
+      console.log('✅ Clínica encontrada:', clinica.id);
+
+      console.log('🔍 Hasheando contraseña...');
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      console.log('✅ Contraseña hasheada');
+
+      console.log('🔍 Creando usuario...');
+      console.log('🔍 Datos del usuario:', {
         email: dto.email,
-        password: hashedPassword,
         role: 'PROFESSIONAL',
         name: dto.name,
         phone: dto.phone,
         clinicaId: clinica.id,
-      },
-    });
+      });
+      
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: 'PROFESSIONAL',
+          name: dto.name,
+          phone: dto.phone,
+          clinicaId: clinica.id,
+        },
+      });
 
-    // Crear el profesional con los nuevos campos
-    const professional = await this.prisma.professional.create({
-      data: {
+      console.log('✅ Usuario creado:', user.id);
+
+      console.log('🔍 Creando profesional...');
+      console.log('🔍 Datos del profesional:', {
         userId: user.id,
         name: dto.name,
-        specialties: dto.specialties, // Usar specialties como envía el frontend
+        specialties: dto.specialties,
         defaultDurationMin: dto.defaultDurationMin ?? 30,
         bufferMin: dto.bufferMin ?? 10,
         notes: dto.notes,
-      },
-      include: { user: true },
-    });
-
-    // Crear horarios de atención si se proporcionan
-    if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
-      const horariosData = dto.horarios.dias.map(dia => ({
-        professionalId: professional.id,
-        dia: dia.toUpperCase(),
-        horaInicio: dto.horarios?.horaInicio || '08:00',
-        horaFin: dto.horarios?.horaFin || '18:00',
-        duracionMin: dto.defaultDurationMin ?? 30,
-      }));
-
-      await this.prisma.agenda.createMany({
-        data: horariosData,
       });
-    }
+      
+      // Crear el profesional con los nuevos campos
+      const professional = await this.prisma.professional.create({
+        data: {
+          userId: user.id,
+          name: dto.name,
+          specialties: dto.specialties, // Especialidades del profesional
+          tratamientos: dto.tratamientos || [], // Tratamientos que realiza
+          defaultDurationMin: dto.defaultDurationMin ?? 30,
+          bufferMin: dto.bufferMin ?? 10,
+          notes: dto.notes,
+        },
+        include: { user: true },
+      });
 
-    // Retornar el profesional con información adicional
-    return {
-      ...professional,
-      especialidad: dto.specialties, // Usar specialties como especialidad
-      tratamientos: dto.tratamientos || [],
-      sucursal: dto.sucursal,
-      horarios: dto.horarios,
-    };
+      console.log('✅ Profesional creado:', professional.id);
+
+      // Crear horarios de atención si se proporcionan
+      if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+        console.log('🔍 Creando horarios...');
+        const horariosData = dto.horarios.dias.map(dia => ({
+          professionalId: professional.id,
+          dia: dia.toUpperCase(),
+          horaInicio: dto.horarios?.horaInicio || '08:00',
+          horaFin: dto.horarios?.horaFin || '18:00',
+          duracionMin: dto.defaultDurationMin ?? 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+        console.log('✅ Horarios creados');
+      }
+
+      // Retornar el profesional con información adicional
+      const result = {
+        ...professional,
+        especialidad: dto.specialties, // Especialidades del profesional
+        tratamientos: dto.tratamientos || [], // Tratamientos que realiza
+        sucursal: dto.sucursal,
+        horarios: dto.horarios,
+      };
+
+      console.log('✅ Profesional creado exitosamente');
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Error creando profesional:', error);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
+    }
   }
 
   async findOne(clinicaUrl: string, id: string) {
@@ -133,7 +185,7 @@ export class ProfessionalsService {
     return {
       ...prof,
       especialidad: prof.specialties, // Retornar array completo de especialidades
-      tratamientos: prof.notes ? [prof.notes] : [], // Convertir notes a array temporalmente
+      tratamientos: prof.tratamientos || [], // Retornar tratamientos reales
       horarios: {
         dias: horarios.map(h => h.dia),
         horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
