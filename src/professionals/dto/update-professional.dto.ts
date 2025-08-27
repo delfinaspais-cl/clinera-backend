@@ -17,7 +17,7 @@ export class UpdateProfessionalDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  especialidad?: string[]; // Array de especialidades
+  specialties?: string[]; // Array de especialidades (como envía el frontend)
 
   @IsOptional()
   @IsArray()
@@ -27,10 +27,6 @@ export class UpdateProfessionalDto {
   @IsOptional()
   @IsString()
   sucursal?: string; // ID de la sucursal seleccionada
-
-  @IsOptional()
-  @IsArray()
-  specialties?: string[];
 
   @IsOptional()
   @IsString()

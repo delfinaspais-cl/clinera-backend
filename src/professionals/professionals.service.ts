@@ -78,7 +78,7 @@ export class ProfessionalsService {
       data: {
         userId: user.id,
         name: dto.name,
-        specialties: dto.especialidad, // Ya es un array
+        specialties: dto.specialties, // Usar specialties como envía el frontend
         defaultDurationMin: dto.defaultDurationMin ?? 30,
         bufferMin: dto.bufferMin ?? 10,
         notes: dto.notes,
@@ -104,7 +104,7 @@ export class ProfessionalsService {
     // Retornar el profesional con información adicional
     return {
       ...professional,
-      especialidad: dto.especialidad,
+      especialidad: dto.specialties, // Usar specialties como especialidad
       tratamientos: dto.tratamientos || [],
       sucursal: dto.sucursal,
       horarios: dto.horarios,
@@ -171,8 +171,7 @@ export class ProfessionalsService {
       // Preparar datos para actualizar el profesional
       const professionalData: any = {};
       if (dto.name) professionalData.name = dto.name;
-      if (dto.especialidad) professionalData.specialties = dto.especialidad; // Ya es un array
-      if (dto.specialties) professionalData.specialties = dto.specialties;
+      if (dto.specialties) professionalData.specialties = dto.specialties; // Usar specialties
       if (dto.defaultDurationMin !== undefined) professionalData.defaultDurationMin = dto.defaultDurationMin;
       if (dto.bufferMin !== undefined) professionalData.bufferMin = dto.bufferMin;
       if (dto.notes !== undefined) professionalData.notes = dto.notes;
@@ -225,7 +224,7 @@ export class ProfessionalsService {
 
         return {
           ...finalProfessional,
-          especialidad: dto.especialidad,
+          especialidad: dto.specialties, // Usar specialties como especialidad
           tratamientos: dto.tratamientos || [],
           sucursal: dto.sucursal,
           horarios: dto.horarios,
@@ -234,7 +233,7 @@ export class ProfessionalsService {
 
       return {
         ...updatedProfessional,
-        especialidad: dto.especialidad,
+        especialidad: dto.specialties, // Usar specialties como especialidad
         tratamientos: dto.tratamientos || [],
         sucursal: dto.sucursal,
         horarios: dto.horarios,

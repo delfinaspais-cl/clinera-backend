@@ -18,7 +18,7 @@ export class CreateProfessionalDto {
   // Campos para Professional
   @IsArray()
   @IsString({ each: true })
-  especialidad: string[]; // Array de especialidades
+  specialties: string[]; // Array de especialidades (como envía el frontend)
 
   @IsOptional()
   @IsArray()
