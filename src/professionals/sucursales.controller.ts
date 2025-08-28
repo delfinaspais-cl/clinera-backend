@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,17 +13,13 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSucursalDto } from './dto/create-sucursal.dto';
 import { UpdateSucursalDto } from './dto/update-sucursal.dto';
 
 @ApiTags('Gestión de Sucursales')
 @Controller('clinica/:clinicaUrl/sucursales')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class SucursalesController {
   constructor(private readonly prisma: PrismaService) {}
   
