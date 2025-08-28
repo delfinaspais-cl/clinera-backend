@@ -165,6 +165,8 @@ model Turno {
   estadoPago     String        @default("pendiente")
   medioPago      String?
   montoTotal     String?
+  montoAbonado   String?
+  montoPendiente String?
   origen         String?
   sucursal       String?
   clinica        Clinica       @relation(fields: [clinicaId], references: [id])

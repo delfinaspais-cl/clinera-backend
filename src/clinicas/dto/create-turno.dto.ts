@@ -10,6 +10,7 @@ import {
   Min,
   Max,
   IsIn,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateTurnoDto {
@@ -115,4 +116,15 @@ export class CreateTurnoDto {
   @IsString()
   @IsOptional()
   sucursal?: string;
+
+  // Campos para pagos parciales
+  @ValidateIf((o) => o.estadoPago === 'parcial')
+  @IsString()
+  @IsNotEmpty({ message: 'El monto abonado es requerido cuando el estado es parcial' })
+  montoAbonado?: string;
+
+  @ValidateIf((o) => o.estadoPago === 'parcial')
+  @IsString()
+  @IsNotEmpty({ message: 'El monto pendiente es requerido cuando el estado es parcial' })
+  montoPendiente?: string;
 }

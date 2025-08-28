@@ -1370,6 +1370,9 @@ export class ClinicasService {
         montoTotal: dto.montoTotal,
         estadoPago: dto.estadoPago || 'pendiente',
         medioPago: dto.medioPago,
+        // Campos para pagos parciales
+        montoAbonado: dto.montoAbonado,
+        montoPendiente: dto.montoPendiente,
         // Nuevos campos adicionales
         origen: dto.origen,
         ate: dto.ate,
@@ -1447,6 +1450,9 @@ export class ClinicasService {
           montoTotal: dto.montoTotal,
           estadoPago: dto.estadoPago,
           medioPago: dto.medioPago,
+          // Campos para pagos parciales
+          montoAbonado: dto.montoAbonado,
+          montoPendiente: dto.montoPendiente,
           // Nuevos campos adicionales
           origen: dto.origen,
           ate: dto.ate,
@@ -1472,6 +1478,12 @@ export class ClinicasService {
           notas: turnoActualizado.notas,
           servicio: turnoActualizado.servicio,
           professionalId: turnoActualizado.professionalId,
+          // Campos de pago
+          montoTotal: turnoActualizado.montoTotal,
+          estadoPago: turnoActualizado.estadoPago,
+          medioPago: turnoActualizado.medioPago,
+          montoAbonado: turnoActualizado.montoAbonado,
+          montoPendiente: turnoActualizado.montoPendiente,
         },
       };
     } catch (error) {
