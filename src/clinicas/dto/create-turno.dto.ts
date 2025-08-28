@@ -95,8 +95,8 @@ export class CreateTurnoDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['transferencia', 'efectivo', 'tarjeta'], {
-    message: 'El medio de pago debe ser: transferencia, efectivo o tarjeta',
+  @IsIn(['efectivo', 'tarjeta', 'transferencia', 'mercadopago', 'paypal', 'otro'], {
+    message: 'El medio de pago debe ser: efectivo, tarjeta, transferencia, mercadopago, paypal u otro',
   })
   medioPago?: string;
 
