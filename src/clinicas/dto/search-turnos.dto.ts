@@ -16,10 +16,6 @@ export class SearchTurnosDto {
   profesional?: string;
 
   @IsOptional()
-  @IsString()
-  especialidad?: string;
-
-  @IsOptional()
   @IsEnum(['pendiente', 'confirmado', 'cancelado', 'completado'])
   estado?: string;
 

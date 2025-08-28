@@ -14,9 +14,6 @@ export class GetTurnosFiltersDto extends PaginationDto {
   estado?: TurnoEstado;
 
   @IsOptional()
-  especialidad?: string;
-
-  @IsOptional()
   doctor?: string;
 
   @IsOptional()

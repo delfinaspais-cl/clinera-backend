@@ -35,11 +35,6 @@ export class CreateTurnoDto {
   telefono?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'La especialidad es requerida' })
-  @MinLength(2, { message: 'La especialidad debe tener al menos 2 caracteres' })
-  especialidad: string;
-
-  @IsString()
   @IsNotEmpty({ message: 'El profesional es requerido' })
   @MinLength(2, {
     message: 'El nombre del profesional debe tener al menos 2 caracteres',

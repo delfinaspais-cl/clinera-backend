@@ -278,9 +278,7 @@ export class ClinicasService {
         whereClause.estado = filters.estado;
       }
 
-      if (filters.especialidad) {
-        whereClause.especialidad = filters.especialidad;
-      }
+
 
       if (filters.doctor) {
         whereClause.doctor = { contains: filters.doctor, mode: 'insensitive' };
@@ -301,7 +299,6 @@ export class ClinicasService {
         whereClause.OR = [
           { paciente: { contains: filters.search, mode: 'insensitive' } },
           { doctor: { contains: filters.search, mode: 'insensitive' } },
-          { especialidad: { contains: filters.search, mode: 'insensitive' } },
           { email: { contains: filters.search, mode: 'insensitive' } },
         ];
       }
@@ -427,7 +424,6 @@ export class ClinicasService {
             paciente: turno.paciente,
             email: turno.email,
             telefono: turno.telefono,
-            especialidad: turno.especialidad,
             doctor: turno.doctor,
             fecha: turno.fecha.toISOString().split('T')[0],
             hora: turno.hora,
@@ -548,7 +544,6 @@ export class ClinicasService {
           paciente: turno.paciente,
           email: turno.email,
           telefono: turno.telefono,
-          especialidad: turno.especialidad,
           doctor: turno.doctor,
           fecha: turno.fecha.toISOString().split('T')[0],
           hora: turno.hora,
@@ -709,7 +704,7 @@ export class ClinicasService {
           paciente: turnoActualizado.paciente,
           email: turnoActualizado.email,
           telefono: turnoActualizado.telefono,
-          especialidad: turnoActualizado.especialidad,
+
           doctor: turnoActualizado.doctor,
           fecha: turnoActualizado.fecha.toISOString().split('T')[0],
           hora: turnoActualizado.hora,
@@ -1030,7 +1025,6 @@ export class ClinicasService {
       const turnosFormateados = turnosDisponibles.map((turno) => ({
         fecha: turno.fecha.toISOString().split('T')[0],
         hora: turno.hora,
-        especialidad: turno.especialidad,
         doctor: turno.doctor,
       }));
 
@@ -1095,7 +1089,6 @@ export class ClinicasService {
           paciente: dto.nombre,
           email: dto.email,
           telefono: dto.telefono,
-          especialidad: dto.especialidad,
           doctor: dto.doctor,
           fecha: fechaTurno,
           hora: dto.hora,
@@ -1119,7 +1112,7 @@ export class ClinicasService {
           paciente: turnoCreado.paciente,
           email: turnoCreado.email,
           telefono: turnoCreado.telefono,
-          especialidad: turnoCreado.especialidad,
+
           doctor: turnoCreado.doctor,
           fecha: turnoCreado.fecha.toISOString().split('T')[0],
           hora: turnoCreado.hora,
@@ -1308,7 +1301,6 @@ export class ClinicasService {
         paciente: turno.paciente,
         email: turno.email,
         telefono: turno.telefono,
-        especialidad: turno.especialidad,
         doctor: turno.doctor,
         fecha: turno.fecha.toISOString().split('T')[0],
         hora: turno.hora,
@@ -1365,7 +1357,6 @@ export class ClinicasService {
         paciente: dto.paciente,
         email: dto.email || `${dto.paciente.toLowerCase().replace(/\s+/g, '.')}@email.com`,
         telefono: dto.telefono,
-        especialidad: dto.especialidad || 'Consulta general',
         doctor: dto.profesional,
         fecha: new Date(dto.fecha),
         hora: dto.hora,
@@ -1443,7 +1434,6 @@ export class ClinicasService {
           paciente: dto.paciente,
           email: dto.email || `${dto.paciente.toLowerCase().replace(/\s+/g, '.')}@email.com`,
           telefono: dto.telefono,
-          especialidad: dto.especialidad || 'Consulta general',
           doctor: dto.profesional,
           fecha: new Date(dto.fecha),
           hora: dto.hora,
@@ -1472,7 +1462,7 @@ export class ClinicasService {
           paciente: turnoActualizado.paciente,
           email: turnoActualizado.email,
           telefono: turnoActualizado.telefono,
-          especialidad: turnoActualizado.especialidad,
+
           doctor: turnoActualizado.doctor,
           fecha: turnoActualizado.fecha.toISOString().split('T')[0],
           hora: turnoActualizado.hora,
@@ -1513,14 +1503,7 @@ export class ClinicasService {
         },
       });
 
-      // Obtener estadísticas por especialidad
-      const statsPorEspecialidad = await this.prisma.turno.groupBy({
-        by: ['especialidad'],
-        where: { clinicaId: clinica.id },
-        _count: {
-          especialidad: true,
-        },
-      });
+
 
       // Obtener estadísticas por mes (últimos 6 meses)
       const fechaInicio = new Date();
@@ -1574,10 +1557,7 @@ export class ClinicasService {
             pendientes: Math.round(porcentajePendientes * 100) / 100,
             cancelados: Math.round(porcentajeCancelados * 100) / 100,
           },
-          porEspecialidad: statsPorEspecialidad.map((stat) => ({
-            especialidad: stat.especialidad,
-            cantidad: stat._count.especialidad,
-          })),
+
           ultimos6Meses: statsPorMes.map((stat) => ({
             estado: stat.estado,
             cantidad: stat._count.estado,
@@ -1659,22 +1639,7 @@ export class ClinicasService {
         },
       });
 
-      // Analytics de especialidades más solicitadas
-      const especialidadesPopulares = await this.prisma.turno.groupBy({
-        by: ['especialidad'],
-        where: {
-          clinicaId: clinica.id,
-        },
-        _count: {
-          especialidad: true,
-        },
-        orderBy: {
-          _count: {
-            especialidad: 'desc',
-          },
-        },
-        take: 5,
-      });
+
 
       // Analytics de doctores más solicitados
       const doctoresPopulares = await this.prisma.turno.groupBy({
@@ -1785,10 +1750,7 @@ export class ClinicasService {
             pacientesUnicos: pacientesPorMes.length,
             ingresosEstimados,
           },
-          especialidadesPopulares: especialidadesPopulares.map((stat) => ({
-            especialidad: stat.especialidad,
-            cantidad: stat._count.especialidad,
-          })),
+
           doctoresPopulares: doctoresPopulares.map((stat) => ({
             doctor: stat.doctor,
             cantidad: stat._count.doctor,
@@ -1854,13 +1816,7 @@ export class ClinicasService {
         where.doctor = { contains: searchDto.profesional, mode: 'insensitive' };
       }
 
-      // Filtro por especialidad
-      if (searchDto.especialidad) {
-        where.especialidad = {
-          contains: searchDto.especialidad,
-          mode: 'insensitive',
-        };
-      }
+
 
       // Filtro por estado
       if (searchDto.estado) {
@@ -1909,7 +1865,6 @@ export class ClinicasService {
         email: turno.email,
         telefono: turno.telefono,
         doctor: turno.doctor,
-        especialidad: turno.especialidad,
         fecha: turno.fecha.toISOString().split('T')[0],
         hora: turno.hora,
         duracionMin: turno.duracionMin,
@@ -1941,7 +1896,6 @@ export class ClinicasService {
         filters: {
           paciente: searchDto.paciente,
           profesional: searchDto.profesional,
-          especialidad: searchDto.especialidad,
           estado: searchDto.estado,
           fechaDesde: searchDto.fechaDesde,
           fechaHasta: searchDto.fechaHasta,
@@ -2100,9 +2054,7 @@ export class ClinicasService {
         where.doctor = { contains: filters.doctor, mode: 'insensitive' };
       }
 
-      if (filters.especialidad) {
-        where.especialidad = { contains: filters.especialidad, mode: 'insensitive' };
-      }
+
 
       // Paginación
       const page = filters.page || 1;
@@ -2127,7 +2079,6 @@ export class ClinicasService {
           paciente: turno.paciente,
           email: turno.email,
           telefono: turno.telefono,
-          especialidad: turno.especialidad,
           doctor: turno.doctor,
           fecha: turno.fecha.toISOString().split('T')[0],
           hora: turno.hora,
@@ -2363,9 +2314,7 @@ export class ClinicasService {
         where.doctor = { contains: filters.doctor, mode: 'insensitive' };
       }
 
-      if (filters.especialidad) {
-        where.especialidad = { contains: filters.especialidad, mode: 'insensitive' };
-      }
+
 
       // Paginación
       const page = filters.page || 1;
@@ -2399,7 +2348,6 @@ export class ClinicasService {
           paciente: turno.paciente,
           email: turno.email,
           telefono: turno.telefono,
-          especialidad: turno.especialidad,
           doctor: turno.doctor,
           fecha: turno.fecha.toISOString().split('T')[0],
           hora: turno.hora,

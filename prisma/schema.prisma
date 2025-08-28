@@ -147,7 +147,6 @@ model Turno {
   paciente       String
   email          String
   telefono       String?
-  especialidad   String
   doctor         String
   fecha          DateTime
   hora           String

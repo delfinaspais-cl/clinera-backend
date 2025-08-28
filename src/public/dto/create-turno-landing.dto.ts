@@ -23,10 +23,6 @@ export class CreateTurnoLandingDto {
 
   @IsString()
   @IsNotEmpty()
-  especialidad: string;
-
-  @IsString()
-  @IsNotEmpty()
   doctor: string;
 
   @IsString()
