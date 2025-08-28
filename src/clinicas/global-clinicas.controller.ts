@@ -269,7 +269,6 @@ export class GlobalClinicasController {
             select: {
               id: true,
               paciente: true,
-              especialidad: true,
               doctor: true,
               fecha: true,
               estado: true,

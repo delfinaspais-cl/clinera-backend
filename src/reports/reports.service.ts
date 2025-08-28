@@ -131,7 +131,6 @@ export class ReportsService {
       email: turno.email,
       telefono: turno.telefono,
       doctor: turno.doctor,
-      especialidad: turno.especialidad,
       fecha: turno.fecha.toISOString().split('T')[0],
       hora: turno.hora,
       duracionMin: turno.duracionMin,

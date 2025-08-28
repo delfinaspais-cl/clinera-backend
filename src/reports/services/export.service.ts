@@ -45,7 +45,7 @@ export class ExportService {
     doc.text('Paciente', startX, yPosition);
     doc.text('Email', startX + colWidth, yPosition);
     doc.text('Doctor', startX + colWidth * 2, yPosition);
-    doc.text('Especialidad', startX + colWidth * 3, yPosition);
+    doc.text('Servicio', startX + colWidth * 3, yPosition);
     doc.text('Fecha', startX + colWidth * 4, yPosition);
     doc.text('Hora', startX + colWidth * 5, yPosition);
     doc.text('Estado', startX + colWidth * 6, yPosition);
@@ -68,7 +68,7 @@ export class ExportService {
       doc.text(turno.paciente || '', startX, yPosition);
       doc.text(turno.email || '', startX + colWidth, yPosition);
       doc.text(turno.doctor || '', startX + colWidth * 2, yPosition);
-      doc.text(turno.especialidad || '', startX + colWidth * 3, yPosition);
+      doc.text(turno.servicio || '', startX + colWidth * 3, yPosition);
       doc.text(turno.fecha || '', startX + colWidth * 4, yPosition);
       doc.text(turno.hora || '', startX + colWidth * 5, yPosition);
       doc.text(turno.estado || '', startX + colWidth * 6, yPosition);
@@ -128,7 +128,7 @@ export class ExportService {
       'Email',
       'Teléfono',
       'Doctor',
-      'Especialidad',
+      'Servicio',
       'Fecha',
       'Hora',
       'Estado',
@@ -150,7 +150,7 @@ export class ExportService {
         turno.email || '',
         turno.telefono || '',
         turno.doctor || '',
-        turno.especialidad || '',
+        turno.servicio || '',
         turno.fecha || '',
         turno.hora || '',
         turno.estado || '',
