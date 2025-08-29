@@ -195,6 +195,11 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/cancel')
+  @ApiOperation({ summary: 'Cancelar turno (sin autenticación)' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiParam({ name: 'turnoId', description: 'ID del turno a cancelar' })
+  @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Turno no encontrado' })
   async cancelTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
