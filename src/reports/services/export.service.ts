@@ -383,4 +383,133 @@ export class ExportService {
 
     return stats;
   }
+
+  // Generar PDF de ventas
+  async generateVentasPDF(
+    ventas: any[],
+    clinicaName: string,
+    res: Response,
+  ): Promise<void> {
+    const doc = new PDFDocument();
+
+    // Configurar headers para descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=reporte-ventas-${clinicaName}-${new Date().toISOString().split('T')[0]}.pdf`,
+    );
+
+    // Pipe el documento a la respuesta
+    doc.pipe(res);
+
+    // Agregar contenido al PDF
+    doc
+      .fontSize(20)
+      .text(`Reporte de Ventas - ${clinicaName}`, { align: 'center' });
+    doc.moveDown();
+    doc
+      .fontSize(12)
+      .text(`Generado el: ${new Date().toLocaleDateString('es-ES')}`, {
+        align: 'center',
+      });
+    doc.moveDown(2);
+
+    // Tabla de ventas
+    let yPosition = doc.y;
+    const startX = 30;
+    const colWidth = 70;
+
+    // Headers de la tabla
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('Fecha', startX, yPosition);
+    doc.text('Paciente', startX + colWidth, yPosition);
+    doc.text('Profesional', startX + colWidth * 2, yPosition);
+    doc.text('Sucursal', startX + colWidth * 3, yPosition);
+    doc.text('Tratamiento', startX + colWidth * 4, yPosition);
+    doc.text('Monto', startX + colWidth * 5, yPosition);
+    doc.text('Estado', startX + colWidth * 6, yPosition);
+    doc.text('Pago', startX + colWidth * 7, yPosition);
+
+    yPosition += 20;
+    doc
+      .moveTo(startX, yPosition)
+      .lineTo(startX + colWidth * 8, yPosition)
+      .stroke();
+    yPosition += 10;
+
+    // Datos de ventas
+    doc.fontSize(7).font('Helvetica');
+    ventas.forEach((venta, index) => {
+      if (yPosition > 700) {
+        doc.addPage();
+        yPosition = 50;
+      }
+
+      doc.text(venta.fecha || '', startX, yPosition);
+      doc.text(venta.paciente || '', startX + colWidth, yPosition);
+      doc.text(venta.profesional || '', startX + colWidth * 2, yPosition);
+      doc.text(venta.sucursal || '', startX + colWidth * 3, yPosition);
+      doc.text(venta.tratamiento || '', startX + colWidth * 4, yPosition);
+      doc.text(venta.montoTotal || '', startX + colWidth * 5, yPosition);
+      doc.text(venta.estado || '', startX + colWidth * 6, yPosition);
+      doc.text(venta.medioPago || '', startX + colWidth * 7, yPosition);
+
+      yPosition += 15;
+    });
+
+    // Estadísticas al final
+    doc.addPage();
+    doc.fontSize(16).text('Estadísticas de Ventas', { align: 'center' });
+    doc.moveDown();
+
+    const stats = this.calculateVentasStats(ventas);
+    doc.fontSize(12).text(`Total de ventas: ${stats.total}`);
+    doc.text(`Ventas pendientes: ${stats.pendientes}`);
+    doc.text(`Ventas confirmadas: ${stats.confirmadas}`);
+    doc.text(`Ventas canceladas: ${stats.canceladas}`);
+    doc.text(`Ventas completadas: ${stats.completadas}`);
+    doc.moveDown();
+    doc.text(`Total facturado: $${stats.totalFacturado.toLocaleString()}`);
+
+    doc.end();
+  }
+
+  // Calcular estadísticas de ventas
+  private calculateVentasStats(ventas: any[]) {
+    const stats = {
+      total: ventas.length,
+      pendientes: 0,
+      confirmadas: 0,
+      canceladas: 0,
+      completadas: 0,
+      totalFacturado: 0,
+    };
+
+    ventas.forEach((venta) => {
+      switch (venta.estado?.toLowerCase()) {
+        case 'pendiente':
+          stats.pendientes++;
+          break;
+        case 'confirmado':
+          stats.confirmadas++;
+          break;
+        case 'cancelado':
+          stats.canceladas++;
+          break;
+        case 'completado':
+          stats.completadas++;
+          break;
+      }
+
+      // Calcular total facturado
+      if (venta.montoTotal && venta.montoTotal !== 'N/A') {
+        const monto = parseFloat(venta.montoTotal.replace('$', '').replace(',', ''));
+        if (!isNaN(monto)) {
+          stats.totalFacturado += monto;
+        }
+      }
+    });
+
+    return stats;
+  }
 }

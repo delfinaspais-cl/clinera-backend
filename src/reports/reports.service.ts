@@ -193,4 +193,148 @@ export class ReportsService {
       notas: paciente.notes,
     }));
   }
+
+  // Método para obtener datos de ventas para exportación
+  async getVentasForExport(
+    clinicaUrl: string,
+    filters: {
+      fechaDesde?: string;
+      fechaHasta?: string;
+      estado?: string;
+      paciente?: string;
+      profesional?: string;
+      sucursal?: string;
+    },
+  ) {
+    const clinica = await this.getClinicaInfo(clinicaUrl);
+
+    const where: any = { clinicaId: clinica.id };
+
+    // Aplicar filtros
+    if (filters.fechaDesde || filters.fechaHasta) {
+      where.fecha = {};
+      if (filters.fechaDesde) {
+        where.fecha.gte = new Date(filters.fechaDesde);
+      }
+      if (filters.fechaHasta) {
+        where.fecha.lte = new Date(filters.fechaHasta);
+      }
+    }
+
+    if (filters.estado && filters.estado !== 'Todos') {
+      where.estado = filters.estado;
+    }
+
+    if (filters.paciente) {
+      where.paciente = {
+        contains: filters.paciente,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.profesional) {
+      where.doctor = {
+        contains: filters.profesional,
+        mode: 'insensitive',
+      };
+    }
+
+    if (filters.sucursal) {
+      where.sucursal = filters.sucursal;
+    }
+
+    const ventas = await this.prisma.turno.findMany({
+      where,
+      orderBy: { fecha: 'desc' },
+      select: {
+        id: true,
+        fecha: true,
+        paciente: true,
+        doctor: true,
+        sucursal: true,
+        servicio: true,
+        montoTotal: true,
+        estado: true,
+        medioPago: true,
+        origen: true,
+        notas: true,
+        hora: true,
+        duracionMin: true,
+        estadoPago: true,
+      },
+    });
+
+    return ventas.map((venta) => ({
+      fecha: venta.fecha.toISOString().split('T')[0],
+      paciente: venta.paciente || 'N/A',
+      profesional: venta.doctor || 'N/A',
+      sucursal: venta.sucursal || 'N/A',
+      tratamiento: venta.servicio || 'Sin especialidad',
+      montoTotal: venta.montoTotal ? `$${venta.montoTotal}` : 'N/A',
+      estado: venta.estado || 'N/A',
+      medioPago: venta.medioPago || 'N/A',
+      origen: venta.origen || 'N/A',
+      notas: venta.notas || 'N/A',
+      hora: venta.hora || 'N/A',
+      duracionMin: venta.duracionMin || 'N/A',
+      estadoPago: venta.estadoPago || 'N/A',
+    }));
+  }
+
+  // Método para obtener estadísticas de ventas
+  async getVentasStats(clinicaUrl: string) {
+    const clinica = await this.getClinicaInfo(clinicaUrl);
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    // Ventas de hoy
+    const ventasHoy = await this.prisma.turno.count({
+      where: {
+        clinicaId: clinica.id,
+        fecha: {
+          gte: startOfDay,
+        },
+      },
+    });
+
+    // Ventas del mes
+    const ventasMes = await this.prisma.turno.count({
+      where: {
+        clinicaId: clinica.id,
+        fecha: {
+          gte: startOfMonth,
+        },
+      },
+    });
+
+    // Total de ventas pagadas
+    const totalVentas = await this.prisma.turno.aggregate({
+      where: {
+        clinicaId: clinica.id,
+        estadoPago: 'pagado',
+        montoTotal: { not: null },
+      },
+      _sum: {
+        montoTotal: true,
+      },
+    });
+
+    // Pacientes únicos
+    const pacientesUnicos = await this.prisma.turno.groupBy({
+      by: ['paciente'],
+      where: {
+        clinicaId: clinica.id,
+        paciente: { not: null },
+      },
+      _count: true,
+    });
+
+    return {
+      ventasHoy,
+      ventasMes,
+      totalVentas: totalVentas._sum.montoTotal || 0,
+      pacientesUnicos: pacientesUnicos.length,
+    };
+  }
 }

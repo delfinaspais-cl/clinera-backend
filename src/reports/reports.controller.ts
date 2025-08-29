@@ -113,4 +113,51 @@ export class ReportsController {
       res,
     );
   }
+
+  // Endpoint para exportar ventas a PDF (sin autenticación)
+  @ApiOperation({ summary: 'Exportar ventas a PDF' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiResponse({
+    status: 200,
+    description: 'Archivo PDF de ventas descargado',
+    content: {
+      'application/pdf': {
+        schema: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @Get('export/ventas/pdf')
+  async exportVentasPDF(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Res() res: Response,
+    @Query('fechaDesde') fechaDesde?: string,
+    @Query('fechaHasta') fechaHasta?: string,
+    @Query('estado') estado?: string,
+    @Query('paciente') paciente?: string,
+    @Query('profesional') profesional?: string,
+    @Query('sucursal') sucursal?: string,
+  ) {
+    const ventas = await this.reportesService.getVentasForExport(clinicaUrl, {
+      fechaDesde,
+      fechaHasta,
+      estado,
+      paciente,
+      profesional,
+      sucursal,
+    });
+    const clinica = await this.reportesService.getClinicaInfo(clinicaUrl);
+    await this.exportService.generateVentasPDF(ventas, clinica.name, res);
+  }
+
+  // Endpoint para obtener estadísticas de ventas (sin autenticación)
+  @ApiOperation({ summary: 'Obtener estadísticas de ventas' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estadísticas de ventas obtenidas',
+  })
+  @Get('ventas/stats')
+  async getVentasStats(@Param('clinicaUrl') clinicaUrl: string) {
+    return await this.reportesService.getVentasStats(clinicaUrl);
+  }
 }
