@@ -309,23 +309,31 @@ export class ReportsService {
     });
 
     // Total de ventas pagadas
-    const totalVentas = await this.prisma.turno.aggregate({
+    const turnosPagados = await this.prisma.turno.findMany({
       where: {
         clinicaId: clinica.id,
         estadoPago: 'pagado',
         montoTotal: { not: null },
       },
-      _sum: {
+      select: {
         montoTotal: true,
       },
     });
+
+    // Calcular total sumando los montos
+    const totalVentas = turnosPagados.reduce((sum, turno) => {
+      const monto = parseFloat(turno.montoTotal || '0');
+      return sum + monto;
+    }, 0);
 
     // Pacientes únicos
     const pacientesUnicos = await this.prisma.turno.groupBy({
       by: ['paciente'],
       where: {
         clinicaId: clinica.id,
-        paciente: { not: null },
+        paciente: {
+          not: '',
+        },
       },
       _count: true,
     });
@@ -333,7 +341,7 @@ export class ReportsService {
     return {
       ventasHoy,
       ventasMes,
-      totalVentas: totalVentas._sum.montoTotal || 0,
+      totalVentas,
       pacientesUnicos: pacientesUnicos.length,
     };
   }

@@ -12,7 +12,6 @@ import { ExportService } from './services/export.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @ApiTags('Reportes y Exportación')
-@UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/reportes')
 export class ReportsController {
   constructor(
@@ -20,16 +19,19 @@ export class ReportsController {
     private readonly exportService: ExportService,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get('turnos')
   getTurnos(@Param('clinicaUrl') clinicaUrl: string) {
     return this.reportesService.turnosPorEstado(clinicaUrl);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('ingresos')
   getIngresos(@Param('clinicaUrl') clinicaUrl: string) {
     return this.reportesService.totalIngresos(clinicaUrl);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('pacientes')
   getPacientes(@Param('clinicaUrl') clinicaUrl: string) {
     return this.reportesService.pacientesPorMes(clinicaUrl);
@@ -48,6 +50,7 @@ export class ReportsController {
     },
   })
   @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Get('export/turnos/pdf')
   async exportTurnosPDF(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -65,6 +68,7 @@ export class ReportsController {
     await this.exportService.generateTurnosPDF(turnos, clinica.name, res);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('export/turnos/excel')
   async exportTurnosExcel(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -82,6 +86,7 @@ export class ReportsController {
     await this.exportService.generateTurnosExcel(turnos, clinica.name, res);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('export/pacientes/pdf')
   async exportPacientesPDF(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -96,6 +101,7 @@ export class ReportsController {
     await this.exportService.generatePacientesPDF(pacientes, clinica.name, res);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('export/pacientes/excel')
   async exportPacientesExcel(
     @Param('clinicaUrl') clinicaUrl: string,
