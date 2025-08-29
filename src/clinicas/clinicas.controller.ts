@@ -34,6 +34,7 @@ import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dto';
 import { CreateNotificacionDto } from './dto/create-notificacion.dto';
 import { TurnosStatsDto, TurnosStatsResponseDto } from './dto/turnos-stats.dto';
+import { DashboardVentasResponseDto } from './dto/dashboard-ventas.dto';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -524,6 +525,21 @@ export class ClinicasController {
     @Query() filters: TurnosStatsDto,
   ) {
     return this.clinicasService.getTurnosStats(clinicaUrl, filters);
+  }
+
+  @Get(':clinicaUrl/dashboard-ventas')
+  @ApiOperation({ summary: 'Obtener datos del dashboard de ventas' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Datos del dashboard obtenidos exitosamente',
+    type: DashboardVentasResponseDto
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getDashboardVentas(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    return this.clinicasService.getDashboardVentas(clinicaUrl);
   }
 
   @Get(':clinicaUrl/ventas')

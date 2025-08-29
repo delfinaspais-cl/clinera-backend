@@ -2564,4 +2564,124 @@ export class ClinicasService {
       ventasPorOrigen,
     };
   }
+
+  async getDashboardVentas(clinicaUrl: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      const ahora = new Date();
+      const hoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+      const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+
+      // 1. Turnos de hoy
+      const turnosHoy = await this.prisma.turno.count({
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: hoy,
+            lt: new Date(hoy.getTime() + 24 * 60 * 60 * 1000),
+          },
+        },
+      });
+
+      // 2. Turnos del mes
+      const turnosMes = await this.prisma.turno.count({
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: inicioMes,
+            lt: new Date(inicioMes.getFullYear(), inicioMes.getMonth() + 1, 1),
+          },
+        },
+      });
+
+      // 3. Ventas de hoy (sumar manualmente ya que montoTotal es string)
+      const turnosHoyData = await this.prisma.turno.findMany({
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: hoy,
+            lt: new Date(hoy.getTime() + 24 * 60 * 60 * 1000),
+          },
+        },
+        select: {
+          montoTotal: true,
+        },
+      });
+
+      const ventasHoy = turnosHoyData.reduce((sum, turno) => {
+        return sum + parseFloat(turno.montoTotal || '0');
+      }, 0);
+
+      // 4. Ventas del mes
+      const turnosMesData = await this.prisma.turno.findMany({
+        where: {
+          clinicaId: clinica.id,
+          fecha: {
+            gte: inicioMes,
+            lt: new Date(inicioMes.getFullYear(), inicioMes.getMonth() + 1, 1),
+          },
+        },
+        select: {
+          montoTotal: true,
+        },
+      });
+
+      const ventasMes = turnosMesData.reduce((sum, turno) => {
+        return sum + parseFloat(turno.montoTotal || '0');
+      }, 0);
+
+      // 5. Total ventas pagadas (de todos los tiempos)
+      const turnosPagadosData = await this.prisma.turno.findMany({
+        where: {
+          clinicaId: clinica.id,
+          estadoPago: 'pagado',
+        },
+        select: {
+          montoTotal: true,
+        },
+      });
+
+      const totalVentasPagadas = turnosPagadosData.reduce((sum, turno) => {
+        return sum + parseFloat(turno.montoTotal || '0');
+      }, 0);
+
+      // 6. Pacientes únicos (de todos los tiempos)
+      const pacientesUnicos = await this.prisma.turno.groupBy({
+        by: ['email'],
+        where: {
+          clinicaId: clinica.id,
+          email: {
+            not: '',
+          },
+        },
+        _count: {
+          email: true,
+        },
+      });
+
+      return {
+        success: true,
+        turnosHoy,
+        turnosMes,
+        ventasHoy,
+        ventasMes,
+        totalVentasPagadas,
+        totalPacientes: pacientesUnicos.length,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener dashboard de ventas:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
 }
