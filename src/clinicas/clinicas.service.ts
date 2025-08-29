@@ -1495,7 +1495,7 @@ export class ClinicasService {
     }
   }
 
-  async getTurnosStats(clinicaUrl: string) {
+  async getTurnosStatsBasic(clinicaUrl: string) {
     try {
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
@@ -2404,5 +2404,164 @@ export class ClinicasService {
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  async getTurnosStats(clinicaUrl: string, filters: any = {}) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Calcular fechas según el período
+      const { fechaInicio, fechaFin } = this.calcularFechasPeriodo(filters.periodo || 'hoy', filters.fechaInicio, filters.fechaFin);
+
+      // Construir filtros base
+      const where: any = {
+        clinicaId: clinica.id,
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin,
+        },
+      };
+
+      // Aplicar filtros adicionales
+      if (filters.estadoPago) {
+        where.estadoPago = filters.estadoPago;
+      }
+
+      if (filters.profesional) {
+        where.doctor = { contains: filters.profesional, mode: 'insensitive' };
+      }
+
+      if (filters.sucursal) {
+        where.sucursal = filters.sucursal;
+      }
+
+      // Obtener todos los turnos del período
+      const turnos = await this.prisma.turno.findMany({
+        where,
+        orderBy: { fecha: 'desc' },
+      });
+
+      // Calcular estadísticas
+      const stats = this.calcularEstadisticas(turnos);
+
+      return {
+        success: true,
+        ...stats,
+        periodo: {
+          inicio: fechaInicio.toISOString().split('T')[0],
+          fin: fechaFin.toISOString().split('T')[0],
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener estadísticas de turnos:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  private calcularFechasPeriodo(periodo: string, fechaInicio?: string, fechaFin?: string) {
+    const ahora = new Date();
+    let fechaInicioDate: Date;
+    let fechaFinDate: Date;
+
+    switch (periodo) {
+      case 'hoy':
+        fechaInicioDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        fechaFinDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+        break;
+      case 'semana':
+        const inicioSemana = new Date(ahora);
+        inicioSemana.setDate(ahora.getDate() - ahora.getDay());
+        fechaInicioDate = new Date(inicioSemana.getFullYear(), inicioSemana.getMonth(), inicioSemana.getDate());
+        fechaFinDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+        break;
+      case 'mes':
+        fechaInicioDate = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+        fechaFinDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+        break;
+      case 'año':
+        fechaInicioDate = new Date(ahora.getFullYear(), 0, 1);
+        fechaFinDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+        break;
+      case 'personalizado':
+        if (!fechaInicio || !fechaFin) {
+          throw new BadRequestException('Para período personalizado, fechaInicio y fechaFin son requeridos');
+        }
+        fechaInicioDate = new Date(fechaInicio);
+        fechaFinDate = new Date(fechaFin + 'T23:59:59');
+        break;
+      default:
+        fechaInicioDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+        fechaFinDate = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59);
+    }
+
+    return { fechaInicio: fechaInicioDate, fechaFin: fechaFinDate };
+  }
+
+  private calcularEstadisticas(turnos: any[]) {
+    // Calcular totales básicos
+    const totalVentas = turnos.reduce((sum, turno) => {
+      const monto = parseFloat(turno.montoTotal || '0');
+      return sum + monto;
+    }, 0);
+
+    const totalTurnos = turnos.length;
+    const pacientesUnicos = new Set(turnos.map(t => t.email)).size;
+    const promedioVentaPorTurno = totalTurnos > 0 ? totalVentas / totalTurnos : 0;
+
+    // Contar por estado de pago
+    const turnosPagados = turnos.filter(t => t.estadoPago === 'pagado').length;
+    const turnosPendientes = turnos.filter(t => t.estadoPago === 'pendiente').length;
+    const turnosParciales = turnos.filter(t => t.estadoPago === 'parcial').length;
+    const turnosSinCargo = turnos.filter(t => t.estadoPago === 'sin_cargo').length;
+
+    // Calcular ventas por estado de pago
+    const ventasPorEstado = {
+      pagado: turnos.filter(t => t.estadoPago === 'pagado').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      parcial: turnos.filter(t => t.estadoPago === 'parcial').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      pendiente: turnos.filter(t => t.estadoPago === 'pendiente').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      sin_cargo: 0,
+    };
+
+    // Calcular ventas por medio de pago
+    const ventasPorMedioPago = {
+      efectivo: turnos.filter(t => t.medioPago === 'efectivo').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      tarjeta: turnos.filter(t => t.medioPago === 'tarjeta').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      transferencia: turnos.filter(t => t.medioPago === 'transferencia').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      mercadopago: turnos.filter(t => t.medioPago === 'mercadopago').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      paypal: turnos.filter(t => t.medioPago === 'paypal').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      otro: turnos.filter(t => t.medioPago === 'otro').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+    };
+
+    // Calcular ventas por origen
+    const ventasPorOrigen = {
+      instagram: turnos.filter(t => t.origen === 'instagram').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      organico: turnos.filter(t => t.origen === 'organico').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      'google-ads': turnos.filter(t => t.origen === 'google-ads').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+      whatsapp: turnos.filter(t => t.origen === 'whatsapp').reduce((sum, t) => sum + parseFloat(t.montoTotal || '0'), 0),
+    };
+
+    return {
+      totalVentas,
+      totalTurnos,
+      totalPacientes: pacientesUnicos,
+      promedioVentaPorTurno,
+      turnosPagados,
+      turnosPendientes,
+      turnosParciales,
+      turnosSinCargo,
+      ventasPorEstado,
+      ventasPorMedioPago,
+      ventasPorOrigen,
+    };
   }
 }

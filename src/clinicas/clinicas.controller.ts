@@ -33,6 +33,7 @@ import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dto';
 import { CreateNotificacionDto } from './dto/create-notificacion.dto';
+import { TurnosStatsDto, TurnosStatsResponseDto } from './dto/turnos-stats.dto';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -210,18 +211,18 @@ export class ClinicasController {
 
   @Get(':clinicaUrl/turnos/stats')
   @UseGuards(JwtAuthGuard)
-  async getTurnosStats(
+  async getTurnosStatsBasic(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
     // Verificar que el usuario tenga acceso a esta clínica
     if (req.user.role === 'OWNER') {
-      return this.clinicasService.getTurnosStats(clinicaUrl);
+      return this.clinicasService.getTurnosStatsBasic(clinicaUrl);
     } else if (
       req.user.role === 'ADMIN' &&
       req.user.clinicaUrl === clinicaUrl
     ) {
-      return this.clinicasService.getTurnosStats(clinicaUrl);
+      return this.clinicasService.getTurnosStatsBasic(clinicaUrl);
     } else {
       throw new UnauthorizedException(
         'Acceso denegado. No tienes permisos para ver estadísticas de esta clínica.',
@@ -507,6 +508,22 @@ export class ClinicasController {
         'Acceso denegado. No tienes permisos para crear notificaciones en esta clínica.',
       );
     }
+  }
+
+  @Get(':clinicaUrl/estadisticas')
+  @ApiOperation({ summary: 'Obtener estadísticas de turnos/ventas' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Estadísticas obtenidas exitosamente',
+    type: TurnosStatsResponseDto
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getTurnosStats(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: TurnosStatsDto,
+  ) {
+    return this.clinicasService.getTurnosStats(clinicaUrl, filters);
   }
 
   @Get(':clinicaUrl/ventas')
