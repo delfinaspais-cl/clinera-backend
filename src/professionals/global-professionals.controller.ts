@@ -87,9 +87,12 @@ export class GlobalProfessionalsController {
         return {
           ...profesional,
           horariosDetallados,
-          sucursal: (profesional as any).sucursal ? (profesional as any).sucursal.id : null,
+          sucursal: (profesional as any).sucursalId || null,
         };
       });
+
+      console.log('🔍 Profesionales encontrados:', profesionales.length);
+      console.log('🔍 Profesionales transformados:', profesionalesTransformados.length);
 
       return {
         success: true,
@@ -166,6 +169,9 @@ export class GlobalProfessionalsController {
   @ApiResponse({ status: 201, description: 'Profesional creado exitosamente' })
   async create(@Body() createProfesionalDto: any) {
     try {
+      console.log('🔍 DTO recibido en create:', JSON.stringify(createProfesionalDto, null, 2));
+      console.log('🔍 Campo sucursal recibido:', createProfesionalDto.sucursal);
+      
       // Validar que la clínica existe
       const clinica = await this.prisma.clinica.findUnique({
         where: { id: createProfesionalDto.clinicaId },
@@ -237,11 +243,15 @@ export class GlobalProfessionalsController {
 
       // Actualizar sucursal si se proporciona
       if (createProfesionalDto.sucursal) {
+        console.log('🔍 Actualizando sucursal con ID:', createProfesionalDto.sucursal);
         await this.prisma.$executeRaw`
           UPDATE "Professional" 
           SET "sucursalId" = ${createProfesionalDto.sucursal} 
           WHERE id = ${profesional.id}
         `;
+        console.log('✅ Sucursal actualizada exitosamente');
+      } else {
+        console.log('⚠️ No se proporcionó sucursal en el DTO');
       }
 
       // Crear horarios si se proporcionan
@@ -332,6 +342,9 @@ export class GlobalProfessionalsController {
   @ApiResponse({ status: 200, description: 'Profesional actualizado exitosamente' })
   async update(@Param('id') id: string, @Body() updateProfesionalDto: any) {
     try {
+      console.log('🔍 DTO recibido en update:', JSON.stringify(updateProfesionalDto, null, 2));
+      console.log('🔍 Campo sucursal recibido en update:', updateProfesionalDto.sucursal);
+      
       const profesional = await this.prisma.professional.findUnique({
         where: { id },
         include: {
@@ -390,11 +403,15 @@ export class GlobalProfessionalsController {
 
       // Actualizar sucursal si se proporciona
       if (updateProfesionalDto.sucursal !== undefined) {
+        console.log('🔍 Actualizando sucursal en update con ID:', updateProfesionalDto.sucursal);
         await this.prisma.$executeRaw`
           UPDATE "Professional" 
           SET "sucursalId" = ${updateProfesionalDto.sucursal} 
           WHERE id = ${id}
         `;
+        console.log('✅ Sucursal actualizada exitosamente en update');
+      } else {
+        console.log('⚠️ No se proporcionó sucursal en el DTO de update');
       }
 
       // Actualizar datos del usuario si se proporcionan
@@ -620,6 +637,9 @@ export class GlobalProfessionalsController {
           sucursal: (profesional as any).sucursalId || null,
         };
       });
+
+      console.log('🔍 Profesionales de clínica encontrados:', profesionales.length);
+      console.log('🔍 Profesionales de clínica transformados:', profesionalesTransformados.length);
 
       return {
         success: true,
