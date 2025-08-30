@@ -64,42 +64,8 @@ export class GlobalProfessionalsController {
         take: limitNum,
         skip: offsetNum,
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
-            },
-          },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
+          user: true,
           agendas: {
-            select: {
-              id: true,
-              dia: true,
-              horaInicio: true,
-              horaFin: true,
-              duracionMin: true,
-            },
             orderBy: {
               dia: 'asc',
             },
@@ -112,16 +78,16 @@ export class GlobalProfessionalsController {
 
       // Transformar los datos para incluir horariosDetallados y sucursal en el formato esperado
       const profesionalesTransformados = profesionales.map(profesional => {
-        const horariosDetallados = profesional.agendas.map(agenda => ({
+        const horariosDetallados = (profesional as any).agendas?.map((agenda: any) => ({
           dia: agenda.dia,
           horaInicio: agenda.horaInicio,
           horaFin: agenda.horaFin,
-        }));
+        })) || [];
 
         return {
           ...profesional,
           horariosDetallados,
-          sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+          sucursal: (profesional as any).sucursal ? (profesional as any).sucursal.id : null,
         };
       });
 
@@ -152,42 +118,8 @@ export class GlobalProfessionalsController {
       const profesional = await this.prisma.professional.findUnique({
         where: { id },
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
-            },
-          },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
+          user: true,
           agendas: {
-            select: {
-              id: true,
-              dia: true,
-              horaInicio: true,
-              horaFin: true,
-              duracionMin: true,
-            },
             orderBy: {
               dia: 'asc',
             },
@@ -200,17 +132,17 @@ export class GlobalProfessionalsController {
       }
 
       // Transformar los horarios al formato esperado por el frontend
-      const horariosDetallados = profesional.agendas.map(agenda => ({
+      const horariosDetallados = (profesional as any).agendas?.map((agenda: any) => ({
         dia: agenda.dia,
         horaInicio: agenda.horaInicio,
         horaFin: agenda.horaFin,
-      }));
+      })) || [];
 
       // Construir la respuesta con el formato esperado
       const response = {
         ...profesional,
         horariosDetallados,
-        sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+        sucursal: (profesional as any).sucursalId || null,
       };
 
       return {
@@ -267,7 +199,6 @@ export class GlobalProfessionalsController {
           defaultDurationMin: createProfesionalDto.defaultDurationMin || 30,
           bufferMin: createProfesionalDto.bufferMin || 10,
           notes: createProfesionalDto.notes,
-          sucursalId: createProfesionalDto.sucursal,
           tratamientos: createProfesionalDto.tratamientos || [],
         },
         include: {
@@ -289,16 +220,6 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
           agendas: {
             select: {
               id: true,
@@ -313,6 +234,15 @@ export class GlobalProfessionalsController {
           },
         },
       });
+
+      // Actualizar sucursal si se proporciona
+      if (createProfesionalDto.sucursal) {
+        await this.prisma.$executeRaw`
+          UPDATE "Professional" 
+          SET "sucursalId" = ${createProfesionalDto.sucursal} 
+          WHERE id = ${profesional.id}
+        `;
+      }
 
       // Crear horarios si se proporcionan
       if (createProfesionalDto.horariosDetallados && Array.isArray(createProfesionalDto.horariosDetallados)) {
@@ -351,16 +281,6 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
           agendas: {
             select: {
               id: true,
@@ -381,17 +301,17 @@ export class GlobalProfessionalsController {
       }
 
       // Transformar los horarios al formato esperado por el frontend
-      const horariosDetallados = profesionalConHorarios.agendas.map(agenda => ({
+      const horariosDetallados = (profesionalConHorarios as any).agendas?.map((agenda: any) => ({
         dia: agenda.dia,
         horaInicio: agenda.horaInicio,
         horaFin: agenda.horaFin,
-      }));
+      })) || [];
 
       // Construir la respuesta con el formato esperado
       const response = {
         ...profesionalConHorarios,
         horariosDetallados,
-        sucursal: profesionalConHorarios.sucursal ? profesionalConHorarios.sucursal.id : null,
+        sucursal: (profesionalConHorarios as any).sucursalId || null,
       };
 
       return {
@@ -432,7 +352,6 @@ export class GlobalProfessionalsController {
           defaultDurationMin: updateProfesionalDto.defaultDurationMin,
           bufferMin: updateProfesionalDto.bufferMin,
           notes: updateProfesionalDto.notes,
-          sucursalId: updateProfesionalDto.sucursal,
           tratamientos: updateProfesionalDto.tratamientos,
         },
         include: {
@@ -454,16 +373,6 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
           agendas: {
             select: {
               id: true,
@@ -478,6 +387,15 @@ export class GlobalProfessionalsController {
           },
         },
       });
+
+      // Actualizar sucursal si se proporciona
+      if (updateProfesionalDto.sucursal !== undefined) {
+        await this.prisma.$executeRaw`
+          UPDATE "Professional" 
+          SET "sucursalId" = ${updateProfesionalDto.sucursal} 
+          WHERE id = ${id}
+        `;
+      }
 
       // Actualizar datos del usuario si se proporcionan
       if (updateProfesionalDto.email || updateProfesionalDto.name || updateProfesionalDto.phone) {
@@ -534,16 +452,6 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
           agendas: {
             select: {
               id: true,
@@ -564,17 +472,17 @@ export class GlobalProfessionalsController {
       }
 
       // Transformar los horarios al formato esperado por el frontend
-      const horariosDetallados = profesionalActualizado.agendas.map(agenda => ({
+      const horariosDetallados = (profesionalActualizado as any).agendas?.map((agenda: any) => ({
         dia: agenda.dia,
         horaInicio: agenda.horaInicio,
         horaFin: agenda.horaFin,
-      }));
+      })) || [];
 
       // Construir la respuesta con el formato esperado
       const response = {
         ...profesionalActualizado,
         horariosDetallados,
-        sucursal: profesionalActualizado.sucursal ? profesionalActualizado.sucursal.id : null,
+        sucursal: (profesionalActualizado as any).sucursalId || null,
       };
 
       return {
@@ -680,16 +588,6 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          sucursal: {
-            select: {
-              id: true,
-              nombre: true,
-              direccion: true,
-              telefono: true,
-              email: true,
-              estado: true,
-            },
-          },
           agendas: {
             select: {
               id: true,
@@ -710,16 +608,16 @@ export class GlobalProfessionalsController {
 
       // Transformar los datos para incluir horariosDetallados y sucursal en el formato esperado
       const profesionalesTransformados = profesionales.map(profesional => {
-        const horariosDetallados = profesional.agendas.map(agenda => ({
+        const horariosDetallados = (profesional as any).agendas?.map((agenda: any) => ({
           dia: agenda.dia,
           horaInicio: agenda.horaInicio,
           horaFin: agenda.horaFin,
-        }));
+        })) || [];
 
         return {
           ...profesional,
           horariosDetallados,
-          sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+          sucursal: (profesional as any).sucursalId || null,
         };
       });
 

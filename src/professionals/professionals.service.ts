@@ -23,30 +23,34 @@ export class ProfessionalsService {
       where: { user: { clinicaId: clinica.id } },
       include: { 
         user: true,
-        agendas: true,
+        agendas: {
+          orderBy: {
+            dia: 'asc',
+          },
+        },
       },
     });
 
-    // Formatear cada profesional con información adicional
-    return professionals.map(prof => {
-      const horarios = prof.agendas.map(agenda => ({
+    // Formatear cada profesional con el formato unificado
+    const profesionalesTransformados = professionals.map(prof => {
+      const horariosDetallados = (prof as any).agendas?.map((agenda: any) => ({
         dia: agenda.dia,
         horaInicio: agenda.horaInicio,
         horaFin: agenda.horaFin,
-        duracionMin: agenda.duracionMin,
-      }));
+      })) || [];
 
       return {
         ...prof,
-        especialidad: prof.specialties, // Retornar array completo de especialidades
-        tratamientos: prof.tratamientos || [], // Retornar tratamientos reales
-        horarios: {
-          dias: horarios.map(h => h.dia),
-          horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
-          horaFin: horarios.length > 0 ? horarios[0].horaFin : null,
-        },
+        horariosDetallados,
+        sucursal: (prof as any).sucursalId || null,
       };
     });
+
+    return {
+      success: true,
+      data: profesionalesTransformados,
+      message: 'Profesionales obtenidos exitosamente',
+    };
   }
 
   async create(clinicaUrl: string, dto: CreateProfessionalDto) {
@@ -160,17 +164,39 @@ export class ProfessionalsService {
         console.log('✅ Horarios simples creados');
       }
 
-      // Retornar el profesional con información adicional
-      const result = {
-        ...professional,
-        especialidad: dto.specialties, // Especialidades del profesional
-        tratamientos: dto.tratamientos || [], // Tratamientos que realiza
-        sucursal: dto.sucursal,
-        horarios: dto.horarios,
+      // Obtener el profesional completo con todos los datos para retornar el formato unificado
+      const profesionalCompleto = await this.prisma.professional.findUnique({
+        where: { id: professional.id },
+        include: { 
+          user: true,
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+        },
+      });
+
+      // Transformar los horarios al formato esperado por el frontend
+      const horariosDetallados = (profesionalCompleto as any).agendas?.map((agenda: any) => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      })) || [];
+
+      // Construir la respuesta con el formato unificado
+      const response = {
+        ...profesionalCompleto,
+        horariosDetallados,
+        sucursal: (profesionalCompleto as any).sucursalId || null,
       };
 
       console.log('✅ Profesional creado exitosamente');
-      return result;
+      return {
+        success: true,
+        data: response,
+        message: 'Profesional creado exitosamente',
+      };
       
     } catch (error) {
       console.error('❌ Error creando profesional:', error);
@@ -184,29 +210,34 @@ export class ProfessionalsService {
       where: { id },
       include: { 
         user: true,
-        agendas: true,
+        agendas: {
+          orderBy: {
+            dia: 'asc',
+          },
+        },
       },
     });
 
     if (!prof) throw new NotFoundException('Profesional no encontrado');
 
-    // Formatear horarios para el frontend
-    const horarios = prof.agendas.map(agenda => ({
+    // Transformar los horarios al formato esperado por el frontend
+    const horariosDetallados = (prof as any).agendas?.map((agenda: any) => ({
       dia: agenda.dia,
       horaInicio: agenda.horaInicio,
       horaFin: agenda.horaFin,
-      duracionMin: agenda.duracionMin,
-    }));
+    })) || [];
+
+    // Construir la respuesta con el formato unificado
+    const response = {
+      ...prof,
+      horariosDetallados,
+      sucursal: (prof as any).sucursalId || null,
+    };
 
     return {
-      ...prof,
-      especialidad: prof.specialties, // Retornar array completo de especialidades
-      tratamientos: prof.tratamientos || [], // Retornar tratamientos reales
-      horarios: {
-        dias: horarios.map(h => h.dia),
-        horaInicio: horarios.length > 0 ? horarios[0].horaInicio : null,
-        horaFin: horarios.length > 0 ? horarios[0].horaFin : null,
-      },
+      success: true,
+      data: response,
+      message: 'Profesional obtenido exitosamente',
     };
   }
 
@@ -304,27 +335,71 @@ export class ProfessionalsService {
           data: userData,
         });
 
-        // Obtener el profesional actualizado con el usuario actualizado
+        // Obtener el profesional actualizado con todos los datos para retornar el formato unificado
         const finalProfessional = await this.prisma.professional.findUnique({
           where: { id },
-          include: { user: true },
+          include: { 
+            user: true,
+            agendas: {
+              orderBy: {
+                dia: 'asc',
+              },
+            },
+          },
         });
 
-        return {
+        // Transformar los horarios al formato esperado por el frontend
+        const horariosDetallados = (finalProfessional as any).agendas?.map((agenda: any) => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        })) || [];
+
+        // Construir la respuesta con el formato unificado
+        const response = {
           ...finalProfessional,
-          especialidad: dto.specialties, // Usar specialties como especialidad
-          tratamientos: dto.tratamientos || [],
-          sucursal: dto.sucursal,
-          horarios: dto.horarios,
+          horariosDetallados,
+          sucursal: (finalProfessional as any).sucursalId || null,
+        };
+
+        return {
+          success: true,
+          data: response,
+          message: 'Profesional actualizado exitosamente',
         };
       }
 
+      // Obtener el profesional actualizado con todos los datos para retornar el formato unificado
+      const finalProfessional = await this.prisma.professional.findUnique({
+        where: { id },
+        include: { 
+          user: true,
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+        },
+      });
+
+      // Transformar los horarios al formato esperado por el frontend
+      const horariosDetallados = (finalProfessional as any).agendas?.map((agenda: any) => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      })) || [];
+
+      // Construir la respuesta con el formato unificado
+      const response = {
+        ...finalProfessional,
+        horariosDetallados,
+        sucursal: (finalProfessional as any).sucursalId || null,
+      };
+
       return {
-        ...updatedProfessional,
-        especialidad: dto.specialties, // Usar specialties como especialidad
-        tratamientos: dto.tratamientos || [],
-        sucursal: dto.sucursal,
-        horarios: dto.horarios,
+        success: true,
+        data: response,
+        message: 'Profesional actualizado exitosamente',
       };
     } catch (error) {
       console.error('Error actualizando profesional:', error);
@@ -375,6 +450,9 @@ export class ProfessionalsService {
       where: { id: professional.user.id },
     });
 
-    return { message: 'Profesional eliminado correctamente' };
+    return { 
+      success: true,
+      message: 'Profesional eliminado correctamente',
+    };
   }
 }
