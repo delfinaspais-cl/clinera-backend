@@ -1,5 +1,17 @@
 // src/professionals/dto/create-professional.dto.ts
-import { IsArray, IsInt, IsOptional, IsString, IsEmail, IsObject } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, IsEmail, IsObject, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class HorarioDiaDto {
+  @IsString()
+  dia: string; // "LUNES", "MARTES", etc.
+
+  @IsString()
+  horaInicio: string; // "09:00"
+
+  @IsString()
+  horaFin: string; // "17:00"
+}
 
 export class CreateProfessionalDto {
   // Campos para User
@@ -41,7 +53,7 @@ export class CreateProfessionalDto {
   @IsInt()
   bufferMin?: number;
 
-  // Horarios de atención
+  // Horarios de atención - Formato simple (para compatibilidad)
   @IsOptional()
   @IsObject()
   horarios?: {
@@ -49,4 +61,11 @@ export class CreateProfessionalDto {
     horaInicio?: string; // "08:00"
     horaFin?: string; // "18:00"
   };
+
+  // Horarios de atención - Formato avanzado (horarios específicos por día)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioDiaDto)
+  horariosDetallados?: HorarioDiaDto[];
 }

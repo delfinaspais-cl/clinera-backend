@@ -128,8 +128,24 @@ export class ProfessionalsService {
       console.log('✅ Profesional creado:', professional.id);
 
       // Crear horarios de atención si se proporcionan
-      if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
-        console.log('🔍 Creando horarios...');
+      if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
+        // Formato avanzado: horarios específicos por día
+        console.log('🔍 Creando horarios detallados...');
+        const horariosData = dto.horariosDetallados.map(horario => ({
+          professionalId: professional.id,
+          dia: horario.dia.toUpperCase(),
+          horaInicio: horario.horaInicio,
+          horaFin: horario.horaFin,
+          duracionMin: dto.defaultDurationMin ?? 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+        console.log('✅ Horarios detallados creados');
+      } else if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+        // Formato simple: mismo horario para todos los días
+        console.log('🔍 Creando horarios simples...');
         const horariosData = dto.horarios.dias.map(dia => ({
           professionalId: professional.id,
           dia: dia.toUpperCase(),
@@ -141,7 +157,7 @@ export class ProfessionalsService {
         await this.prisma.agenda.createMany({
           data: horariosData,
         });
-        console.log('✅ Horarios creados');
+        console.log('✅ Horarios simples creados');
       }
 
       // Retornar el profesional con información adicional
@@ -241,13 +257,33 @@ export class ProfessionalsService {
       });
 
       // Actualizar horarios si se proporcionan
-      if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+      if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
+        // Formato avanzado: horarios específicos por día
         // Eliminar horarios existentes
         await this.prisma.agenda.deleteMany({
           where: { professionalId: id },
         });
 
-        // Crear nuevos horarios
+        // Crear nuevos horarios detallados
+        const horariosData = dto.horariosDetallados.map(horario => ({
+          professionalId: id,
+          dia: horario.dia.toUpperCase(),
+          horaInicio: horario.horaInicio,
+          horaFin: horario.horaFin,
+          duracionMin: dto.defaultDurationMin ?? 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+      } else if (dto.horarios && dto.horarios.dias && dto.horarios.dias.length > 0) {
+        // Formato simple: mismo horario para todos los días
+        // Eliminar horarios existentes
+        await this.prisma.agenda.deleteMany({
+          where: { professionalId: id },
+        });
+
+        // Crear nuevos horarios simples
         const horariosData = dto.horarios.dias.map(dia => ({
           professionalId: id,
           dia: dia.toUpperCase(),
