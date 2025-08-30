@@ -82,16 +82,52 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          agendas: true,
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
 
+      // Transformar los datos para incluir horariosDetallados y sucursal en el formato esperado
+      const profesionalesTransformados = profesionales.map(profesional => {
+        const horariosDetallados = profesional.agendas.map(agenda => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        }));
+
+        return {
+          ...profesional,
+          horariosDetallados,
+          sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+        };
+      });
+
       return {
         success: true,
-        data: profesionales,
+        data: profesionalesTransformados,
         message: 'Profesionales obtenidos exitosamente',
         pagination: {
           limit: limitNum,
@@ -134,7 +170,28 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          agendas: true,
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
       });
 
@@ -142,9 +199,23 @@ export class GlobalProfessionalsController {
         throw new NotFoundException('Profesional no encontrado');
       }
 
+      // Transformar los horarios al formato esperado por el frontend
+      const horariosDetallados = profesional.agendas.map(agenda => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      }));
+
+      // Construir la respuesta con el formato esperado
+      const response = {
+        ...profesional,
+        horariosDetallados,
+        sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+      };
+
       return {
         success: true,
-        data: profesional,
+        data: response,
         message: 'Profesional obtenido exitosamente',
       };
     } catch (error) {
@@ -196,6 +267,8 @@ export class GlobalProfessionalsController {
           defaultDurationMin: createProfesionalDto.defaultDurationMin || 30,
           bufferMin: createProfesionalDto.bufferMin || 10,
           notes: createProfesionalDto.notes,
+          sucursalId: createProfesionalDto.sucursal,
+          tratamientos: createProfesionalDto.tratamientos || [],
         },
         include: {
           user: {
@@ -216,13 +289,114 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          agendas: true,
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
       });
 
+      // Crear horarios si se proporcionan
+      if (createProfesionalDto.horariosDetallados && Array.isArray(createProfesionalDto.horariosDetallados)) {
+        const horariosData = createProfesionalDto.horariosDetallados.map(horario => ({
+          professionalId: profesional.id,
+          dia: horario.dia,
+          horaInicio: horario.horaInicio,
+          horaFin: horario.horaFin,
+          duracionMin: createProfesionalDto.defaultDurationMin || 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+      }
+
+      // Obtener el profesional con los horarios creados
+      const profesionalConHorarios = await this.prisma.professional.findUnique({
+        where: { id: profesional.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+              clinicaId: true,
+              clinica: {
+                select: {
+                  id: true,
+                  name: true,
+                  url: true,
+                },
+              },
+            },
+          },
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+        },
+      });
+
+      if (!profesionalConHorarios) {
+        throw new BadRequestException('Error al obtener el profesional creado');
+      }
+
+      // Transformar los horarios al formato esperado por el frontend
+      const horariosDetallados = profesionalConHorarios.agendas.map(agenda => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      }));
+
+      // Construir la respuesta con el formato esperado
+      const response = {
+        ...profesionalConHorarios,
+        horariosDetallados,
+        sucursal: profesionalConHorarios.sucursal ? profesionalConHorarios.sucursal.id : null,
+      };
+
       return {
         success: true,
-        data: profesional,
+        data: response,
         message: 'Profesional creado exitosamente',
       };
     } catch (error) {
@@ -258,6 +432,8 @@ export class GlobalProfessionalsController {
           defaultDurationMin: updateProfesionalDto.defaultDurationMin,
           bufferMin: updateProfesionalDto.bufferMin,
           notes: updateProfesionalDto.notes,
+          sucursalId: updateProfesionalDto.sucursal,
+          tratamientos: updateProfesionalDto.tratamientos,
         },
         include: {
           user: {
@@ -278,7 +454,28 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          agendas: true,
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
       });
 
@@ -294,9 +491,95 @@ export class GlobalProfessionalsController {
         });
       }
 
+      // Actualizar horarios si se proporcionan
+      if (updateProfesionalDto.horariosDetallados && Array.isArray(updateProfesionalDto.horariosDetallados)) {
+        // Eliminar horarios existentes
+        await this.prisma.agenda.deleteMany({
+          where: { professionalId: id },
+        });
+
+        // Crear nuevos horarios
+        const horariosData = updateProfesionalDto.horariosDetallados.map(horario => ({
+          professionalId: id,
+          dia: horario.dia,
+          horaInicio: horario.horaInicio,
+          horaFin: horario.horaFin,
+          duracionMin: updateProfesionalDto.defaultDurationMin || 30,
+        }));
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+      }
+
+      // Obtener el profesional actualizado con los horarios
+      const profesionalActualizado = await this.prisma.professional.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+              clinicaId: true,
+              clinica: {
+                select: {
+                  id: true,
+                  name: true,
+                  url: true,
+                },
+              },
+            },
+          },
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+        },
+      });
+
+      if (!profesionalActualizado) {
+        throw new BadRequestException('Error al obtener el profesional actualizado');
+      }
+
+      // Transformar los horarios al formato esperado por el frontend
+      const horariosDetallados = profesionalActualizado.agendas.map(agenda => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      }));
+
+      // Construir la respuesta con el formato esperado
+      const response = {
+        ...profesionalActualizado,
+        horariosDetallados,
+        sucursal: profesionalActualizado.sucursal ? profesionalActualizado.sucursal.id : null,
+      };
+
       return {
         success: true,
-        data: updatedProfesional,
+        data: response,
         message: 'Profesional actualizado exitosamente',
       };
     } catch (error) {
@@ -397,16 +680,52 @@ export class GlobalProfessionalsController {
               },
             },
           },
-          agendas: true,
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            },
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
 
+      // Transformar los datos para incluir horariosDetallados y sucursal en el formato esperado
+      const profesionalesTransformados = profesionales.map(profesional => {
+        const horariosDetallados = profesional.agendas.map(agenda => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        }));
+
+        return {
+          ...profesional,
+          horariosDetallados,
+          sucursal: profesional.sucursal ? profesional.sucursal.id : null,
+        };
+      });
+
       return {
         success: true,
-        data: profesionales,
+        data: profesionalesTransformados,
         message: 'Profesionales de la clínica obtenidos exitosamente',
         pagination: {
           limit: limitNum,

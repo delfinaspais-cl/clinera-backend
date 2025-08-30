@@ -195,9 +195,11 @@ model Professional {
   notes              String?
   createdAt          DateTime @default(now())
   tratamientos       String[] @default([])
+  sucursalId         String?
   agendas            Agenda[]
   user               User     @relation(fields: [userId], references: [id])
   turnos             Turno[]
+  sucursal           Sucursal? @relation(fields: [sucursalId], references: [id])
 }
 
 model Agenda {
@@ -348,6 +350,7 @@ model Sucursal {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  professionals Professional[]
 
   @@index([clinicaId])
   @@index([estado])
