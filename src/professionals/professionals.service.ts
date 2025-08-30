@@ -131,6 +131,19 @@ export class ProfessionalsService {
 
       console.log('✅ Profesional creado:', professional.id);
 
+      // Actualizar sucursal si se proporciona
+      if (dto.sucursal) {
+        console.log('🔍 Actualizando sucursal con ID:', dto.sucursal);
+        await this.prisma.$executeRaw`
+          UPDATE "Professional" 
+          SET "sucursalId" = ${dto.sucursal} 
+          WHERE id = ${professional.id}
+        `;
+        console.log('✅ Sucursal actualizada exitosamente');
+      } else {
+        console.log('⚠️ No se proporcionó sucursal en el DTO');
+      }
+
       // Crear horarios de atención si se proporcionan
       if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
         // Formato avanzado: horarios específicos por día
@@ -286,6 +299,19 @@ export class ProfessionalsService {
         data: professionalData,
         include: { user: true },
       });
+
+      // Actualizar sucursal si se proporciona
+      if (dto.sucursal !== undefined) {
+        console.log('🔍 Actualizando sucursal en update con ID:', dto.sucursal);
+        await this.prisma.$executeRaw`
+          UPDATE "Professional" 
+          SET "sucursalId" = ${dto.sucursal} 
+          WHERE id = ${id}
+        `;
+        console.log('✅ Sucursal actualizada exitosamente en update');
+      } else {
+        console.log('⚠️ No se proporcionó sucursal en el DTO de update');
+      }
 
       // Actualizar horarios si se proporcionan
       if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
