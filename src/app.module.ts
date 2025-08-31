@@ -18,7 +18,6 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
 import { PlansModule } from './plans/plans.module';
-import { PaymentsModule } from './payments/payments.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
@@ -56,7 +55,6 @@ import { GlobalNotificationsController } from './notifications/global-notificati
     ContactosModule,
     EmailModule,
     PlansModule,
-    PaymentsModule,
   ],
   controllers: [
     RootController, 
