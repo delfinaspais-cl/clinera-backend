@@ -4,6 +4,7 @@ import {
   Post,
   Put,
   Delete,
+  Patch,
   Param,
   Body,
   Query,
@@ -26,6 +27,36 @@ import { PrismaService } from '../prisma/prisma.service';
 @Controller('turnos')
 export class GlobalTurnosController {
   constructor(private readonly prisma: PrismaService) {}
+
+  // Función helper para procesar datos de pago de un turno
+  private procesarDatosPago(turno: any) {
+    const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+    const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+    const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+    // Determinar estado de pago automáticamente si no está definido o es inconsistente
+    let estadoPago = turno.estadoPago;
+    if (!estadoPago || estadoPago === 'pendiente') {
+      if (montoAbonado >= montoTotal && montoTotal > 0) {
+        estadoPago = 'pagado';
+      } else if (montoAbonado > 0) {
+        estadoPago = 'parcial';
+      } else {
+        estadoPago = 'pendiente';
+      }
+    }
+
+    return {
+      ...turno,
+      montoTotal,
+      montoAbonado,
+      montoPendiente,
+      estadoPago,
+      // Agregar campos calculados para el frontend
+      porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+      porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
+    };
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -79,9 +110,39 @@ export class GlobalTurnosController {
         },
       });
 
+      // Procesar datos de pago para cada turno
+      const turnosProcesados = turnos.map(turno => {
+        const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+        const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+        const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+        // Determinar estado de pago automáticamente si no está definido o es inconsistente
+        let estadoPago = turno.estadoPago;
+        if (!estadoPago || estadoPago === 'pendiente') {
+          if (montoAbonado >= montoTotal && montoTotal > 0) {
+            estadoPago = 'pagado';
+          } else if (montoAbonado > 0) {
+            estadoPago = 'parcial';
+          } else {
+            estadoPago = 'pendiente';
+          }
+        }
+
+        return {
+          ...turno,
+          montoTotal,
+          montoAbonado,
+          montoPendiente,
+          estadoPago,
+          // Agregar campos calculados para el frontend
+          porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+          porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
+        };
+      });
+
       return {
         success: true,
-        data: turnos,
+        data: turnosProcesados,
         message: 'Turnos obtenidos exitosamente',
         pagination: {
           limit: limitNum,
@@ -122,9 +183,12 @@ export class GlobalTurnosController {
         throw new NotFoundException('Turno no encontrado');
       }
 
+      // Procesar datos de pago usando la función helper
+      const turnoProcesado = this.procesarDatosPago(turno);
+
       return {
         success: true,
-        data: turno,
+        data: turnoProcesado,
         message: 'Turno obtenido exitosamente',
       };
     } catch (error) {
@@ -207,6 +271,26 @@ export class GlobalTurnosController {
         throw new NotFoundException('Turno no encontrado');
       }
 
+      // Calcular montos de pago si se proporcionan
+      let montoAbonado = turno.montoAbonado;
+      let montoPendiente = turno.montoPendiente;
+      let estadoPago = updateTurnoDto.estadoPago;
+
+      if (updateTurnoDto.montoAbonado !== undefined) {
+        const montoTotal = updateTurnoDto.montoTotal ? parseFloat(updateTurnoDto.montoTotal) : parseFloat(turno.montoTotal || '0');
+        montoAbonado = updateTurnoDto.montoAbonado.toString();
+        montoPendiente = (montoTotal - updateTurnoDto.montoAbonado).toString();
+        
+        // Determinar estado de pago automáticamente
+        if (updateTurnoDto.montoAbonado >= montoTotal && montoTotal > 0) {
+          estadoPago = 'pagado';
+        } else if (updateTurnoDto.montoAbonado > 0) {
+          estadoPago = 'parcial';
+        } else {
+          estadoPago = 'pendiente';
+        }
+      }
+
       const updatedTurno = await this.prisma.turno.update({
         where: { id },
         data: {
@@ -220,7 +304,9 @@ export class GlobalTurnosController {
           estado: updateTurnoDto.estado,
           // Nuevos campos para datos de pago
           montoTotal: updateTurnoDto.montoTotal,
-          estadoPago: updateTurnoDto.estadoPago,
+          montoAbonado,
+          montoPendiente,
+          estadoPago,
           medioPago: updateTurnoDto.medioPago,
           // Nuevos campos adicionales
           origen: updateTurnoDto.origen,
@@ -237,9 +323,12 @@ export class GlobalTurnosController {
         },
       });
 
+      // Procesar datos de pago usando la función helper
+      const turnoProcesado = this.procesarDatosPago(updatedTurno);
+
       return {
         success: true,
-        data: updatedTurno,
+        data: turnoProcesado,
         message: 'Turno actualizado exitosamente',
       };
     } catch (error) {
@@ -346,9 +435,39 @@ export class GlobalTurnosController {
         },
       });
 
+      // Procesar datos de pago para cada turno
+      const turnosProcesados = turnos.map(turno => {
+        const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+        const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+        const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+        // Determinar estado de pago automáticamente si no está definido o es inconsistente
+        let estadoPago = turno.estadoPago;
+        if (!estadoPago || estadoPago === 'pendiente') {
+          if (montoAbonado >= montoTotal && montoTotal > 0) {
+            estadoPago = 'pagado';
+          } else if (montoAbonado > 0) {
+            estadoPago = 'parcial';
+          } else {
+            estadoPago = 'pendiente';
+          }
+        }
+
+        return {
+          ...turno,
+          montoTotal,
+          montoAbonado,
+          montoPendiente,
+          estadoPago,
+          // Agregar campos calculados para el frontend
+          porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+          porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
+        };
+      });
+
       return {
         success: true,
-        data: turnos,
+        data: turnosProcesados,
         message: 'Turnos de la clínica obtenidos exitosamente',
         pagination: {
           limit: limitNum,
@@ -431,6 +550,94 @@ export class GlobalTurnosController {
         throw error;
       }
       throw new BadRequestException('Error al crear el turno público');
+    }
+  }
+
+
+
+
+
+  @Get('paciente/:email')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener turnos de un paciente por email' })
+  @ApiResponse({ status: 200, description: 'Turnos del paciente obtenidos exitosamente' })
+  async getTurnosByPaciente(
+    @Param('email') email: string,
+    @Query('clinicaId') clinicaId?: string,
+    @Query('estado') estado?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    try {
+      const limitNum = limit ? parseInt(limit, 10) : 50;
+      const offsetNum = offset ? parseInt(offset, 10) : 0;
+
+      const where: any = { email };
+      if (clinicaId) where.clinicaId = clinicaId;
+      if (estado) where.estado = estado;
+
+      const turnos = await this.prisma.turno.findMany({
+        where,
+        take: limitNum,
+        skip: offsetNum,
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+        orderBy: {
+          fecha: 'desc',
+        },
+      });
+
+      // Procesar datos de pago para cada turno
+      const turnosProcesados = turnos.map(turno => {
+        const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+        const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+        const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+        // Determinar estado de pago automáticamente si no está definido o es inconsistente
+        let estadoPago = turno.estadoPago;
+        if (!estadoPago || estadoPago === 'pendiente') {
+          if (montoAbonado >= montoTotal && montoTotal > 0) {
+            estadoPago = 'pagado';
+          } else if (montoAbonado > 0) {
+            estadoPago = 'parcial';
+          } else {
+            estadoPago = 'pendiente';
+          }
+        }
+
+        return {
+          ...turno,
+          montoTotal,
+          montoAbonado,
+          montoPendiente,
+          estadoPago,
+          // Agregar campos calculados para el frontend
+          porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+          porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
+        };
+      });
+
+      return {
+        success: true,
+        data: turnosProcesados,
+        message: 'Turnos del paciente obtenidos exitosamente',
+        pagination: {
+          limit: limitNum,
+          offset: offsetNum,
+          total: await this.prisma.turno.count({ where }),
+        },
+      };
+    } catch (error) {
+      console.error('Error obteniendo turnos del paciente:', error);
+      throw new BadRequestException('Error al obtener los turnos del paciente');
     }
   }
 } 
