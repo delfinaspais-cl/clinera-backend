@@ -1295,6 +1295,23 @@ export class ClinicasService {
       const horaFin = new Date(horaInicio.getTime() + (turno.duracionMin || 30) * 60000);
       const horaFinStr = horaFin.toTimeString().slice(0, 5);
 
+      // Procesar datos de pago
+      const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+      const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+      const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+      // Determinar estado de pago automáticamente si no está definido o es inconsistente
+      let estadoPago = turno.estadoPago;
+      if (!estadoPago || estadoPago === 'pendiente') {
+        if (montoAbonado >= montoTotal && montoTotal > 0) {
+          estadoPago = 'pagado';
+        } else if (montoAbonado > 0) {
+          estadoPago = 'parcial';
+        } else {
+          estadoPago = 'pendiente';
+        }
+      }
+
       // Transformar los datos para el formato requerido
       const turnoFormateado = {
         id: turno.id,
@@ -1320,6 +1337,14 @@ export class ClinicasService {
         clinicaId: turno.clinicaId,
         createdAt: turno.createdAt,
         updatedAt: turno.updatedAt,
+        // Datos de pago procesados
+        montoTotal,
+        montoAbonado,
+        montoPendiente,
+        estadoPago,
+        medioPago: turno.medioPago,
+        porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+        porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
       };
 
       return {
@@ -2084,9 +2109,25 @@ export class ClinicasService {
         this.prisma.turno.count({ where }),
       ]);
 
-      return {
-        success: true,
-        turnos: turnos.map(turno => ({
+      // Procesar datos de pago para cada turno
+      const turnosProcesados = turnos.map(turno => {
+        const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
+        const montoAbonado = turno.montoAbonado ? parseFloat(turno.montoAbonado) : 0;
+        const montoPendiente = turno.montoPendiente ? parseFloat(turno.montoPendiente) : (montoTotal - montoAbonado);
+
+        // Determinar estado de pago automáticamente si no está definido o es inconsistente
+        let estadoPago = turno.estadoPago;
+        if (!estadoPago || estadoPago === 'pendiente') {
+          if (montoAbonado >= montoTotal && montoTotal > 0) {
+            estadoPago = 'pagado';
+          } else if (montoAbonado > 0) {
+            estadoPago = 'parcial';
+          } else {
+            estadoPago = 'pendiente';
+          }
+        }
+
+        return {
           id: turno.id,
           paciente: turno.paciente,
           email: turno.email,
@@ -2101,15 +2142,25 @@ export class ClinicasService {
           servicio: turno.servicio,
           professionalId: turno.professionalId,
           clinicaId: turno.clinicaId,
-          montoTotal: turno.montoTotal,
-          estadoPago: turno.estadoPago,
+          // Datos de pago procesados
+          montoTotal,
+          montoAbonado,
+          montoPendiente,
+          estadoPago,
           medioPago: turno.medioPago,
+          porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
+          porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
           origen: turno.origen,
           ate: turno.ate,
           sucursal: turno.sucursal,
           createdAt: turno.createdAt,
           updatedAt: turno.updatedAt,
-        })),
+        };
+      });
+
+      return {
+        success: true,
+        turnos: turnosProcesados,
         pagination: {
           page,
           limit,
