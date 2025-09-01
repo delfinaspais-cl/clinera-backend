@@ -30,6 +30,7 @@ import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
+import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dto';
 import { CreateNotificacionDto } from './dto/create-notificacion.dto';
@@ -440,16 +441,16 @@ export class ClinicasController {
   }
 
   @Put(':clinicaUrl/turnos/:turnoId')
-  @ApiOperation({ summary: 'Actualizar un turno existente' })
-  @ApiResponse({ status: 200, description: 'Turno actualizado exitosamente' })
+  @ApiOperation({ summary: 'Actualizar fecha y hora de un turno existente' })
+  @ApiResponse({ status: 200, description: 'Fecha y hora del turno actualizadas exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
   async updateTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
-    @Body() dto: UpdateTurnoDto,
+    @Body() dto: UpdateTurnoFechaHoraDto,
   ) {
-    return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
+    return this.clinicasService.updateTurnoFechaHora(clinicaUrl, turnoId, dto);
   }
 
   @Delete(':clinicaUrl/turnos/:turnoId')

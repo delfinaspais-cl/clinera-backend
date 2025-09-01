@@ -10,6 +10,7 @@ import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
 import * as bcrypt from 'bcrypt';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
+import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 
 @Injectable()
@@ -1516,6 +1517,72 @@ export class ClinicasService {
         throw error;
       }
       console.error('Error al actualizar turno:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async updateTurnoFechaHora(clinicaUrl: string, turnoId: string, dto: UpdateTurnoFechaHoraDto) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el turno y verificar que pertenece a la clínica
+      const turnoExistente = await this.prisma.turno.findFirst({
+        where: {
+          id: turnoId,
+          clinicaId: clinica.id,
+        },
+      });
+
+      if (!turnoExistente) {
+        throw new BadRequestException('Turno no encontrado');
+      }
+
+      // Actualizar solo fecha y hora del turno
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turnoId },
+        data: {
+          fecha: new Date(dto.fecha),
+          hora: dto.hora,
+          updatedAt: new Date(),
+        },
+      });
+
+      return {
+        success: true,
+        turno: {
+          id: turnoActualizado.id,
+          paciente: turnoActualizado.paciente,
+          email: turnoActualizado.email,
+          telefono: turnoActualizado.telefono,
+          doctor: turnoActualizado.doctor,
+          fecha: turnoActualizado.fecha.toISOString().split('T')[0],
+          hora: turnoActualizado.hora,
+          duracionMin: turnoActualizado.duracionMin,
+          estado: turnoActualizado.estado,
+          motivo: turnoActualizado.motivo,
+          notas: turnoActualizado.notas,
+          servicio: turnoActualizado.servicio,
+          professionalId: turnoActualizado.professionalId,
+          // Campos de pago
+          montoTotal: turnoActualizado.montoTotal,
+          estadoPago: turnoActualizado.estadoPago,
+          medioPago: turnoActualizado.medioPago,
+          montoAbonado: turnoActualizado.montoAbonado,
+          montoPendiente: turnoActualizado.montoPendiente,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar fecha y hora del turno:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
