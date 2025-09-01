@@ -18,6 +18,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
 import { PlansModule } from './plans/plans.module';
+import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
@@ -29,6 +30,7 @@ import { GlobalTurnosController } from './turnos/global-turnos.controller';
 import { GlobalPatientsController } from './patients/global-patients.controller';
 import { GlobalProfessionalsController } from './professionals/global-professionals.controller';
 import { GlobalNotificationsController } from './notifications/global-notifications.controller';
+import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-medicas.controller';
 
 @Module({
   imports: [
@@ -55,6 +57,7 @@ import { GlobalNotificationsController } from './notifications/global-notificati
     ContactosModule,
     EmailModule,
     PlansModule,
+    FichasMedicasModule,
   ],
   controllers: [
     RootController, 
@@ -64,6 +67,7 @@ import { GlobalNotificationsController } from './notifications/global-notificati
     GlobalPatientsController,
     GlobalProfessionalsController,
     GlobalNotificationsController,
+    GlobalFichasMedicasController,
   ],
   providers: [AppService, OwnersService],
 })

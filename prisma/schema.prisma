@@ -40,6 +40,7 @@ model Clinica {
   users               User[]
   whatsappMessages    WhatsAppMessage[]
   whatsappTemplates   WhatsAppTemplate[]
+  fichasMedicas       FichaMedica[]
 }
 
 model Mensaje {
@@ -183,6 +184,7 @@ model Patient {
   notes     String?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id])
+  fichaMedica FichaMedica?
 }
 
 model Professional {
@@ -354,6 +356,69 @@ model Sucursal {
 
   @@index([clinicaId])
   @@index([estado])
+}
+
+model FichaMedica {
+  id                        String           @id @default(cuid())
+  pacienteId                String           @unique
+  clinicaId                 String
+  grupoSanguineo            String?
+  alergias                  String?
+  medicamentosActuales      String?
+  antecedentesPatologicos   String?
+  antecedentesQuirurgicos   String?
+  antecedentesFamiliares    String?
+  habitos                   String?
+  ocupacion                 String?
+  motivoConsulta            String?
+  sintomas                  String?
+  diagnostico               String?
+  tratamiento               String?
+  evolucion                 String?
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+  
+  paciente                  Patient          @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  clinica                   Clinica          @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  archivosMedicos           ArchivoMedico[]
+  imagenesMedicas           ImagenMedica[]
+
+  @@index([pacienteId])
+  @@index([clinicaId])
+}
+
+model ArchivoMedico {
+  id              String      @id @default(cuid())
+  fichaMedicaId   String
+  nombre          String
+  nombreArchivo   String
+  tipo            String      // 'pdf', 'doc', 'docx'
+  url             String
+  tamañoBytes     BigInt?
+  fechaSubida     DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  fichaMedica     FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+
+  @@index([fichaMedicaId])
+}
+
+model ImagenMedica {
+  id              String      @id @default(cuid())
+  fichaMedicaId   String
+  nombre          String
+  nombreArchivo   String
+  url             String
+  descripcion     String?
+  tamañoBytes     BigInt?
+  fechaSubida     DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  fichaMedica     FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+
+  @@index([fichaMedicaId])
 }
 
 enum Role {
