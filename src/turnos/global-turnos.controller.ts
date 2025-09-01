@@ -558,9 +558,7 @@ export class GlobalTurnosController {
 
 
   @Get('paciente/:email')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Obtener turnos de un paciente por email' })
+  @ApiOperation({ summary: 'Obtener turnos de un paciente por email (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turnos del paciente obtenidos exitosamente' })
   async getTurnosByPaciente(
     @Param('email') email: string,
