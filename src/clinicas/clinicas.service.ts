@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
@@ -7,11 +8,11 @@ import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
-import * as bcrypt from 'bcrypt';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
+import { CreatePatientDto } from '../patients/dto/create-patient.dto';
 
 @Injectable()
 export class ClinicasService {
@@ -1413,6 +1414,53 @@ export class ClinicasService {
       });
 
       console.log('Turno creado exitosamente:', turno.id);
+
+      // Crear automáticamente un paciente si no existe
+      try {
+        // Verificar si ya existe un paciente con ese email en esta clínica
+        const pacienteExistente = await this.prisma.patient.findFirst({
+          where: {
+            user: {
+              email: dto.email,
+              clinicaId: clinica.id,
+            },
+          },
+        });
+
+        if (!pacienteExistente) {
+          console.log('Creando paciente automáticamente para:', dto.email);
+          
+          // Crear el usuario primero
+          const hashedPassword = await bcrypt.hash('defaultPassword123', 10);
+          
+          const user = await this.prisma.user.create({
+            data: {
+              email: dto.email,
+              password: hashedPassword,
+              role: 'PATIENT',
+              name: dto.paciente,
+              phone: dto.telefono, // Aquí está el mapeo correcto: telefono -> phone
+              clinicaId: clinica.id,
+            },
+          });
+
+          // Crear el paciente
+          const paciente = await this.prisma.patient.create({
+            data: {
+              name: dto.paciente,
+              phone: dto.telefono, // Aquí está el mapeo correcto: telefono -> phone
+              userId: user.id,
+            },
+          });
+
+          console.log('Paciente creado automáticamente:', paciente.id);
+        } else {
+          console.log('Paciente ya existe:', pacienteExistente.id);
+        }
+      } catch (error) {
+        console.error('Error al crear paciente automáticamente:', error);
+        // No lanzar error para no afectar la creación del turno
+      }
 
       return {
         success: true,
