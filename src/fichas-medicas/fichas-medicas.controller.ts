@@ -7,7 +7,6 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
-  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,11 +14,10 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
+
 import { FichasMedicasService } from './fichas-medicas.service';
 import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto } from './dto/ficha-medica.dto';
 import { diskStorage } from 'multer';
@@ -28,8 +26,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 @ApiTags('Fichas Médicas')
 @Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class FichasMedicasController {
   constructor(private readonly fichasMedicasService: FichasMedicasService) {}
 

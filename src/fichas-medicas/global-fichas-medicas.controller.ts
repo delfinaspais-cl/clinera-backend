@@ -7,7 +7,6 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
-  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,11 +14,10 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
+
 import { FichasMedicasService } from './fichas-medicas.service';
 import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto } from './dto/ficha-medica.dto';
 import { diskStorage } from 'multer';
@@ -32,8 +30,6 @@ export class GlobalFichasMedicasController {
   constructor(private readonly fichasMedicasService: FichasMedicasService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener ficha médica de un paciente' })
   @ApiResponse({ status: 200, description: 'Ficha médica obtenida exitosamente', type: FichaMedicaResponseDto })
   @ApiResponse({ status: 404, description: 'Clínica o paciente no encontrado' })
@@ -45,8 +41,6 @@ export class GlobalFichasMedicasController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Guardar ficha médica de un paciente' })
   @ApiResponse({ status: 200, description: 'Ficha médica guardada exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica o paciente no encontrado' })
@@ -59,8 +53,6 @@ export class GlobalFichasMedicasController {
   }
 
   @Post('upload-file')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Subir archivo médico' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -116,8 +108,6 @@ export class GlobalFichasMedicasController {
   }
 
   @Post('upload-image')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Subir imagen médica' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -168,8 +158,6 @@ export class GlobalFichasMedicasController {
   }
 
   @Delete('files/:fileId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar archivo médico' })
   @ApiResponse({ status: 200, description: 'Archivo eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Archivo no encontrado' })
@@ -182,8 +170,6 @@ export class GlobalFichasMedicasController {
   }
 
   @Delete('images/:imageId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar imagen médica' })
   @ApiResponse({ status: 200, description: 'Imagen eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Imagen no encontrada' })
