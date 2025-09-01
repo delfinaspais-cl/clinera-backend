@@ -440,31 +440,16 @@ export class ClinicasController {
   }
 
   @Put(':clinicaUrl/turnos/:turnoId')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Actualizar un turno existente' })
   @ApiResponse({ status: 200, description: 'Turno actualizado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
   async updateTurno(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
     @Body() dto: UpdateTurnoDto,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
-    } else {
-      throw new UnauthorizedException(
-        'Acceso denegado. No tienes permisos para editar turnos en esta clínica.',
-      );
-    }
+    return this.clinicasService.updateTurno(clinicaUrl, turnoId, dto);
   }
 
   @Delete(':clinicaUrl/turnos/:turnoId')
