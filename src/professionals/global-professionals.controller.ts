@@ -201,11 +201,11 @@ export class GlobalProfessionalsController {
         data: {
           userId: user.id,
           name: createProfesionalDto.name,
-          specialties: createProfesionalDto.specialties || [],
+          // specialties: createProfesionalDto.specialties || [], // Campo eliminado en nueva estructura
           defaultDurationMin: createProfesionalDto.defaultDurationMin || 30,
           bufferMin: createProfesionalDto.bufferMin || 10,
           notes: createProfesionalDto.notes,
-          tratamientos: createProfesionalDto.tratamientos || [],
+          // tratamientos: createProfesionalDto.tratamientos || [], // Campo eliminado en nueva estructura
         },
         include: {
           user: {
@@ -361,11 +361,11 @@ export class GlobalProfessionalsController {
         where: { id },
         data: {
           name: updateProfesionalDto.name,
-          specialties: updateProfesionalDto.specialties,
+          // specialties: updateProfesionalDto.specialties, // Campo eliminado en nueva estructura
           defaultDurationMin: updateProfesionalDto.defaultDurationMin,
           bufferMin: updateProfesionalDto.bufferMin,
           notes: updateProfesionalDto.notes,
-          tratamientos: updateProfesionalDto.tratamientos,
+          // tratamientos: updateProfesionalDto.tratamientos, // Campo eliminado en nueva estructura
         },
         include: {
           user: {

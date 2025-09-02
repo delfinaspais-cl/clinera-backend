@@ -73,7 +73,15 @@ export class ClinicasService {
           skip,
           take: limit,
           include: {
-            professional: true,
+            professional: {
+              include: {
+                especialidades: {
+                  include: {
+                    especialidad: true
+                  }
+                }
+              }
+            },
             patient: true,
           },
         }),
@@ -83,8 +91,10 @@ export class ClinicasService {
       // Transformar los datos para el formato requerido
       const usuariosFormateados = users.map((user) => {
         let especialidad = '';
-        if (user.professional && user.professional.specialties) {
-          especialidad = user.professional.specialties.join(', ');
+        if (user.professional && user.professional.especialidades) {
+          especialidad = user.professional.especialidades
+            .map(pe => pe.especialidad.name)
+            .join(', ');
         }
 
         return {
@@ -340,6 +350,11 @@ export class ClinicasService {
                       name: true,
                       email: true,
                     }
+                  },
+                  especialidades: {
+                    include: {
+                      especialidad: true
+                    }
                   }
                 }
               }
@@ -448,7 +463,7 @@ export class ClinicasService {
             professional: turno.professional ? {
               id: turno.professional.id,
               name: turno.professional.name,
-              specialties: turno.professional.specialties,
+              specialties: turno.professional.especialidades?.map(pe => pe.especialidad.name) || [],
               user: turno.professional.user,
             } : null,
           };
@@ -526,6 +541,11 @@ export class ClinicasService {
                   name: true,
                   email: true,
                 }
+              },
+              especialidades: {
+                include: {
+                  especialidad: true
+                }
               }
             }
           }
@@ -559,7 +579,7 @@ export class ClinicasService {
           professional: turno.professional ? {
             id: turno.professional.id,
             name: turno.professional.name,
-            specialties: turno.professional.specialties,
+            specialties: turno.professional.especialidades?.map(pe => pe.especialidad.name) || [],
             user: turno.professional.user,
           } : null,
         };
@@ -1282,6 +1302,11 @@ export class ClinicasService {
                   name: true,
                   email: true,
                 }
+              },
+              especialidades: {
+                include: {
+                  especialidad: true
+                }
               }
             }
           }
@@ -1333,7 +1358,7 @@ export class ClinicasService {
         professional: turno.professional ? {
           id: turno.professional.id,
           name: turno.professional.name,
-          specialties: turno.professional.specialties,
+          specialties: turno.professional.especialidades?.map(pe => pe.especialidad.name) || [],
           user: turno.professional.user,
         } : null,
         clinicaId: turno.clinicaId,

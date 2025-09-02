@@ -120,8 +120,8 @@ export class ProfessionalsService {
         data: {
           userId: user.id,
           name: dto.name,
-          specialties: dto.specialties, // Especialidades del profesional
-          tratamientos: dto.tratamientos || [], // Tratamientos que realiza
+          // specialties: dto.specialties, // Campo eliminado en nueva estructura
+          // tratamientos: dto.tratamientos || [], // Campo eliminado en nueva estructura
           defaultDurationMin: dto.defaultDurationMin ?? 30,
           bufferMin: dto.bufferMin ?? 10,
           notes: dto.notes,
