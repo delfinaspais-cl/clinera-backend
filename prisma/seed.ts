@@ -95,7 +95,6 @@ async function main() {
       create: {
         userId: user.id,
         name: user.name ?? 'Profesional sin nombre',
-        specialties: ['Clínica General', 'Pediatría'],
         defaultDurationMin: 30,
         bufferMin: 10,
       },

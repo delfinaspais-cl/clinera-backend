@@ -32,6 +32,7 @@ model Clinica {
   pendienteAprobacion Boolean            @default(false)
   conversations       Conversation[]
   especialidades      Especialidad[]
+  tratamientos        Tratamiento[]
   horarios            Horario[]
   mensajes            Mensaje[]
   notificaciones      Notificacion[]
@@ -191,17 +192,18 @@ model Professional {
   id                 String   @id @default(uuid())
   userId             String   @unique
   name               String
-  specialties        String[]
   defaultDurationMin Int      @default(30)
   bufferMin          Int      @default(10)
   notes              String?
   createdAt          DateTime @default(now())
-  tratamientos       String[] @default([])
   sucursalId         String?
   agendas            Agenda[]
   user               User     @relation(fields: [userId], references: [id])
   turnos             Turno[]
   sucursal           Sucursal? @relation(fields: [sucursalId], references: [id])
+  // Relaciones muchos a muchos
+  especialidades     ProfessionalEspecialidad[]
+  tratamientos       ProfessionalTratamiento[]
 }
 
 model Agenda {
@@ -229,6 +231,57 @@ model Especialidad {
   name      String
   clinicaId String
   clinica   Clinica @relation(fields: [clinicaId], references: [id])
+  // Relación muchos a muchos con profesionales
+  profesionales ProfessionalEspecialidad[]
+}
+
+// Nueva tabla para tratamientos
+model Tratamiento {
+  id          String   @id @default(cuid())
+  name        String
+  descripcion String?
+  duracionMin Int      @default(30)
+  precio      Float?
+  clinicaId   String
+  estado      String   @default("activo")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  // Relación muchos a muchos con profesionales
+  profesionales ProfessionalTratamiento[]
+
+  @@index([clinicaId])
+  @@index([estado])
+}
+
+// Tabla de relación entre profesionales y especialidades
+model ProfessionalEspecialidad {
+  id               String        @id @default(cuid())
+  professionalId   String
+  especialidadId   Int
+  createdAt        DateTime      @default(now())
+  professional     Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  especialidad     Especialidad  @relation(fields: [especialidadId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, especialidadId])
+  @@index([professionalId])
+  @@index([especialidadId])
+}
+
+// Tabla de relación entre profesionales y tratamientos
+model ProfessionalTratamiento {
+  id               String        @id @default(cuid())
+  professionalId   String
+  tratamientoId    String
+  precio           Float?        // Precio específico del profesional para este tratamiento
+  duracionMin      Int?          // Duración específica del profesional para este tratamiento
+  createdAt        DateTime      @default(now())
+  professional     Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  tratamiento      Tratamiento   @relation(fields: [tratamientoId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, tratamientoId])
+  @@index([professionalId])
+  @@index([tratamientoId])
 }
 
 model PasswordResetToken {

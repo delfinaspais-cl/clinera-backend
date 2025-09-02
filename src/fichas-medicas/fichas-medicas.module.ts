@@ -11,3 +11,5 @@ import { PrismaModule } from '../prisma/prisma.module';
   exports: [FichasMedicasService],
 })
 export class FichasMedicasModule {}
+
+
