@@ -11,7 +11,7 @@ async function bootstrap() {
   const config = app.get<ConfigService>(ConfigService);
 
   // Configurar prefijo global de la API
-  app.setGlobalPrefix('api');
+  // app.setGlobalPrefix('api'); // Comentado para endpoints públicos
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(new ValidationPipe({
