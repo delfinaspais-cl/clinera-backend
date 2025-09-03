@@ -39,8 +39,12 @@ async function bootstrap() {
           'https://clinera-frontend.vercel.app',
           'https://clinera.vercel.app',
           'https://clinera-web-git-develop-clinera-io-b8a9d478.vercel.app',
+          // Tu dominio específico de Vercel
+          'https://clinera-101a5caom-clinera-io-b8a9d478.vercel.app',
           // Patrón para dominios de Vercel con preview deployments
           /^https:\/\/clinera-web.*\.vercel\.app$/,
+          // Patrón más amplio para cualquier subdominio de clinera en Vercel
+          /^https:\/\/clinera.*\.vercel\.app$/,
         ].filter((origin): origin is string | RegExp => Boolean(origin)) // Remueve valores undefined/null
       : true, // Permite todos los orígenes en desarrollo
     credentials: true,
