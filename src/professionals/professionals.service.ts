@@ -28,6 +28,16 @@ export class ProfessionalsService {
             dia: 'asc',
           },
         },
+        especialidades: {
+          include: {
+            especialidad: true
+          }
+        },
+        tratamientos: {
+          include: {
+            tratamiento: true
+          }
+        }
       },
     });
 
@@ -39,9 +49,17 @@ export class ProfessionalsService {
         horaFin: agenda.horaFin,
       })) || [];
 
+      // Transformar especialidades al formato esperado
+      const specialties = (prof as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+
+      // Transformar tratamientos al formato esperado
+      const tratamientos = (prof as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+
       return {
         ...prof,
         horariosDetallados,
+        specialties,
+        tratamientos,
         sucursal: (prof as any).sucursalId || null,
       };
     });
@@ -302,6 +320,16 @@ export class ProfessionalsService {
             dia: 'asc',
           },
         },
+        especialidades: {
+          include: {
+            especialidad: true
+          }
+        },
+        tratamientos: {
+          include: {
+            tratamiento: true
+          }
+        }
       },
     });
 
@@ -314,10 +342,18 @@ export class ProfessionalsService {
       horaFin: agenda.horaFin,
     })) || [];
 
+    // Transformar especialidades al formato esperado
+    const specialties = (prof as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+
+    // Transformar tratamientos al formato esperado
+    const tratamientos = (prof as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+
     // Construir la respuesta con el formato unificado
     const response = {
       ...prof,
       horariosDetallados,
+      specialties,
+      tratamientos,
       sucursal: (prof as any).sucursalId || null,
     };
 
