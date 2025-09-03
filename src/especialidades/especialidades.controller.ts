@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Put, Param, Body, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Delete } from '@nestjs/common';
 import { EspecialidadesService } from './especialidades.service';
 import { UpdateEspecialidadesDto } from './dto/update-especialidades.dto';
 import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
 import { UpdateEspecialidadDto as UpdateSingleEspecialidadDto } from './dto/update-especialidad.dto';
 import { AssignProfessionalsDto } from './dto/assign-professionals.dto';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @Controller('clinica/:clinicaUrl/especialidades')
-@UseGuards(JwtAuthGuard)
 export class EspecialidadesController {
   constructor(private readonly especialidadesService: EspecialidadesService) {}
 

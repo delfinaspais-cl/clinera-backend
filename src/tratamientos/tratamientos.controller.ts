@@ -6,16 +6,13 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { TratamientosService } from './tratamientos.service';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 import { AssignProfessionalsDto } from './dto/assign-professionals.dto';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @Controller('clinica/:clinicaUrl/tratamientos')
-@UseGuards(JwtAuthGuard)
 export class TratamientosController {
   constructor(private readonly tratamientosService: TratamientosService) {}
 
