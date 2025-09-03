@@ -120,8 +120,6 @@ export class ProfessionalsService {
         data: {
           userId: user.id,
           name: dto.name,
-          // specialties: dto.specialties, // Campo eliminado en nueva estructura
-          // tratamientos: dto.tratamientos || [], // Campo eliminado en nueva estructura
           defaultDurationMin: dto.defaultDurationMin ?? 30,
           bufferMin: dto.bufferMin ?? 10,
           notes: dto.notes,
@@ -130,6 +128,64 @@ export class ProfessionalsService {
       });
 
       console.log('✅ Profesional creado:', professional.id);
+
+      // Asignar especialidades si se proporcionan
+      if (dto.specialties && dto.specialties.length > 0) {
+        console.log('🔍 Asignando especialidades:', dto.specialties);
+        
+        // Buscar las especialidades por nombre
+        const especialidades = await this.prisma.especialidad.findMany({
+          where: {
+            name: { in: dto.specialties },
+            clinicaId: clinica.id
+          }
+        });
+
+        if (especialidades.length > 0) {
+          // Crear las relaciones ProfessionalEspecialidad
+          const especialidadesData = especialidades.map(esp => ({
+            professionalId: professional.id,
+            especialidadId: esp.id
+          }));
+
+          await this.prisma.professionalEspecialidad.createMany({
+            data: especialidadesData
+          });
+          console.log('✅ Especialidades asignadas:', especialidades.map(e => e.name));
+        } else {
+          console.log('⚠️ No se encontraron especialidades para asignar');
+        }
+      }
+
+      // Asignar tratamientos si se proporcionan
+      if (dto.tratamientos && dto.tratamientos.length > 0) {
+        console.log('🔍 Asignando tratamientos:', dto.tratamientos);
+        
+        // Buscar los tratamientos por nombre
+        const tratamientos = await this.prisma.tratamiento.findMany({
+          where: {
+            name: { in: dto.tratamientos },
+            clinicaId: clinica.id
+          }
+        });
+
+        if (tratamientos.length > 0) {
+          // Crear las relaciones ProfessionalTratamiento
+          const tratamientosData = tratamientos.map(trat => ({
+            professionalId: professional.id,
+            tratamientoId: trat.id,
+            precio: trat.precio,
+            duracionMin: trat.duracionMin
+          }));
+
+          await this.prisma.professionalTratamiento.createMany({
+            data: tratamientosData
+          });
+          console.log('✅ Tratamientos asignados:', tratamientos.map(t => t.name));
+        } else {
+          console.log('⚠️ No se encontraron tratamientos para asignar');
+        }
+      }
 
       // Actualizar sucursal si se proporciona
       if (dto.sucursal) {
@@ -187,6 +243,16 @@ export class ProfessionalsService {
               dia: 'asc',
             },
           },
+          especialidades: {
+            include: {
+              especialidad: true
+            }
+          },
+          tratamientos: {
+            include: {
+              tratamiento: true
+            }
+          }
         },
       });
 
@@ -197,10 +263,18 @@ export class ProfessionalsService {
         horaFin: agenda.horaFin,
       })) || [];
 
+      // Transformar especialidades al formato esperado
+      const specialties = (profesionalCompleto as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+
+      // Transformar tratamientos al formato esperado
+      const tratamientos = (profesionalCompleto as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+
       // Construir la respuesta con el formato unificado
       const response = {
         ...profesionalCompleto,
         horariosDetallados,
+        specialties,
+        tratamientos,
         sucursal: (profesionalCompleto as any).sucursalId || null,
       };
 
