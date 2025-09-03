@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Delete, UseGuards } from '@nes
 import { EspecialidadesService } from './especialidades.service';
 import { UpdateEspecialidadesDto } from './dto/update-especialidades.dto';
 import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
+import { UpdateEspecialidadDto as UpdateSingleEspecialidadDto } from './dto/update-especialidad.dto';
 import { AssignProfessionalsDto } from './dto/assign-professionals.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
@@ -40,7 +41,7 @@ export class EspecialidadesController {
   updateEspecialidad(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('id') id: string,
-    @Body() updateEspecialidadDto: CreateEspecialidadDto,
+    @Body() updateEspecialidadDto: UpdateSingleEspecialidadDto,
   ) {
     return this.especialidadesService.updateEspecialidad(clinicaUrl, parseInt(id), updateEspecialidadDto);
   }

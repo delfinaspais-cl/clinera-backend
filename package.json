@@ -25,6 +25,7 @@
     "deploy": "echo 'Forcing Railway deploy - NEW DATABASE URL'",
     "seed": "ts-node prisma/seed.ts",
     "seed:test": "ts-node prisma/seed-test-data.ts",
+    "seed:tratamientos-especialidades": "ts-node prisma/seed-tratamientos-especialidades.ts",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:migrate:dev": "prisma migrate dev",

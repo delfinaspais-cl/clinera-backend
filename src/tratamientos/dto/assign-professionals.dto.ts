@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsNumber, IsOptional, IsPositive } from 'class-validator';
+import { IsArray, IsString, IsNumber, IsPositive } from 'class-validator';
 
 export class AssignProfessionalsDto {
   @IsArray()
@@ -7,11 +7,9 @@ export class AssignProfessionalsDto {
 
   @IsNumber()
   @IsPositive()
-  @IsOptional()
-  price?: number;
+  price: number;
 
   @IsNumber()
   @IsPositive()
-  @IsOptional()
-  sessions?: number;
+  sessions: number;
 }

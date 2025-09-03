@@ -135,14 +135,27 @@ export class TratamientosService {
       throw new NotFoundException('Tratamiento no encontrado');
     }
 
+    const updateData: any = {};
+    
+    if (updateTratamientoDto.name !== undefined) {
+      updateData.name = updateTratamientoDto.name;
+    }
+    
+    if (updateTratamientoDto.description !== undefined) {
+      updateData.descripcion = updateTratamientoDto.description;
+    }
+    
+    if (updateTratamientoDto.sessions !== undefined) {
+      updateData.duracionMin = updateTratamientoDto.sessions * 30;
+    }
+    
+    if (updateTratamientoDto.price !== undefined) {
+      updateData.precio = updateTratamientoDto.price;
+    }
+
     return this.prisma.tratamiento.update({
       where: { id },
-      data: {
-        name: updateTratamientoDto.name,
-        descripcion: updateTratamientoDto.description,
-        duracionMin: updateTratamientoDto.sessions * 30,
-        precio: updateTratamientoDto.price,
-      },
+      data: updateData,
       include: {
         profesionales: {
           include: {
