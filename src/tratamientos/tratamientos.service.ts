@@ -1,23 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateEspecialidadDto } from './dto/create-especialidad.dto';
-import { UpdateEspecialidadDto } from './dto/update-especialidad.dto';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
+import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 import { AssignProfessionalsDto } from './dto/assign-professionals.dto';
 
 @Injectable()
-export class EspecialidadesService {
+export class TratamientosService {
   constructor(private prisma: PrismaService) {}
 
-  async createEspecialidad(clinicaUrl: string, createEspecialidadDto: CreateEspecialidadDto) {
+  async createTratamiento(clinicaUrl: string, createTratamientoDto: CreateTratamientoDto) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    return this.prisma.especialidad.create({
+    return this.prisma.tratamiento.create({
       data: {
-        name: createEspecialidadDto.name,
+        name: createTratamientoDto.name,
+        descripcion: createTratamientoDto.description,
+        duracionMin: createTratamientoDto.sessions * 30, // Convertir sesiones a minutos
+        precio: createTratamientoDto.price,
         clinicaId: clinica.id,
       },
       include: {
@@ -27,7 +32,6 @@ export class EspecialidadesService {
               include: {
                 user: {
                   select: {
-                    id: true,
                     name: true,
                   },
                 },
@@ -39,15 +43,20 @@ export class EspecialidadesService {
     });
   }
 
-  async getEspecialidades(clinicaUrl: string) {
+  async findAllTratamientos(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    return this.prisma.especialidad.findMany({
-      where: { clinicaId: clinica.id },
+    return this.prisma.tratamiento.findMany({
+      where: { 
+        clinicaId: clinica.id,
+        estado: 'activo'
+      },
       include: {
         profesionales: {
           include: {
@@ -67,14 +76,16 @@ export class EspecialidadesService {
     });
   }
 
-  async getEspecialidadById(clinicaUrl: string, id: number) {
+  async findTratamientoById(clinicaUrl: string, id: string) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    const especialidad = await this.prisma.especialidad.findFirst({
+    const tratamiento = await this.prisma.tratamiento.findFirst({
       where: { 
         id,
         clinicaId: clinica.id 
@@ -97,35 +108,40 @@ export class EspecialidadesService {
       },
     });
 
-    if (!especialidad) {
-      throw new NotFoundException('Especialidad no encontrada');
+    if (!tratamiento) {
+      throw new NotFoundException('Tratamiento no encontrado');
     }
 
-    return especialidad;
+    return tratamiento;
   }
 
-  async updateEspecialidad(clinicaUrl: string, id: number, updateEspecialidadDto: UpdateEspecialidadDto) {
+  async updateTratamiento(clinicaUrl: string, id: string, updateTratamientoDto: UpdateTratamientoDto) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    const especialidad = await this.prisma.especialidad.findFirst({
+    const tratamiento = await this.prisma.tratamiento.findFirst({
       where: { 
         id,
         clinicaId: clinica.id 
       },
     });
 
-    if (!especialidad) {
-      throw new NotFoundException('Especialidad no encontrada');
+    if (!tratamiento) {
+      throw new NotFoundException('Tratamiento no encontrado');
     }
 
-    return this.prisma.especialidad.update({
+    return this.prisma.tratamiento.update({
       where: { id },
       data: {
-        name: updateEspecialidadDto.name,
+        name: updateTratamientoDto.name,
+        descripcion: updateTratamientoDto.description,
+        duracionMin: updateTratamientoDto.sessions * 30,
+        precio: updateTratamientoDto.price,
       },
       include: {
         profesionales: {
@@ -146,71 +162,73 @@ export class EspecialidadesService {
     });
   }
 
-  async removeEspecialidad(clinicaUrl: string, id: number) {
+  async removeTratamiento(clinicaUrl: string, id: string) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    const especialidad = await this.prisma.especialidad.findFirst({
+    const tratamiento = await this.prisma.tratamiento.findFirst({
       where: { 
         id,
         clinicaId: clinica.id 
       },
     });
 
-    if (!especialidad) {
-      throw new NotFoundException('Especialidad no encontrada');
+    if (!tratamiento) {
+      throw new NotFoundException('Tratamiento no encontrado');
     }
 
-    // Eliminar asignaciones de profesionales primero
-    await this.prisma.professionalEspecialidad.deleteMany({
-      where: { especialidadId: id },
-    });
-
-    // Eliminar la especialidad
-    return this.prisma.especialidad.delete({
+    // Soft delete - cambiar estado a inactivo
+    return this.prisma.tratamiento.update({
       where: { id },
+      data: { estado: 'inactivo' },
     });
   }
 
-  async assignProfessionals(clinicaUrl: string, id: number, assignProfessionalsDto: AssignProfessionalsDto) {
+  async assignProfessionals(clinicaUrl: string, id: string, assignProfessionalsDto: AssignProfessionalsDto) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
-    const especialidad = await this.prisma.especialidad.findFirst({
+    const tratamiento = await this.prisma.tratamiento.findFirst({
       where: { 
         id,
         clinicaId: clinica.id 
       },
     });
 
-    if (!especialidad) {
-      throw new NotFoundException('Especialidad no encontrada');
+    if (!tratamiento) {
+      throw new NotFoundException('Tratamiento no encontrado');
     }
 
     // Eliminar asignaciones existentes
-    await this.prisma.professionalEspecialidad.deleteMany({
-      where: { especialidadId: id },
+    await this.prisma.professionalTratamiento.deleteMany({
+      where: { tratamientoId: id },
     });
 
     // Crear nuevas asignaciones
     if (assignProfessionalsDto.professionalIds.length > 0) {
       const assignments = assignProfessionalsDto.professionalIds.map(professionalId => ({
         professionalId,
-        especialidadId: id,
+        tratamientoId: id,
+        precio: assignProfessionalsDto.price,
+        duracionMin: assignProfessionalsDto.sessions * 30,
       }));
 
-      await this.prisma.professionalEspecialidad.createMany({
+      await this.prisma.professionalTratamiento.createMany({
         data: assignments,
       });
     }
 
-    return this.getEspecialidadById(clinicaUrl, id);
+    return this.findTratamientoById(clinicaUrl, id);
   }
 
   async getAvailableProfessionals(clinicaUrl: string) {
@@ -218,7 +236,9 @@ export class EspecialidadesService {
       where: { url: clinicaUrl },
     });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
 
     return this.prisma.professional.findMany({
       where: { 
@@ -239,26 +259,6 @@ export class EspecialidadesService {
           },
         },
       },
-    });
-  }
-
-  // Mantener compatibilidad con el método existente
-  async updateEspecialidades(clinicaUrl: string, especialidades: string[]) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
-
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
-
-    await this.prisma.especialidad.deleteMany({
-      where: { clinicaId: clinica.id },
-    });
-
-    return this.prisma.especialidad.createMany({
-      data: especialidades.map((name) => ({
-        name,
-        clinicaId: clinica.id,
-      })),
     });
   }
 }

@@ -13,6 +13,7 @@ import { MensajesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { EspecialidadesModule } from './especialidades/especialidades.module';
+import { TratamientosModule } from './tratamientos/tratamientos.module';
 import { PushNotificationsModule } from './push-notifications/push-notifications.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
@@ -52,6 +53,7 @@ import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-me
     NotificationsModule,
     HorariosModule,
     EspecialidadesModule,
+    TratamientosModule,
     PushNotificationsModule,
     WhatsAppModule,
     ContactosModule,
