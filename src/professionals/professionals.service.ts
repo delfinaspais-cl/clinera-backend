@@ -393,7 +393,6 @@ export class ProfessionalsService {
       // Preparar datos para actualizar el profesional
       const professionalData: any = {};
       if (dto.name) professionalData.name = dto.name;
-      if (dto.specialties) professionalData.specialties = dto.specialties; // Usar specialties
       if (dto.defaultDurationMin !== undefined) professionalData.defaultDurationMin = dto.defaultDurationMin;
       if (dto.bufferMin !== undefined) professionalData.bufferMin = dto.bufferMin;
       if (dto.notes !== undefined) professionalData.notes = dto.notes;
@@ -421,6 +420,130 @@ export class ProfessionalsService {
         console.log('✅ Sucursal actualizada exitosamente en update');
       } else {
         console.log('⚠️ No se proporcionó sucursal en el DTO de update');
+      }
+
+      // Actualizar especialidades si se proporcionan
+      if (dto.specialties && dto.specialties.length > 0) {
+        console.log('🔍 Actualizando especialidades:', dto.specialties);
+        
+        try {
+          // Buscar las especialidades por nombre
+          const especialidades = await this.prisma.especialidad.findMany({
+            where: {
+              name: { in: dto.specialties },
+              clinicaId: clinica.id
+            }
+          });
+
+          console.log('🔍 Especialidades encontradas:', especialidades);
+
+          if (especialidades.length > 0) {
+            // Obtener especialidades actuales del profesional
+            const especialidadesActuales = await this.prisma.professionalEspecialidad.findMany({
+              where: { professionalId: id },
+              include: { especialidad: true }
+            });
+
+            console.log('🔍 Especialidades actuales:', especialidadesActuales.map(esp => esp.especialidad.name));
+
+            // Filtrar especialidades que ya existen
+            const especialidadesExistentes = especialidadesActuales.filter(esp => 
+              dto.specialties!.includes(esp.especialidad.name)
+            );
+
+            console.log('🔍 Especialidades que ya existen:', especialidadesExistentes.map(esp => esp.especialidad.name));
+
+            // Filtrar especialidades nuevas a agregar
+            const especialidadesNuevas = especialidades.filter(esp => 
+              !especialidadesActuales.some(espExistente => espExistente.especialidadId === esp.id)
+            );
+
+            console.log('🔍 Especialidades nuevas a agregar:', especialidadesNuevas.map(esp => esp.name));
+
+            if (especialidadesNuevas.length > 0) {
+              // Crear solo las nuevas relaciones ProfessionalEspecialidad
+              const especialidadesData = especialidadesNuevas.map(esp => ({
+                professionalId: id,
+                especialidadId: esp.id
+              }));
+
+              console.log('🔍 Creando nuevas relaciones:', especialidadesData);
+              await this.prisma.professionalEspecialidad.createMany({
+                data: especialidadesData
+              });
+              console.log('✅ Nuevas especialidades agregadas:', especialidadesNuevas.map(e => e.name));
+            } else {
+              console.log('✅ Todas las especialidades ya existen');
+            }
+          } else {
+            console.log('⚠️ No se encontraron especialidades para asignar');
+          }
+        } catch (error) {
+          console.error('❌ Error actualizando especialidades:', error);
+          console.error('❌ Stack trace:', error.stack);
+          throw new Error(`Error actualizando especialidades: ${error.message}`);
+        }
+      }
+
+      // Actualizar tratamientos si se proporcionan
+      if (dto.tratamientos && dto.tratamientos.length > 0) {
+        console.log('🔍 Actualizando tratamientos:', dto.tratamientos);
+        
+        try {
+          // Buscar los tratamientos por nombre
+          const tratamientos = await this.prisma.tratamiento.findMany({
+            where: {
+              name: { in: dto.tratamientos },
+              clinicaId: clinica.id
+            }
+          });
+
+          if (tratamientos.length > 0) {
+            // Obtener tratamientos actuales del profesional
+            const tratamientosActuales = await this.prisma.professionalTratamiento.findMany({
+              where: { professionalId: id },
+              include: { tratamiento: true }
+            });
+
+            console.log('🔍 Tratamientos actuales:', tratamientosActuales.map(trat => trat.tratamiento.name));
+
+            // Filtrar tratamientos que ya existen
+            const tratamientosExistentes = tratamientosActuales.filter(trat => 
+              dto.tratamientos!.includes(trat.tratamiento.name)
+            );
+
+            console.log('🔍 Tratamientos que ya existen:', tratamientosExistentes.map(trat => trat.tratamiento.name));
+
+            // Filtrar tratamientos nuevos a agregar
+            const tratamientosNuevos = tratamientos.filter(trat => 
+              !tratamientosActuales.some(tratExistente => tratExistente.tratamientoId === trat.id)
+            );
+
+            console.log('🔍 Tratamientos nuevos a agregar:', tratamientosNuevos.map(trat => trat.name));
+
+            if (tratamientosNuevos.length > 0) {
+              // Crear solo las nuevas relaciones ProfessionalTratamiento
+              const tratamientosData = tratamientosNuevos.map(trat => ({
+                professionalId: id,
+                tratamientoId: trat.id,
+                precio: trat.precio,
+                duracionMin: trat.duracionMin
+              }));
+
+              await this.prisma.professionalTratamiento.createMany({
+                data: tratamientosData
+              });
+              console.log('✅ Nuevos tratamientos agregados:', tratamientosNuevos.map(t => t.name));
+            } else {
+              console.log('✅ Todos los tratamientos ya existen');
+            }
+          } else {
+            console.log('⚠️ No se encontraron tratamientos para asignar');
+          }
+        } catch (error) {
+          console.error('❌ Error actualizando tratamientos:', error);
+          throw new Error(`Error actualizando tratamientos: ${error.message}`);
+        }
       }
 
       // Actualizar horarios si se proporcionan
@@ -481,6 +604,16 @@ export class ProfessionalsService {
                 dia: 'asc',
               },
             },
+            especialidades: {
+              include: {
+                especialidad: true
+              }
+            },
+            tratamientos: {
+              include: {
+                tratamiento: true
+              }
+            }
           },
         });
 
@@ -491,10 +624,18 @@ export class ProfessionalsService {
           horaFin: agenda.horaFin,
         })) || [];
 
+        // Transformar especialidades al formato esperado
+        const specialties = (finalProfessional as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+
+        // Transformar tratamientos al formato esperado
+        const tratamientos = (finalProfessional as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+
         // Construir la respuesta con el formato unificado
         const response = {
           ...finalProfessional,
           horariosDetallados,
+          specialties,
+          tratamientos,
           sucursal: (finalProfessional as any).sucursalId || null,
         };
 
@@ -515,6 +656,16 @@ export class ProfessionalsService {
               dia: 'asc',
             },
           },
+          especialidades: {
+            include: {
+              especialidad: true
+            }
+          },
+          tratamientos: {
+            include: {
+              tratamiento: true
+            }
+          }
         },
       });
 
@@ -525,10 +676,18 @@ export class ProfessionalsService {
         horaFin: agenda.horaFin,
       })) || [];
 
+      // Transformar especialidades al formato esperado
+      const specialties = (finalProfessional as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+
+      // Transformar tratamientos al formato esperado
+      const tratamientos = (finalProfessional as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+
       // Construir la respuesta con el formato unificado
       const response = {
         ...finalProfessional,
         horariosDetallados,
+        specialties,
+        tratamientos,
         sucursal: (finalProfessional as any).sucursalId || null,
       };
 
