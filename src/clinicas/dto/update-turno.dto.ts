@@ -69,7 +69,6 @@ export class UpdateTurnoDto {
 
   @IsString()
   @IsOptional()
-  @MinLength(10, { message: 'El motivo debe tener al menos 10 caracteres' })
   motivo?: string;
 
   @IsString()
