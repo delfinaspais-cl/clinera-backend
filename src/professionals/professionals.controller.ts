@@ -14,6 +14,7 @@ import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @Controller('clinica/:clinicaUrl/profesionales')
+// @UseGuards(JwtAuthGuard) // Comentado para permitir pruebas sin autenticación
 export class ProfessionalsController {
   constructor(private readonly professionalsService: ProfessionalsService) {}
 
