@@ -38,6 +38,7 @@ model Clinica {
   notificaciones      Notificacion[]
   sucursales          Sucursal[]
   turnos              Turno[]
+  ventas              Venta[]
   users               User[]
   whatsappMessages    WhatsAppMessage[]
   whatsappTemplates   WhatsAppTemplate[]
@@ -472,6 +473,39 @@ model ImagenMedica {
   fichaMedica     FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
+}
+
+model Venta {
+  id                String   @id @default(cuid())
+  ventaId           String   @unique // ID personalizado para el frontend
+  comprador         String
+  paciente          String
+  email             String
+  telefono          String
+  tratamiento       String
+  profesional       String
+  profesionalId     String?
+  sucursal          String
+  montoTotal        String
+  montoAbonado      String
+  montoPendiente    String
+  estado            String   @default("activa")
+  estadoPago        String   @default("pendiente")
+  medioPago         String?
+  origen            String?
+  ate               String?
+  sesiones          Int      @default(1)
+  sesionesUsadas    Int      @default(0)
+  fechaCreacion     DateTime @default(now())
+  fechaVencimiento  DateTime?
+  notas             String?
+  clinicaId         String
+  clinica           Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  
+  @@index([clinicaId])
+  @@index([estado])
+  @@index([estadoPago])
+  @@index([fechaCreacion])
 }
 
 enum Role {

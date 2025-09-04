@@ -20,6 +20,7 @@ import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
 import { PlansModule } from './plans/plans.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
+import { VentasModule } from './ventas/ventas.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController, RootController } from './app.controller';
 import { AppService } from './app.service';
@@ -32,6 +33,7 @@ import { GlobalPatientsController } from './patients/global-patients.controller'
 import { GlobalProfessionalsController } from './professionals/global-professionals.controller';
 import { GlobalNotificationsController } from './notifications/global-notifications.controller';
 import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-medicas.controller';
+import { GlobalVentasController } from './ventas/global-ventas.controller';
 
 @Module({
   imports: [
@@ -60,6 +62,7 @@ import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-me
     EmailModule,
     PlansModule,
     FichasMedicasModule,
+    VentasModule,
   ],
   controllers: [
     RootController, 
@@ -70,6 +73,7 @@ import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-me
     GlobalProfessionalsController,
     GlobalNotificationsController,
     GlobalFichasMedicasController,
+    GlobalVentasController,
   ],
   providers: [AppService, OwnersService],
 })
