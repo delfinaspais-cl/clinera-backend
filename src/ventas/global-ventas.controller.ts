@@ -7,8 +7,6 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
-  Request,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,10 +14,8 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
 @ApiTags('Ventas Globales')
@@ -35,11 +31,9 @@ export class GlobalVentasController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Crear nueva venta' })
   @ApiResponse({ status: 201, description: 'Venta creada exitosamente' })
-  async create(@Body() createVentaDto: any, @Request() req) {
+  async create(@Body() createVentaDto: any) {
     try {
       // Validar que la clínica existe
       const clinica = await this.prisma.clinica.findUnique({
@@ -108,8 +102,6 @@ export class GlobalVentasController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todas las ventas' })
   @ApiResponse({ status: 200, description: 'Lista de ventas obtenida exitosamente' })
   @ApiQuery({ name: 'clinicaId', required: false, description: 'Filtrar por clínica' })
@@ -168,8 +160,6 @@ export class GlobalVentasController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener venta específica' })
   @ApiResponse({ status: 200, description: 'Venta obtenida exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
@@ -207,8 +197,6 @@ export class GlobalVentasController {
   }
 
   @Get('venta-id/:ventaId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener venta por ventaId personalizado' })
   @ApiResponse({ status: 200, description: 'Venta obtenida exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
@@ -246,8 +234,6 @@ export class GlobalVentasController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar venta' })
   @ApiResponse({ status: 200, description: 'Venta actualizada exitosamente' })
   async update(@Param('id') id: string, @Body() updateVentaDto: any) {
@@ -297,8 +283,6 @@ export class GlobalVentasController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Eliminar venta' })
   @ApiResponse({ status: 200, description: 'Venta eliminada exitosamente' })
   async remove(@Param('id') id: string) {
@@ -329,8 +313,6 @@ export class GlobalVentasController {
   }
 
   @Get('clinica/:clinicaId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener ventas de una clínica específica' })
   @ApiResponse({ status: 200, description: 'Ventas de la clínica obtenidas exitosamente' })
   @ApiQuery({ name: 'estado', required: false, description: 'Filtrar por estado' })
@@ -387,8 +369,6 @@ export class GlobalVentasController {
   }
 
   @Get('stats/:clinicaId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener estadísticas de ventas de una clínica' })
   @ApiResponse({ status: 200, description: 'Estadísticas obtenidas exitosamente' })
   async getStats(@Param('clinicaId') clinicaId: string) {
