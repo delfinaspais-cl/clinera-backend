@@ -33,34 +33,82 @@ export class PatientsService {
   }
 
   async create(clinicaUrl: string, dto: CreatePatientDto) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+    try {
+      console.log('🔍 Creando paciente para clínica:', clinicaUrl);
+      console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+      
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      
+      console.log('🔍 Clínica encontrada:', clinica ? 'Sí' : 'No');
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10); // 👈 encriptar
+      // Generar contraseña automáticamente
+      const password = this.generateRandomPassword();
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        role: 'PATIENT',
-        name: dto.name,
-        phone: dto.phone,
-        clinicaId: clinica.id,
-      },
-    });
+      // Verificar si ya existe un usuario con ese email
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
 
-    return this.prisma.patient.create({
-      data: {
-        name: dto.name,
-        birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-        phone: dto.phone,
-        notes: dto.notes,
-        userId: user.id,
-      },
-      include: { user: true },
-    });
+      console.log('🔍 Usuario existente:', existingUser ? 'Sí' : 'No');
+      if (existingUser) {
+        throw new BadRequestException('Ya existe un usuario con este email');
+      }
+
+      console.log('🔍 Encriptando contraseña...');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Usar telefono si está disponible, sino phone
+      const phoneNumber = dto.telefono || dto.phone;
+      
+      // Usar fechaNacimiento si está disponible, sino birthDate
+      const birthDate = dto.fechaNacimiento || dto.birthDate;
+
+      console.log('🔍 Datos procesados - Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
+
+      console.log('🔍 Creando usuario...');
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: 'PATIENT',
+          name: dto.name,
+          phone: phoneNumber,
+          location: dto.direccion,
+          clinicaId: clinica.id,
+        },
+      });
+
+      console.log('🔍 Usuario creado con ID:', user.id);
+
+      console.log('🔍 Creando paciente...');
+      const patient = await this.prisma.patient.create({
+        data: {
+          name: dto.name,
+          birthDate: birthDate ? new Date(birthDate) : null,
+          phone: phoneNumber,
+          notes: dto.notes,
+          userId: user.id,
+        },
+        include: { user: true },
+      });
+
+      console.log('🔍 Paciente creado exitosamente con ID:', patient.id);
+
+      return {
+        success: true,
+        data: patient,
+        message: 'Paciente creado exitosamente',
+      };
+    } catch (error) {
+      console.error('Error creando paciente:', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error interno del servidor al crear paciente');
+    }
   }
 
   async findOne(clinicaUrl: string, id: string) {
@@ -330,5 +378,17 @@ export class PatientsService {
       console.error('Error al buscar pacientes:', error);
       throw new BadRequestException('Error interno del servidor');
     }
+  }
+
+  private generateRandomPassword(): string {
+    const length = 8;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let password = '';
+    
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+    
+    return password;
   }
 }

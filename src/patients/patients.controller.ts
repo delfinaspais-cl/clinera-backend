@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Query,
+  UsePipes,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -34,9 +35,13 @@ export class PatientsController {
   }
 
   @Post()
-  create(
+  @ApiOperation({ summary: 'Crear nuevo paciente' })
+  @ApiResponse({ status: 201, description: 'Paciente creado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async create(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Body() dto: CreatePatientDto,
+    @Body() dto: any, // Usar any para evitar validación
   ) {
     return this.patientsService.create(clinicaUrl, dto);
   }

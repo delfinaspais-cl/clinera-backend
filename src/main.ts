@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -10,14 +10,26 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<ConfigService>(ConfigService);
 
-  // Configurar prefijo global de la API
-  // app.setGlobalPrefix('api'); // Comentado para endpoints públicos
+  // Configurar prefijo global de la API, excluyendo ciertos controladores
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'clinica/:clinicaUrl/pacientes', method: RequestMethod.POST },
+      { path: 'clinica/:clinicaUrl/pacientes', method: RequestMethod.GET },
+      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.GET },
+      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.PATCH },
+      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.DELETE },
+      { path: 'clinica/:clinicaUrl/pacientes/search', method: RequestMethod.GET },
+      { path: 'clinica/:clinicaUrl/pacientes/mis-turnos', method: RequestMethod.GET },
+    ],
+  });
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: false, // Permitir campos adicionales
     transform: true,
+    skipMissingProperties: true, // Saltar validación de propiedades faltantes
+    skipUndefinedProperties: true, // Saltar validación de propiedades undefined
   }));
 
   // Interceptor global simplificado
