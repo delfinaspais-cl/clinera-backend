@@ -107,7 +107,6 @@ Disallow: /api/admin/`;
       };
     }
   }
-}
 
   @Get('health')
   healthCheck() {
@@ -179,3 +178,4 @@ Disallow: /api/admin/`;
       );
     }
   }
+}

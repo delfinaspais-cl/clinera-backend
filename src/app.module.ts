@@ -22,7 +22,7 @@ import { PlansModule } from './plans/plans.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
 import { VentasModule } from './ventas/ventas.module';
 import { ConfigModule } from '@nestjs/config';
-import { AppController, RootController } from './app.controller';
+import { RootController } from './app.controller';
 import { AppService } from './app.service';
 import { OwnersService } from './owners/owners.service';
 
@@ -66,7 +66,6 @@ import { GlobalVentasController } from './ventas/global-ventas.controller';
   ],
   controllers: [
     RootController, 
-    AppController, 
     GlobalClinicasController,
     GlobalTurnosController,
     GlobalPatientsController,
