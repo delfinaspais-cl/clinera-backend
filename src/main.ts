@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -10,8 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<ConfigService>(ConfigService);
 
-  // Configurar prefijo global de la API
-  app.setGlobalPrefix('api');
+  // Configurar prefijo global de la API, excluyendo endpoints públicos
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'public', method: RequestMethod.GET },
+      { path: 'public', method: RequestMethod.POST },
+      { path: 'public', method: RequestMethod.PATCH },
+      { path: 'public', method: RequestMethod.DELETE },
+    ],
+  });
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(new ValidationPipe({
