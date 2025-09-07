@@ -14,7 +14,12 @@ import type { Response } from 'express';
 
 @Controller()
 export class RootController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly appService: AppService,
+    private readonly clinicasService: ClinicasService,
+    private readonly notificationsService: NotificationsService,
+    private readonly ownersService: OwnersService,
+  ) {}
 
   @Get()
   getRoot() {
@@ -65,16 +70,44 @@ Disallow: /api/admin/`;
        })
        .send(svgFavicon);
   }
-}
 
-@Controller('api')
-export class AppController {
-  constructor(
-    private readonly clinicasService: ClinicasService,
-    private readonly notificationsService: NotificationsService,
-    private readonly ownersService: OwnersService,
-    private readonly appService: AppService,
-  ) {}
+  @Get('public/clinica/:clinicaUrl/exists')
+  async checkClinicaExists(@Param('clinicaUrl') clinicaUrl: string) {
+    // Endpoint público sin prefijo /api - redirige internamente
+    console.log('🔍 Verificando existencia de clínica (controlador raíz):', clinicaUrl);
+    
+    try {
+      if (!clinicaUrl || clinicaUrl.trim() === '') {
+        return {
+          success: false,
+          exists: false,
+          message: 'URL de clínica inválida',
+        };
+      }
+
+      const result = await this.clinicasService.checkClinicaExists(clinicaUrl);
+      console.log('✅ Resultado (controlador raíz):', result);
+      
+      return {
+        ...result,
+        timestamp: new Date().toISOString(),
+        debug: {
+          requestedUrl: clinicaUrl,
+          endpoint: '/public/clinica/:clinicaUrl/exists'
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error en checkClinicaExists (controlador raíz):', error);
+      return {
+        success: false,
+        exists: false,
+        message: 'Error interno del servidor',
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+}
 
   @Get('health')
   healthCheck() {
@@ -146,4 +179,3 @@ export class AppController {
       );
     }
   }
-}

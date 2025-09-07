@@ -10,15 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<ConfigService>(ConfigService);
 
-  // Configurar prefijo global de la API, excluyendo endpoints públicos
-  app.setGlobalPrefix('api', {
-    exclude: [
-      { path: 'public', method: RequestMethod.GET },
-      { path: 'public', method: RequestMethod.POST },
-      { path: 'public', method: RequestMethod.PATCH },
-      { path: 'public', method: RequestMethod.DELETE },
-    ],
-  });
+  // Sin prefijo global - todos los endpoints son accesibles directamente
+  // app.setGlobalPrefix('api'); // Comentado para endpoints sin prefijo
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(new ValidationPipe({
