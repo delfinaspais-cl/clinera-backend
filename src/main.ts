@@ -10,16 +10,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<ConfigService>(ConfigService);
 
-  // Configurar prefijo global de la API, excluyendo ciertos controladores
+  // Configurar prefijo global de la API, excluyendo solo el endpoint específico de creación de pacientes
   app.setGlobalPrefix('api', {
     exclude: [
       { path: 'clinica/:clinicaUrl/pacientes', method: RequestMethod.POST },
-      { path: 'clinica/:clinicaUrl/pacientes', method: RequestMethod.GET },
-      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.GET },
-      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.PATCH },
-      { path: 'clinica/:clinicaUrl/pacientes/:id', method: RequestMethod.DELETE },
-      { path: 'clinica/:clinicaUrl/pacientes/search', method: RequestMethod.GET },
-      { path: 'clinica/:clinicaUrl/pacientes/mis-turnos', method: RequestMethod.GET },
     ],
   });
 
