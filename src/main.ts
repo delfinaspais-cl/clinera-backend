@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, RequestMethod } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -10,20 +10,14 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get<ConfigService>(ConfigService);
 
-  // Configurar prefijo global de la API, excluyendo solo el endpoint específico de creación de pacientes
-  app.setGlobalPrefix('api', {
-    exclude: [
-      { path: 'clinica/:clinicaUrl/pacientes', method: RequestMethod.POST },
-    ],
-  });
+  // Configurar prefijo global de la API
+  app.setGlobalPrefix('api');
 
   // Configurar ValidationPipe global
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: false, // Permitir campos adicionales
     transform: true,
-    skipMissingProperties: true, // Saltar validación de propiedades faltantes
-    skipUndefinedProperties: true, // Saltar validación de propiedades undefined
   }));
 
   // Interceptor global simplificado
