@@ -1434,58 +1434,56 @@ export class ClinicasService {
 
       console.log('Datos del turno a crear:', JSON.stringify(turnoData, null, 2));
 
+      // Verificar si ya existe un paciente con ese email ANTES de crear el turno
+      const pacienteExistente = await this.prisma.patient.findFirst({
+        where: {
+          user: {
+            email: dto.email,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              clinicaId: true,
+              clinica: {
+                select: {
+                  name: true,
+                  url: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (pacienteExistente) {
+        console.log('⚠️ Ya existe un paciente con este email:', dto.email);
+        console.log('Paciente existente:', {
+          id: pacienteExistente.id,
+          name: pacienteExistente.name,
+          email: pacienteExistente.user.email,
+          clinica: pacienteExistente.user.clinica?.name || 'Sin clínica',
+        });
+        
+        // Lanzar error con información detallada para mostrar alerta visible
+        throw new BadRequestException(
+          `Ya existe un paciente con el email ${dto.email}. ` +
+          `Paciente: ${pacienteExistente.name} ` +
+          `(${pacienteExistente.user.clinica?.name || 'Clínica no especificada'}). ` +
+          `Por favor, usa un email diferente o contacta al administrador.`
+        );
+      }
+
+      console.log('✅ Email disponible, no hay paciente existente con:', dto.email);
+
       const turno = await this.prisma.turno.create({
         data: turnoData,
       });
 
       console.log('Turno creado exitosamente:', turno.id);
-
-      // Crear automáticamente un paciente si no existe
-      try {
-        // Verificar si ya existe un paciente con ese email en esta clínica
-        const pacienteExistente = await this.prisma.patient.findFirst({
-          where: {
-            user: {
-              email: dto.email,
-              clinicaId: clinica.id,
-            },
-          },
-        });
-
-        if (!pacienteExistente) {
-          console.log('Creando paciente automáticamente para:', dto.email);
-          
-          // Crear el usuario primero
-          const hashedPassword = await bcrypt.hash('defaultPassword123', 10);
-          
-          const user = await this.prisma.user.create({
-            data: {
-              email: dto.email,
-              password: hashedPassword,
-              role: 'PATIENT',
-              name: dto.paciente,
-              phone: dto.telefono, // Aquí está el mapeo correcto: telefono -> phone
-              clinicaId: clinica.id,
-            },
-          });
-
-          // Crear el paciente
-          const paciente = await this.prisma.patient.create({
-            data: {
-              name: dto.paciente,
-              phone: dto.telefono, // Aquí está el mapeo correcto: telefono -> phone
-              userId: user.id,
-            },
-          });
-
-          console.log('Paciente creado automáticamente:', paciente.id);
-        } else {
-          console.log('Paciente ya existe:', pacienteExistente.id);
-        }
-      } catch (error) {
-        console.error('Error al crear paciente automáticamente:', error);
-        // No lanzar error para no afectar la creación del turno
-      }
 
       return {
         success: true,
