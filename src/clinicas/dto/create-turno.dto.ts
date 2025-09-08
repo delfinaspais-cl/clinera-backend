@@ -19,8 +19,8 @@ export class CreateTurnoDto {
   @MinLength(2, {
     message: 'El nombre del paciente debe tener al menos 2 caracteres',
   })
-  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, {
-    message: 'El nombre del paciente solo puede contener letras y espacios',
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\.]+$/, {
+    message: 'El nombre del paciente solo puede contener letras, espacios y puntos',
   })
   paciente: string;
 
@@ -88,24 +88,15 @@ export class CreateTurnoDto {
 
   @IsString()
   @IsOptional()
-  @IsIn(['pagado', 'parcial', 'pendiente'], {
-    message: 'El estado de pago debe ser: pagado, parcial o pendiente',
-  })
   estadoPago?: string;
 
   @IsString()
   @IsOptional()
-  @IsIn(['efectivo', 'tarjeta', 'transferencia', 'mercadopago', 'paypal', 'otro'], {
-    message: 'El medio de pago debe ser: efectivo, tarjeta, transferencia, mercadopago, paypal u otro',
-  })
   medioPago?: string;
 
   // Nuevos campos adicionales
   @IsString()
   @IsOptional()
-  @IsIn(['instagram', 'organico', 'google-ads', 'whatsapp'], {
-    message: 'El origen debe ser: instagram, organico, google-ads o whatsapp',
-  })
   origen?: string;
 
   @IsString()
