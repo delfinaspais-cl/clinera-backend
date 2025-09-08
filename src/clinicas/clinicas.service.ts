@@ -1434,7 +1434,7 @@ export class ClinicasService {
 
       console.log('Datos del turno a crear:', JSON.stringify(turnoData, null, 2));
 
-      // Verificar si ya existe un paciente con ese email ANTES de crear el turno
+      // Verificar si ya existe un paciente con ese email
       const pacienteExistente = await this.prisma.patient.findFirst({
         where: {
           user: {
@@ -1460,24 +1460,48 @@ export class ClinicasService {
       });
 
       if (pacienteExistente) {
-        console.log('⚠️ Ya existe un paciente con este email:', dto.email);
+        console.log('✅ Paciente ya existe, solo se creará el turno:', dto.email);
         console.log('Paciente existente:', {
           id: pacienteExistente.id,
           name: pacienteExistente.name,
           email: pacienteExistente.user.email,
           clinica: pacienteExistente.user.clinica?.name || 'Sin clínica',
         });
+      } else {
+        console.log('🆕 Paciente no existe, se creará paciente + turno para:', dto.email);
         
-        // Lanzar error con información detallada para mostrar alerta visible
-        throw new BadRequestException(
-          `Ya existe un paciente con el email ${dto.email}. ` +
-          `Paciente: ${pacienteExistente.name} ` +
-          `(${pacienteExistente.user.clinica?.name || 'Clínica no especificada'}). ` +
-          `Por favor, usa un email diferente o contacta al administrador.`
-        );
-      }
+        // Crear paciente automáticamente ya que no existe
+        try {
+          // Crear el usuario primero
+          const hashedPassword = await bcrypt.hash('defaultPassword123', 10);
+          
+          const user = await this.prisma.user.create({
+            data: {
+              email: dto.email,
+              password: hashedPassword,
+              role: 'PATIENT',
+              name: dto.paciente,
+              phone: dto.telefono,
+              clinicaId: clinica.id,
+            },
+          });
 
-      console.log('✅ Email disponible, no hay paciente existente con:', dto.email);
+          // Crear el paciente
+          const paciente = await this.prisma.patient.create({
+            data: {
+              name: dto.paciente,
+              phone: dto.telefono,
+              userId: user.id,
+            },
+          });
+
+          console.log('✅ Usuario y paciente creados automáticamente:', { userId: user.id, pacienteId: paciente.id });
+        } catch (error) {
+          console.error('❌ Error al crear paciente automáticamente:', error);
+          // Si falla la creación del paciente, lanzar error
+          throw new BadRequestException(`Error al crear el paciente: ${error.message}`);
+        }
+      }
 
       const turno = await this.prisma.turno.create({
         data: turnoData,
