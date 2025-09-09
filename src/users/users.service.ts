@@ -162,7 +162,7 @@ export class UsersService {
         email: createUserDto.email,
         password: password, // Usar la misma contraseña
         phone: createUserDto.phone,
-      });
+      }, clinica.mensapiServiceEmail || undefined, clinica.mensapiServicePassword || undefined);
     } catch (error) {
       // Log del error pero no fallar la creación del usuario
       console.warn('Error registrando usuario en mensapi:', error.message);

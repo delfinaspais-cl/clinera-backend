@@ -42,15 +42,19 @@ export class MensapiIntegrationService {
     this.mensapiServicePassword = process.env.MENSAPI_SERVICE_PASSWORD || '';
   }
 
-  private async authenticate(): Promise<boolean> {
+  private async authenticate(serviceEmail?: string, servicePassword?: string): Promise<boolean> {
     try {
       // Verificar si ya tenemos un token válido
       if (this.accessToken && Date.now() < this.tokenExpiry) {
         return true;
       }
 
+      // Usar credenciales específicas de la clínica o las globales
+      const email = serviceEmail || this.mensapiServiceEmail;
+      const password = servicePassword || this.mensapiServicePassword;
+
       // Si no tenemos credenciales de servicio, intentar registro público
-      if (!this.mensapiServiceEmail || !this.mensapiServicePassword) {
+      if (!email || !password) {
         this.logger.warn('No hay credenciales de servicio configuradas para mensapi');
         return false;
       }
@@ -60,8 +64,8 @@ export class MensapiIntegrationService {
       const response = await axios.post(
         `${this.mensapiUrl}/auth/login`,
         {
-          email: this.mensapiServiceEmail,
-          password: this.mensapiServicePassword,
+          email: email,
+          password: password,
         },
         {
           headers: {
@@ -91,12 +95,12 @@ export class MensapiIntegrationService {
     email: string;
     password?: string;
     phone?: string;
-  }): Promise<MensapiRegistrationResponse | null> {
+  }, serviceEmail?: string, servicePassword?: string): Promise<MensapiRegistrationResponse | null> {
     try {
       this.logger.log(`Registrando usuario en mensapi: ${userData.email}`);
 
       // Intentar autenticación si tenemos credenciales
-      const isAuthenticated = await this.authenticate();
+      const isAuthenticated = await this.authenticate(serviceEmail, servicePassword);
       
       const registrationData = {
         name: userData.name,

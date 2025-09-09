@@ -30,6 +30,8 @@ model Clinica {
   url                 String             @unique @map("slug")
   fuente              String?            @default("owner_dashboard")
   pendienteAprobacion Boolean            @default(false)
+  mensapiServiceEmail String?
+  mensapiServicePassword String?
   conversations       Conversation[]
   especialidades      Especialidad[]
   tratamientos        Tratamiento[]
