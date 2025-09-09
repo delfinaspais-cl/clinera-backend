@@ -81,6 +81,9 @@ export class SucursalesController {
           direccion: createSucursalDto.direccion,
           telefono: createSucursalDto.telefono,
           email: createSucursalDto.email,
+          ciudad: createSucursalDto.ciudad,
+          provincia: createSucursalDto.provincia,
+          pais: createSucursalDto.pais,
           clinicaId: clinica.id,
         },
       });

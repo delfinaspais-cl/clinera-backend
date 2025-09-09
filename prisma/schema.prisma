@@ -406,6 +406,9 @@ model Sucursal {
   direccion     String?
   telefono      String?
   email         String?
+  ciudad        String?
+  provincia     String?
+  pais          String?
   estado        String         @default("activa")
   clinicaId     String
   createdAt     DateTime       @default(now())

@@ -40,4 +40,34 @@ export class CreateSucursalDto {
   @IsOptional()
   @IsEmail({}, { message: 'El email debe tener un formato válido' })
   email?: string;
+
+  @ApiPropertyOptional({
+    description: 'Ciudad de la sucursal',
+    example: 'Buenos Aires',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: 'La ciudad no puede exceder 100 caracteres' })
+  ciudad?: string;
+
+  @ApiPropertyOptional({
+    description: 'Provincia de la sucursal',
+    example: 'CABA',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: 'La provincia no puede exceder 100 caracteres' })
+  provincia?: string;
+
+  @ApiPropertyOptional({
+    description: 'País de la sucursal',
+    example: 'Argentina',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100, { message: 'El país no puede exceder 100 caracteres' })
+  pais?: string;
 }
