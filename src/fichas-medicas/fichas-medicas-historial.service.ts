@@ -134,6 +134,20 @@ export class FichasMedicasHistorialService {
     return this.mapearVersionAResponse(version);
   }
 
+  // Actualizar ficha médica (crea nueva versión automáticamente)
+  async actualizarFichaMedica(
+    clinicaUrl: string, 
+    pacienteId: string, 
+    datos: CrearVersionFichaMedicaDto
+  ): Promise<FichaMedicaHistorialResponseDto> {
+    // Si no se proporcionan notas de cambio, generar automáticamente
+    if (!datos.notasCambio) {
+      datos.notasCambio = 'Actualización de ficha médica';
+    }
+    
+    return this.crearNuevaVersion(clinicaUrl, pacienteId, datos);
+  }
+
   // Crear nueva versión de ficha médica
   async crearNuevaVersion(
     clinicaUrl: string, 

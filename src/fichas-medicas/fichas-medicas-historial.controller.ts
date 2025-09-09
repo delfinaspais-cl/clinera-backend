@@ -76,6 +76,18 @@ export class FichasMedicasHistorialController {
     return this.fichasMedicasHistorialService.getVersionEspecifica(clinicaUrl, pacienteId, versionId);
   }
 
+  @Put()
+  @ApiOperation({ summary: 'Actualizar ficha médica (crea nueva versión automáticamente)' })
+  @ApiResponse({ status: 200, description: 'Ficha médica actualizada exitosamente', type: FichaMedicaHistorialResponseDto })
+  @ApiResponse({ status: 404, description: 'Clínica o paciente no encontrado' })
+  async actualizarFichaMedica(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Body() datos: CrearVersionFichaMedicaDto,
+  ): Promise<FichaMedicaHistorialResponseDto> {
+    return this.fichasMedicasHistorialService.actualizarFichaMedica(clinicaUrl, pacienteId, datos);
+  }
+
   @Post('version')
   @ApiOperation({ summary: 'Crear nueva versión de ficha médica' })
   @ApiResponse({ status: 201, description: 'Nueva versión creada exitosamente', type: FichaMedicaHistorialResponseDto })
