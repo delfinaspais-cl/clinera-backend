@@ -69,7 +69,7 @@ export class UsersService {
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
     const permisosString = PermissionsService.getPermisosAsString(permisos);
 
-    // Crear el usuario
+    // Crear el usuario (sin clinicaId específico)
     const user = await this.prisma.user.create({
       data: {
         name: createUserDto.nombre,
@@ -77,7 +77,7 @@ export class UsersService {
         password: hashedPassword,
         role: createUserDto.tipo,
         phone: createUserDto.phone,
-        clinicaId: createUserDto.clinicaId,
+        clinicaId: null, // No asociado a clínica específica
         estado: 'pendiente', // Estado inicial como pendiente
         configuracion: permisosString, // Guardar permisos en configuracion
       },
