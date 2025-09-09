@@ -39,7 +39,7 @@ import {
 } from './dto/ficha-medica-historial.dto';
 
 @ApiTags('Fichas Médicas - Historial')
-@Controller('api/clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
+@Controller('api/clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica-historial')
 export class FichasMedicasHistorialController {
   constructor(private readonly fichasMedicasHistorialService: FichasMedicasHistorialService) {}
 
