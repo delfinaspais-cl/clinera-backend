@@ -14,8 +14,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
-@Controller('clinica/:clinicaUrl/users')
-export class ClinicaUsersController {
+@Controller('clinica/:clinicaUrl/usuarios')
+export class ClinicaUsuariosController {
   constructor(private readonly usersService: UsersService) {}
 
   // Endpoint público para crear usuarios (sin autenticación JWT)
