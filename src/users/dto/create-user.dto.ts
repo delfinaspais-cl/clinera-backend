@@ -24,14 +24,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   phone?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  sucursales?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  especialidades?: string[];
 }

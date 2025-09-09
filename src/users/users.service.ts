@@ -100,8 +100,6 @@ export class UsersService {
     return {
       ...user,
       permisos,
-      sucursales: createUserDto.sucursales || [],
-      especialidades: createUserDto.especialidades || [],
     };
   }
 
@@ -173,8 +171,6 @@ export class UsersService {
     return {
       ...user,
       permisos,
-      sucursales: createUserDto.sucursales || [],
-      especialidades: createUserDto.especialidades || [],
       clinica: {
         id: clinica.id,
         name: clinica.name,
