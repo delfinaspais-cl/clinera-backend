@@ -9,8 +9,6 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-  UseGuards,
-  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -38,11 +36,8 @@ import {
   FiltrosFichasMedicasDto,
   SubirArchivoVersionDto
 } from './dto/ficha-medica-historial.dto';
-import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @ApiTags('Fichas Médicas - Historial')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
 export class FichasMedicasHistorialController {
   constructor(private readonly fichasMedicasHistorialService: FichasMedicasHistorialService) {}
@@ -89,10 +84,8 @@ export class FichasMedicasHistorialController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Body() datos: CrearVersionFichaMedicaDto,
-    @Request() req: any,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    const creadoPor = req.user?.id;
-    return this.fichasMedicasHistorialService.crearNuevaVersion(clinicaUrl, pacienteId, datos, creadoPor);
+    return this.fichasMedicasHistorialService.crearNuevaVersion(clinicaUrl, pacienteId, datos);
   }
 
   @Get('compare/:version1Id/:version2Id')
@@ -209,23 +202,18 @@ export class FichasMedicasHistorialController {
     @Param('pacienteId') pacienteId: string,
     @Param('versionId') versionId: string,
     @Body() body: { notasCambio: string },
-    @Request() req: any,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    const creadoPor = req.user?.id;
     return this.fichasMedicasHistorialService.restaurarVersion(
       clinicaUrl,
       pacienteId,
       versionId,
-      body.notasCambio,
-      creadoPor
+      body.notasCambio
     );
   }
 }
 
 // Controlador global para estadísticas y búsquedas
 @ApiTags('Fichas Médicas - Global')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('clinica/:clinicaUrl/fichas-medicas')
 export class FichasMedicasGlobalController {
   constructor(private readonly fichasMedicasHistorialService: FichasMedicasHistorialService) {}

@@ -138,8 +138,7 @@ export class FichasMedicasHistorialService {
   async crearNuevaVersion(
     clinicaUrl: string, 
     pacienteId: string, 
-    datos: CrearVersionFichaMedicaDto,
-    creadoPor?: string
+    datos: CrearVersionFichaMedicaDto
   ): Promise<FichaMedicaHistorialResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
@@ -164,7 +163,6 @@ export class FichasMedicasHistorialService {
         pacienteId,
         clinicaId: clinica.id,
         version: nuevaVersion,
-        creadoPor,
         esVersionActual: true,
         notasCambio: datos.notasCambio,
         // Datos básicos
@@ -506,8 +504,7 @@ export class FichasMedicasHistorialService {
     clinicaUrl: string,
     pacienteId: string,
     versionId: string,
-    notasCambio: string,
-    creadoPor?: string
+    notasCambio: string
   ): Promise<FichaMedicaHistorialResponseDto> {
     const versionAnterior = await this.getVersionEspecifica(clinicaUrl, pacienteId, versionId);
 
@@ -517,7 +514,7 @@ export class FichasMedicasHistorialService {
       notasCambio: `Restauración de la versión ${versionAnterior.version}. ${notasCambio}`
     };
 
-    return await this.crearNuevaVersion(clinicaUrl, pacienteId, datosRestauracion, creadoPor);
+    return await this.crearNuevaVersion(clinicaUrl, pacienteId, datosRestauracion);
   }
 
   // Métodos privados auxiliares
