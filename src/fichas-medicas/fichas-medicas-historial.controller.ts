@@ -39,7 +39,7 @@ import {
 } from './dto/ficha-medica-historial.dto';
 
 @ApiTags('Fichas Médicas - Historial')
-@Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
+@Controller('api/clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
 export class FichasMedicasHistorialController {
   constructor(private readonly fichasMedicasHistorialService: FichasMedicasHistorialService) {}
 
@@ -227,7 +227,7 @@ export class FichasMedicasHistorialController {
 
 // Controlador global para estadísticas y búsquedas
 @ApiTags('Fichas Médicas - Global')
-@Controller('clinica/:clinicaUrl/fichas-medicas')
+@Controller('api/clinica/:clinicaUrl/fichas-medicas')
 export class FichasMedicasGlobalController {
   constructor(private readonly fichasMedicasHistorialService: FichasMedicasHistorialService) {}
 

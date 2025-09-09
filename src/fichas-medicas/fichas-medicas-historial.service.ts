@@ -134,18 +134,132 @@ export class FichasMedicasHistorialService {
     return this.mapearVersionAResponse(version);
   }
 
-  // Actualizar ficha médica (crea nueva versión automáticamente)
+  // Actualizar ficha médica (modifica la versión actual)
   async actualizarFichaMedica(
     clinicaUrl: string, 
     pacienteId: string, 
     datos: CrearVersionFichaMedicaDto
   ): Promise<FichaMedicaHistorialResponseDto> {
-    // Si no se proporcionan notas de cambio, generar automáticamente
-    if (!datos.notasCambio) {
-      datos.notasCambio = 'Actualización de ficha médica';
+    const clinica = await this.verificarClinica(clinicaUrl);
+    const paciente = await this.verificarPaciente(pacienteId, clinica.id);
+
+    // Buscar la versión actual
+    let versionActual = await this.prisma.fichaMedicaHistorial.findFirst({
+      where: {
+        pacienteId,
+        clinicaId: clinica.id,
+        esVersionActual: true
+      },
+      include: {
+        creadoPorUser: {
+          include: {
+            professional: {
+              include: {
+                especialidades: {
+                  include: {
+                    especialidad: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        archivos: {
+          orderBy: { fechaSubida: 'desc' }
+        }
+      }
+    });
+
+    // Si no existe versión actual, crear la primera
+    if (!versionActual) {
+      const primeraVersion = await this.prisma.fichaMedicaHistorial.create({
+        data: {
+          pacienteId,
+          clinicaId: clinica.id,
+          version: 1,
+          esVersionActual: true,
+          notasCambio: datos.notasCambio || 'Primera versión de la ficha médica',
+          // Datos básicos
+          grupoSanguineo: datos.datosBasicos?.grupoSanguineo,
+          ocupacion: datos.datosBasicos?.ocupacion,
+          alergias: datos.datosBasicos?.alergias,
+          medicamentosActuales: datos.datosBasicos?.medicamentosActuales,
+          antecedentesPatologicos: datos.datosBasicos?.antecedentesPatologicos,
+          antecedentesQuirurgicos: datos.datosBasicos?.antecedentesQuirurgicos,
+          antecedentesFamiliares: datos.datosBasicos?.antecedentesFamiliares,
+          habitos: datos.datosBasicos?.habitos,
+          // Historia clínica
+          motivoConsulta: datos.historiaClinica?.motivoConsulta,
+          sintomas: datos.historiaClinica?.sintomas,
+          diagnostico: datos.historiaClinica?.diagnostico,
+          tratamiento: datos.historiaClinica?.tratamiento,
+          evolucion: datos.historiaClinica?.evolucion
+        },
+        include: {
+          creadoPorUser: {
+            include: {
+              professional: {
+                include: {
+                  especialidades: {
+                    include: {
+                      especialidad: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          archivos: {
+            orderBy: { fechaSubida: 'desc' }
+          }
+        }
+      });
+
+      return this.mapearVersionAResponse(primeraVersion);
     }
-    
-    return this.crearNuevaVersion(clinicaUrl, pacienteId, datos);
+
+    // Actualizar la versión actual existente
+    const versionActualizada = await this.prisma.fichaMedicaHistorial.update({
+      where: { id: versionActual.id },
+      data: {
+        notasCambio: datos.notasCambio || 'Actualización de ficha médica',
+        // Datos básicos
+        grupoSanguineo: datos.datosBasicos?.grupoSanguineo,
+        ocupacion: datos.datosBasicos?.ocupacion,
+        alergias: datos.datosBasicos?.alergias,
+        medicamentosActuales: datos.datosBasicos?.medicamentosActuales,
+        antecedentesPatologicos: datos.datosBasicos?.antecedentesPatologicos,
+        antecedentesQuirurgicos: datos.datosBasicos?.antecedentesQuirurgicos,
+        antecedentesFamiliares: datos.datosBasicos?.antecedentesFamiliares,
+        habitos: datos.datosBasicos?.habitos,
+        // Historia clínica
+        motivoConsulta: datos.historiaClinica?.motivoConsulta,
+        sintomas: datos.historiaClinica?.sintomas,
+        diagnostico: datos.historiaClinica?.diagnostico,
+        tratamiento: datos.historiaClinica?.tratamiento,
+        evolucion: datos.historiaClinica?.evolucion
+      },
+      include: {
+        creadoPorUser: {
+          include: {
+            professional: {
+              include: {
+                especialidades: {
+                  include: {
+                    especialidad: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        archivos: {
+          orderBy: { fechaSubida: 'desc' }
+        }
+      }
+    });
+
+    return this.mapearVersionAResponse(versionActualizada);
   }
 
   // Crear nueva versión de ficha médica
