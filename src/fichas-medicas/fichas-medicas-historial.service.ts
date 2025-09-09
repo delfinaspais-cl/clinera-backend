@@ -80,7 +80,7 @@ export class FichasMedicasHistorialService {
       version: version.version,
       fechaCreacion: version.fechaCreacion.toISOString(),
       creadoPor: version.creadoPorUser?.name || 'Sistema',
-      notasCambio: version.notasCambio,
+      notasCambio: version.notasCambio || undefined,
       esVersionActual: version.esVersionActual,
       resumenCambios: this.generarResumenCambios(version)
     }));
@@ -276,7 +276,7 @@ export class FichasMedicasHistorialService {
     }
 
     // Subir archivo
-    const uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo);
+    const uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo as 'archivos' | 'imagenes');
 
     // Guardar en base de datos
     const archivo = await this.prisma.fichaMedicaArchivo.create({
@@ -294,7 +294,7 @@ export class FichasMedicasHistorialService {
       tipo: archivo.tipo,
       nombre: archivo.nombre,
       url: this.storageService.getFileUrl(archivo.url),
-      descripcion: archivo.descripcion,
+      descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     };
   }
@@ -320,7 +320,7 @@ export class FichasMedicasHistorialService {
       tipo: archivo.tipo,
       nombre: archivo.nombre,
       url: this.storageService.getFileUrl(archivo.url),
-      descripcion: archivo.descripcion,
+      descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     }));
   }
@@ -624,14 +624,14 @@ export class FichasMedicasHistorialService {
   }
 
   private generarResumenCambios(version: any): string {
-    const cambios = [];
+    const cambios: string[] = [];
     
     if (version.notasCambio) {
       cambios.push(version.notasCambio);
     }
 
     // Analizar campos modificados
-    const camposModificados = [];
+    const camposModificados: string[] = [];
     if (version.alergias) camposModificados.push('alergias');
     if (version.medicamentosActuales) camposModificados.push('medicamentos');
     if (version.diagnostico) camposModificados.push('diagnóstico');
