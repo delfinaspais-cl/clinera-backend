@@ -3,11 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PermissionsService } from './services/permissions.service';
+import { MensapiIntegrationService } from './services/mensapi-integration.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mensapiIntegration: MensapiIntegrationService,
+  ) {}
 
   findAll() {
     return this.prisma.user.findMany();
@@ -152,6 +156,20 @@ export class UsersService {
       },
     });
 
+    // Intentar registrar el usuario en mensapi (no bloquea si falla)
+    let mensapiResult = null;
+    try {
+      mensapiResult = await this.mensapiIntegration.registerUser({
+        name: createUserDto.nombre,
+        email: createUserDto.email,
+        password: password, // Usar la misma contraseña
+        phone: createUserDto.phone,
+      });
+    } catch (error) {
+      // Log del error pero no fallar la creación del usuario
+      console.warn('Error registrando usuario en mensapi:', error.message);
+    }
+
     return {
       ...user,
       permisos,
@@ -161,6 +179,14 @@ export class UsersService {
         id: clinica.id,
         name: clinica.name,
         url: clinica.url,
+      },
+      mensapi: mensapiResult ? {
+        registered: true,
+        accessToken: mensapiResult.content.accessToken,
+        refreshToken: mensapiResult.content.refreshToken,
+      } : {
+        registered: false,
+        error: 'No se pudo registrar en mensapi',
       },
     };
   }
