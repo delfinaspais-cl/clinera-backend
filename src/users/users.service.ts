@@ -157,7 +157,7 @@ export class UsersService {
     });
 
     // Intentar registrar el usuario en mensapi (no bloquea si falla)
-    let mensapiResult = null;
+    let mensapiResult: any = null;
     try {
       mensapiResult = await this.mensapiIntegration.registerUser({
         name: createUserDto.nombre,
