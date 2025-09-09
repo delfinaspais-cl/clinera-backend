@@ -26,10 +26,6 @@ export class CreateUserDto {
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  clinicaId?: string;
-
-  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   sucursales?: string[];
