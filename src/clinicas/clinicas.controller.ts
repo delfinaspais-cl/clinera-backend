@@ -123,6 +123,16 @@ export class ClinicasController {
     }
   }
 
+  @Delete(':clinicaUrl/usuarios/:userId')
+  @ApiOperation({ summary: 'Eliminar usuario de la clínica' })
+  @ApiResponse({ status: 200, description: 'Usuario eliminado exitosamente' })
+  async deleteUsuario(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.clinicasService.deleteUsuario(clinicaUrl, userId);
+  }
+
   @Get(':clinicaUrl/turnos/hoy')
   @UseGuards(JwtAuthGuard)
   async getTurnosHoy(

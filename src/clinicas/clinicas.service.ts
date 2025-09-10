@@ -206,6 +206,94 @@ export class ClinicasService {
     }
   }
 
+  async deleteUsuario(clinicaUrl: string, userId: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el usuario
+      const usuario = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          professional: true,
+          patient: true,
+        },
+      });
+
+      if (!usuario) {
+        throw new BadRequestException('Usuario no encontrado');
+      }
+
+      // Verificar que el usuario pertenece a la clínica
+      if (usuario.clinicaId !== clinica.id) {
+        throw new BadRequestException('El usuario no pertenece a esta clínica');
+      }
+
+      // Eliminar datos relacionados según el rol
+      if (usuario.role === 'PROFESSIONAL' && usuario.professional) {
+        // Eliminar especialidades del profesional
+        await this.prisma.professionalEspecialidad.deleteMany({
+          where: { professionalId: usuario.professional.id },
+        });
+
+        // Eliminar tratamientos del profesional
+        await this.prisma.professionalTratamiento.deleteMany({
+          where: { professionalId: usuario.professional.id },
+        });
+
+        // Eliminar agendas del profesional
+        await this.prisma.agenda.deleteMany({
+          where: { professionalId: usuario.professional.id },
+        });
+
+        // Eliminar el profesional
+        await this.prisma.professional.delete({
+          where: { id: usuario.professional.id },
+        });
+      }
+
+      if (usuario.role === 'PATIENT' && usuario.patient) {
+        // Eliminar el paciente
+        await this.prisma.patient.delete({
+          where: { id: usuario.patient.id },
+        });
+      }
+
+      // Eliminar turnos relacionados
+      // await this.prisma.turno.deleteMany({
+      //   where: { userId: userId },
+      // });
+
+      // Finalmente, eliminar el usuario
+      await this.prisma.user.delete({
+        where: { id: userId },
+      });
+
+      return {
+        success: true,
+        message: 'Usuario eliminado exitosamente',
+        deletedUser: {
+          id: usuario.id,
+          name: usuario.name,
+          email: usuario.email,
+          role: usuario.role,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al eliminar usuario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
   async updateUsuarioEstado(
     clinicaUrl: string,
     userId: string,
