@@ -63,10 +63,18 @@ export class PatientsService {
       // Usar telefono si está disponible, sino phone
       const phoneNumber = dto.telefono || dto.phone;
       
-      // Usar fechaNacimiento si está disponible, sino birthDate
-      const birthDate = dto.fechaNacimiento || dto.birthDate;
+      // Usar fechaNacimiento si está disponible, sino birthDate, sino fecha_nacimiento
+      const birthDate = dto.fechaNacimiento || dto.birthDate || dto.fecha_nacimiento;
+      
+      // Usar name si está disponible, sino nombre
+      const patientName = dto.name || dto.nombre;
+      
+      // Validar que el nombre no esté vacío
+      if (!patientName || patientName.trim() === '') {
+        throw new BadRequestException('El nombre del paciente es requerido');
+      }
 
-      console.log('🔍 Datos procesados - Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
+      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
 
       console.log('🔍 Creando usuario...');
       const user = await this.prisma.user.create({
@@ -74,7 +82,7 @@ export class PatientsService {
           email: dto.email,
           password: hashedPassword,
           role: 'PATIENT',
-          name: dto.name,
+          name: patientName,
           phone: phoneNumber,
           location: dto.direccion,
           clinicaId: clinica.id,
@@ -84,12 +92,21 @@ export class PatientsService {
       console.log('🔍 Usuario creado con ID:', user.id);
 
       console.log('🔍 Creando paciente...');
+      
+      // Combinar notas existentes con documento si está presente
+      let combinedNotes = dto.notes || '';
+      if (dto.documento) {
+        combinedNotes = combinedNotes ? 
+          `${combinedNotes}\nDocumento: ${dto.documento}` : 
+          `Documento: ${dto.documento}`;
+      }
+      
       const patient = await this.prisma.patient.create({
         data: {
-          name: dto.name,
+          name: patientName,
           birthDate: birthDate ? new Date(birthDate) : null,
           phone: phoneNumber,
-          notes: dto.notes,
+          notes: combinedNotes,
           userId: user.id,
         },
         include: { user: true },

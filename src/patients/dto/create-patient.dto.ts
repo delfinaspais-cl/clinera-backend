@@ -5,6 +5,11 @@ export class CreatePatientDto {
   @IsString()
   name: string;
 
+  // Campo alternativo para compatibilidad con frontend
+  @IsOptional()
+  @IsString()
+  nombre?: string;
+
   @IsNotEmpty()
   @IsString()
   telefono: string;
@@ -28,6 +33,15 @@ export class CreatePatientDto {
   @IsOptional()
   @IsString()
   fechaNacimiento?: string;
+
+  // Campo alternativo para compatibilidad con frontend
+  @IsOptional()
+  @IsDateString()
+  fecha_nacimiento?: string;
+
+  @IsOptional()
+  @IsString()
+  documento?: string;
 
   @IsOptional()
   @IsString()
