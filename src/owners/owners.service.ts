@@ -3,11 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateClinicaDto } from './dto/create-clinica.dto';
 import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class OwnersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async getAllClinicas() {
     try {
@@ -115,6 +119,21 @@ export class OwnersService {
           estado: 'activo',
         },
       });
+
+      // Enviar email de bienvenida con credenciales al admin
+      try {
+        await this.emailService.sendWelcomeCredentialsEmail(
+          dto.email,
+          dto.password, // Contraseña en texto plano para el email
+          `Administrador de ${dto.nombre}`,
+          'ADMIN',
+          dto.nombre,
+        );
+        console.log(`Email de bienvenida enviado al admin: ${dto.email}`);
+      } catch (emailError) {
+        console.error('Error al enviar email de bienvenida al admin:', emailError);
+        // No lanzamos error para no interrumpir la creación de la clínica
+      }
     }
 
     if (dto.especialidades?.length) {

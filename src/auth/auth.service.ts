@@ -12,7 +12,8 @@ import { OwnerLoginDto } from './dto/owner-login.dto';
 import { ClinicaLoginDto } from './dto/clinica-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { EmailService } from './services/email.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { EmailService } from '../email/email.service';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -79,6 +80,27 @@ export class AuthService {
           role: role as any,
         },
       });
+
+      // Enviar email de bienvenida con credenciales (solo si tiene clínica)
+      if (user.clinicaId) {
+        try {
+          const clinica = await this.prisma.clinica.findUnique({
+            where: { id: user.clinicaId },
+          });
+          
+          await this.emailService.sendWelcomeCredentialsEmail(
+            dto.email,
+            dto.password, // Contraseña en texto plano para el email
+            dto.name,
+            dto.role,
+            clinica?.name,
+          );
+          console.log(`Email de bienvenida enviado a ${dto.email}`);
+        } catch (emailError) {
+          console.error('Error al enviar email de bienvenida:', emailError);
+          // No lanzamos error para no interrumpir el registro
+        }
+      }
 
       return this.login(user);
     } catch (error) {
@@ -355,6 +377,65 @@ export class AuthService {
         throw error;
       }
       console.error('Error en resetPassword:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async changePassword(dto: ChangePasswordDto) {
+    try {
+      // Buscar usuario por email
+      const user = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (!user) {
+        throw new BadRequestException('Usuario no encontrado');
+      }
+
+      // Verificar contraseña actual
+      const isCurrentPasswordValid = await bcrypt.compare(
+        dto.currentPassword,
+        user.password,
+      );
+
+      if (!isCurrentPasswordValid) {
+        throw new BadRequestException('La contraseña actual es incorrecta');
+      }
+
+      // Verificar que la nueva contraseña sea diferente
+      const isSamePassword = await bcrypt.compare(
+        dto.newPassword,
+        user.password,
+      );
+
+      if (isSamePassword) {
+        throw new BadRequestException(
+          'La nueva contraseña debe ser diferente a la actual',
+        );
+      }
+
+      // Actualizar contraseña
+      const hashedNewPassword = await bcrypt.hash(dto.newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedNewPassword },
+      });
+
+      // Enviar email de confirmación
+      await this.emailService.sendPasswordChangedEmail(
+        user.email,
+        user.name || 'Usuario',
+      );
+
+      return {
+        success: true,
+        message: 'Contraseña actualizada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en changePassword:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
