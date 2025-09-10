@@ -7,6 +7,8 @@ interface EmailData {
   template?: string;
   data?: any;
   html?: string;
+  text?: string;
+  variables?: Record<string, any>;
 }
 
 @Injectable()
@@ -26,16 +28,24 @@ export class EmailService {
     });
   }
 
-  async sendEmail(emailData: EmailData): Promise<boolean> {
+  async sendEmail(emailData: EmailData): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       let html: string;
+      let text: string;
 
       if (emailData.html) {
         html = emailData.html;
       } else if (emailData.template) {
-        html = this.getTemplate(emailData.template, emailData.data);
+        html = this.getTemplate(emailData.template, emailData.variables || emailData.data);
       } else {
         throw new Error('Se requiere template o html');
+      }
+
+      // Si se proporciona texto plano, usarlo; si no, generar uno básico desde el HTML
+      if (emailData.text) {
+        text = emailData.text;
+      } else {
+        text = this.htmlToText(html);
       }
 
       const mailOptions = {
@@ -43,14 +53,15 @@ export class EmailService {
         to: emailData.to,
         subject: emailData.subject,
         html,
+        text,
       };
 
       const info = await this.transporter.sendMail(mailOptions);
       console.log('Email enviado:', info.messageId);
-      return true;
+      return { success: true, messageId: info.messageId };
     } catch (error) {
       console.error('Error al enviar email:', error);
-      return false;
+      return { success: false, error: error.message };
     }
   }
 
@@ -64,6 +75,8 @@ export class EmailService {
         return this.getPasswordResetTemplate(data);
       case 'password-changed':
         return this.getPasswordChangedTemplate(data);
+      case 'turno-confirmation':
+        return this.getTurnoConfirmationTemplate(data);
       default:
         throw new Error(`Template '${template}' no encontrado`);
     }
@@ -268,29 +281,119 @@ export class EmailService {
     }
   }
 
+  private getTurnoConfirmationTemplate(data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3B82F6; margin: 0;">Clinera</h1>
+            <p style="color: #6B7280; margin: 10px 0 0 0;">Gestión Médica Inteligente</p>
+          </div>
+          
+          <h2 style="color: #10B981; margin-bottom: 20px;">✅ Cita Confirmada</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Estimado/a <strong>${data.paciente || 'Paciente'}</strong>,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Le confirmamos que su cita ha sido agendada exitosamente.
+          </p>
+          
+          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">DETALLES DE LA CITA:</h3>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${data.fecha || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Hora:</strong> ${data.hora || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Profesional:</strong> ${data.profesional || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Tratamiento:</strong> ${data.tratamiento || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Sucursal:</strong> ${data.sucursal || 'No especificado'}</p>
+          </div>
+          
+          ${data.ventaId ? `
+          <div style="background-color: #FEF3C7; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">INFORMACIÓN DE LA VENTA:</h3>
+            <p style="color: #374151; margin: 5px 0;"><strong>ID de Venta:</strong> ${data.ventaId}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Monto Total:</strong> $${data.montoTotal || '0'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Estado de Pago:</strong> ${data.estadoPago || 'pendiente'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Medio de Pago:</strong> ${data.medioPago || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Sesiones:</strong> ${data.sesiones || '1'}</p>
+          </div>
+          ` : ''}
+          
+          ${data.turnoId ? `
+          <div style="background-color: #EFF6FF; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">INFORMACIÓN ADICIONAL:</h3>
+            <p style="color: #374151; margin: 5px 0;"><strong>ID del Turno:</strong> ${data.turnoId}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha de Creación:</strong> ${data.fechaCreacion || new Date().toLocaleDateString('es-ES')}</p>
+          </div>
+          ` : ''}
+          
+          <div style="background-color: #D1FAE5; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
+            <p style="color: #065F46; margin: 0; font-weight: bold;">
+              📅 Por favor, llegue 10 minutos antes de su cita.
+            </p>
+          </div>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Si necesita reprogramar o cancelar su cita, por favor contáctenos.
+          </p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://clinera.com'}" 
+               style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Ver Mis Citas
+            </a>
+          </div>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
+          
+          <p style="color: #6B7280; font-size: 14px; text-align: center; margin: 0;">
+            Este es un email automático, por favor no respondas a este mensaje.<br>
+            Si tienes alguna pregunta, contacta con nuestro equipo de soporte.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private htmlToText(html: string): string {
+    // Simple HTML to text conversion
+    return html
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
+      .replace(/&amp;/g, '&') // Replace &amp; with &
+      .replace(/&lt;/g, '<') // Replace &lt; with <
+      .replace(/&gt;/g, '>') // Replace &gt; with >
+      .replace(/&quot;/g, '"') // Replace &quot; with "
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
+  }
+
   // Métodos legacy para compatibilidad
   async sendPasswordResetEmail(
     email: string,
     resetToken: string,
     userName: string,
   ): Promise<boolean> {
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: 'Recuperación de contraseña - Clinera',
       template: 'password-reset',
       data: { resetToken, userName },
     });
+    return result.success;
   }
 
   async sendPasswordChangedEmail(
     email: string,
     userName: string,
   ): Promise<boolean> {
-    return this.sendEmail({
+    const result = await this.sendEmail({
       to: email,
       subject: 'Contraseña actualizada - Clinera',
       template: 'password-changed',
       data: { userName },
     });
+    return result.success;
   }
 }

@@ -2897,4 +2897,16 @@ export class ClinicasService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  async getClinicaByUrl(clinicaUrl: string) {
+    try {
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      return clinica;
+    } catch (error) {
+      console.error('Error al obtener clínica por URL:', error);
+      return null;
+    }
+  }
 }

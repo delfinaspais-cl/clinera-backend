@@ -36,11 +36,16 @@ import { GetNotificacionesFiltersDto } from './dto/get-notificaciones-filters.dt
 import { CreateNotificacionDto } from './dto/create-notificacion.dto';
 import { TurnosStatsDto, TurnosStatsResponseDto } from './dto/turnos-stats.dto';
 import { DashboardVentasResponseDto } from './dto/dashboard-ventas.dto';
+import { EmailService } from '../email/email.service';
+import { SendEmailDto } from '../turnos/dto/send-email.dto';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
 export class ClinicasController {
-  constructor(private clinicasService: ClinicasService) {}
+  constructor(
+    private clinicasService: ClinicasService,
+    private emailService: EmailService,
+  ) {}
 
   @Get(':clinicaUrl/usuarios')
   @UseGuards(JwtAuthGuard)
@@ -542,5 +547,80 @@ export class ClinicasController {
     @Query() filters: GetTurnosFiltersDto,
   ) {
     return this.clinicasService.getVentas(clinicaUrl, filters);
+  }
+
+  @Post(':clinicaUrl/turnos/email')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Enviar email de confirmación de turno' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Email enviado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        messageId: { type: 'string' },
+        message: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Error al enviar el email',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        code: { type: 'string' }
+      }
+    }
+  })
+  async sendTurnoEmail(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() sendEmailDto: SendEmailDto,
+  ) {
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
+      if (!clinica) {
+        return {
+          success: false,
+          error: 'Clínica no encontrada',
+          code: 'CLINICA_NOT_FOUND'
+        };
+      }
+
+      const result = await this.emailService.sendEmail({
+        to: sendEmailDto.to,
+        subject: sendEmailDto.subject,
+        text: sendEmailDto.text,
+        html: sendEmailDto.html,
+        template: sendEmailDto.template,
+        variables: sendEmailDto.variables,
+      });
+
+      if (result.success) {
+        return {
+          success: true,
+          messageId: result.messageId,
+          message: 'Email enviado exitosamente'
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Error desconocido al enviar el email',
+          code: 'EMAIL_SEND_FAILED'
+        };
+      }
+    } catch (error) {
+      console.error('Error en sendTurnoEmail:', error);
+      return {
+        success: false,
+        error: error.message || 'Error interno del servidor',
+        code: 'EMAIL_SEND_FAILED'
+      };
+    }
   }
 }

@@ -22,11 +22,16 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
+import { SendEmailDto } from './dto/send-email.dto';
 
 @ApiTags('Turnos Globales')
 @Controller('turnos')
 export class GlobalTurnosController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   // Función helper para procesar datos de pago de un turno
   private procesarDatosPago(turno: any) {
@@ -636,6 +641,68 @@ export class GlobalTurnosController {
     } catch (error) {
       console.error('Error obteniendo turnos del paciente:', error);
       throw new BadRequestException('Error al obtener los turnos del paciente');
+    }
+  }
+
+  @Post('email')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Enviar email de confirmación de turno' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Email enviado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        messageId: { type: 'string' },
+        message: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 400, 
+    description: 'Error al enviar el email',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        code: { type: 'string' }
+      }
+    }
+  })
+  async sendTurnoEmail(@Body() sendEmailDto: SendEmailDto) {
+    try {
+      const result = await this.emailService.sendEmail({
+        to: sendEmailDto.to,
+        subject: sendEmailDto.subject,
+        text: sendEmailDto.text,
+        html: sendEmailDto.html,
+        template: sendEmailDto.template,
+        variables: sendEmailDto.variables,
+      });
+
+      if (result.success) {
+        return {
+          success: true,
+          messageId: result.messageId,
+          message: 'Email enviado exitosamente'
+        };
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Error desconocido al enviar el email',
+          code: 'EMAIL_SEND_FAILED'
+        };
+      }
+    } catch (error) {
+      console.error('Error en sendTurnoEmail:', error);
+      return {
+        success: false,
+        error: error.message || 'Error interno del servidor',
+        code: 'EMAIL_SEND_FAILED'
+      };
     }
   }
 } 
