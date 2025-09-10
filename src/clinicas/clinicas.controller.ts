@@ -550,9 +550,7 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/email')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Enviar email de confirmación de turno' })
+  @ApiOperation({ summary: 'Enviar email de confirmación de turno (sin autenticación)' })
   @ApiResponse({ 
     status: 200, 
     description: 'Email enviado exitosamente',
@@ -568,6 +566,18 @@ export class ClinicasController {
   @ApiResponse({ 
     status: 400, 
     description: 'Error al enviar el email',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        error: { type: 'string' },
+        code: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ 
+    status: 404, 
+    description: 'Clínica no encontrada',
     schema: {
       type: 'object',
       properties: {
