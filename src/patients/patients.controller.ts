@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Param,
@@ -58,6 +59,19 @@ export class PatientsController {
     @Body() dto: UpdatePatientDto,
   ) {
     return this.patientsService.update(clinicaUrl, id, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Actualizar paciente completo (sin autenticación)' })
+  @ApiResponse({ status: 200, description: 'Paciente actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
+  async updatePatient(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+    @Body() dto: any, // Usar any para evitar validación
+  ) {
+    return this.patientsService.updatePatient(clinicaUrl, id, dto);
   }
 
   @Delete(':id')

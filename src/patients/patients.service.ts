@@ -154,6 +154,106 @@ export class PatientsService {
     });
   }
 
+  async updatePatient(clinicaUrl: string, id: string, dto: any) {
+    try {
+      console.log('🔍 Actualizando paciente para clínica:', clinicaUrl);
+      console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+      
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      
+      console.log('🔍 Clínica encontrada:', clinica ? 'Sí' : 'No');
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
+
+      // Buscar el paciente existente
+      const existingPatient = await this.prisma.patient.findUnique({
+        where: { id },
+        include: { user: true },
+      });
+
+      console.log('🔍 Paciente encontrado:', existingPatient ? 'Sí' : 'No');
+      if (!existingPatient) throw new NotFoundException('Paciente no encontrado');
+
+      // Procesar los datos como en el método create
+      const phoneNumber = dto.telefono || dto.phone;
+      const birthDate = dto.fechaNacimiento || dto.birthDate || dto.fecha_nacimiento;
+      const patientName = dto.name || dto.nombre;
+
+      // Validar que el nombre no esté vacío si se proporciona
+      if (patientName && patientName.trim() === '') {
+        throw new BadRequestException('El nombre del paciente no puede estar vacío');
+      }
+
+      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
+
+      // Preparar datos de actualización para el usuario
+      const userUpdateData: any = {};
+      if (dto.email) userUpdateData.email = dto.email;
+      if (patientName) userUpdateData.name = patientName;
+      if (phoneNumber) userUpdateData.phone = phoneNumber;
+      if (dto.direccion) userUpdateData.location = dto.direccion;
+
+      // Actualizar usuario si hay datos para actualizar
+      if (Object.keys(userUpdateData).length > 0) {
+        console.log('🔍 Actualizando usuario...');
+        await this.prisma.user.update({
+          where: { id: existingPatient.userId },
+          data: userUpdateData,
+        });
+        console.log('🔍 Usuario actualizado exitosamente');
+      }
+
+      // Preparar datos de actualización para el paciente
+      const patientUpdateData: any = {};
+      if (patientName) patientUpdateData.name = patientName;
+      if (birthDate) patientUpdateData.birthDate = new Date(birthDate);
+      if (phoneNumber) patientUpdateData.phone = phoneNumber;
+      
+      // Manejar notas y documento
+      let combinedNotes = dto.notes || existingPatient.notes || '';
+      if (dto.documento) {
+        // Remover documento anterior si existe
+        combinedNotes = combinedNotes.replace(/Documento: \d+/g, '').trim();
+        // Agregar nuevo documento
+        combinedNotes = combinedNotes ? 
+          `${combinedNotes}\nDocumento: ${dto.documento}` : 
+          `Documento: ${dto.documento}`;
+      }
+      if (combinedNotes) patientUpdateData.notes = combinedNotes;
+
+      // Actualizar paciente si hay datos para actualizar
+      if (Object.keys(patientUpdateData).length > 0) {
+        console.log('🔍 Actualizando paciente...');
+        const updatedPatient = await this.prisma.patient.update({
+          where: { id },
+          data: patientUpdateData,
+          include: { user: true },
+        });
+        console.log('🔍 Paciente actualizado exitosamente con ID:', updatedPatient.id);
+
+        return {
+          success: true,
+          data: updatedPatient,
+          message: 'Paciente actualizado exitosamente',
+        };
+      } else {
+        // Si no hay datos para actualizar, retornar el paciente actual
+        return {
+          success: true,
+          data: existingPatient,
+          message: 'No se encontraron cambios para actualizar',
+        };
+      }
+    } catch (error) {
+      console.error('Error actualizando paciente:', error);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error interno del servidor al actualizar paciente');
+    }
+  }
+
   async remove(clinicaUrl: string, id: string) {
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
