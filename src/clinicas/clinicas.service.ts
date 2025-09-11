@@ -201,16 +201,38 @@ export class ClinicasService {
 
       // SIEMPRE enviar email de bienvenida con credenciales
       try {
-        await this.emailService.sendWelcomeCredentialsEmail(
-          dto.email,
-          password, // Contraseña generada automáticamente
-          dto.nombre,
-          dto.rol,
-          clinica.name,
-        );
-        console.log(`✅ Email de bienvenida enviado a ${dto.email} con contraseña generada: ${password}`);
+        console.log(`📧 Intentando enviar email de bienvenida a ${dto.email}...`);
+        console.log(`📧 Datos del email:`, {
+          email: dto.email,
+          password: password,
+          userName: dto.nombre,
+          role: dto.rol,
+          clinicaName: clinica.name
+        });
+        
+        // Usar la misma lógica que funciona en turnos - llamar directamente a sendEmail
+        const emailResult = await this.emailService.sendEmail({
+          to: dto.email,
+          subject: `Bienvenido/a a ${clinica.name} - Tus credenciales de acceso`,
+          template: 'welcome-credentials',
+          data: { 
+            email: dto.email, 
+            password: password, 
+            userName: dto.nombre, 
+            role: dto.rol, 
+            clinicaName: clinica.name 
+          },
+        });
+        
+        if (emailResult.success) {
+          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email} con contraseña: ${password}`);
+          console.log(`✅ MessageId: ${emailResult.messageId}`);
+        } else {
+          console.error(`❌ Falló el envío de email a ${dto.email} - error: ${emailResult.error}`);
+        }
       } catch (emailError) {
         console.error('❌ Error al enviar email de bienvenida:', emailError);
+        console.error('❌ Stack trace:', emailError.stack);
         // No lanzamos error para no interrumpir la creación del usuario
       }
 
