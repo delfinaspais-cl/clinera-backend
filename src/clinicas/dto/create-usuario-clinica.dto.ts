@@ -33,8 +33,5 @@ export class CreateUsuarioClinicaDto {
   @MinLength(2, { message: 'La especialidad debe tener al menos 2 caracteres' })
   especialidad?: string;
 
-  @IsString()
-  @IsOptional()
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
-  password?: string;
+  // Password siempre se genera automáticamente - no se acepta del frontend
 }

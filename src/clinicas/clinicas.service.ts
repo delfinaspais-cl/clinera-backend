@@ -182,8 +182,8 @@ export class ClinicasService {
           throw new BadRequestException('Rol inválido');
       }
 
-      // Generar contraseña automática si no se proporciona
-      const password = dto.password || this.generatePassword();
+      // SIEMPRE generar contraseña automáticamente
+      const password = this.generatePassword();
       
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -199,18 +199,18 @@ export class ClinicasService {
         },
       });
 
-      // Enviar email de bienvenida con credenciales
+      // SIEMPRE enviar email de bienvenida con credenciales
       try {
         await this.emailService.sendWelcomeCredentialsEmail(
           dto.email,
-          password, // Contraseña generada o proporcionada en texto plano para el email
+          password, // Contraseña generada automáticamente
           dto.nombre,
           dto.rol,
           clinica.name,
         );
-        console.log(`Email de bienvenida enviado a ${dto.email} con contraseña: ${password}`);
+        console.log(`✅ Email de bienvenida enviado a ${dto.email} con contraseña generada: ${password}`);
       } catch (emailError) {
-        console.error('Error al enviar email de bienvenida:', emailError);
+        console.error('❌ Error al enviar email de bienvenida:', emailError);
         // No lanzamos error para no interrumpir la creación del usuario
       }
 
