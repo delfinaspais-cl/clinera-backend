@@ -13,10 +13,24 @@ import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { CreatePatientDto } from '../patients/dto/create-patient.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class ClinicasService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
+
+  // Función para generar contraseña automática
+  private generatePassword(): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  }
 
   async getUsuariosByClinicaUrl(
     clinicaUrl: string,
@@ -168,8 +182,11 @@ export class ClinicasService {
           throw new BadRequestException('Rol inválido');
       }
 
+      // Generar contraseña automática si no se proporciona
+      const password = dto.password || this.generatePassword();
+      
       // Hashear la contraseña
-      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       // Crear el usuario
       const usuario = await this.prisma.user.create({
@@ -181,6 +198,21 @@ export class ClinicasService {
           clinicaId: clinica.id,
         },
       });
+
+      // Enviar email de bienvenida con credenciales
+      try {
+        await this.emailService.sendWelcomeCredentialsEmail(
+          dto.email,
+          password, // Contraseña generada o proporcionada en texto plano para el email
+          dto.nombre,
+          dto.rol,
+          clinica.name,
+        );
+        console.log(`Email de bienvenida enviado a ${dto.email} con contraseña: ${password}`);
+      } catch (emailError) {
+        console.error('Error al enviar email de bienvenida:', emailError);
+        // No lanzamos error para no interrumpir la creación del usuario
+      }
 
       return {
         success: true,
