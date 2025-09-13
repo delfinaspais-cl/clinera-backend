@@ -4,6 +4,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PermissionsService } from './services/permissions.service';
 import { MensapiIntegrationService } from './services/mensapi-integration.service';
+import { ExternalEmailService } from '../email/external-email.service';
+import { PasswordGenerator } from '../common/utils/password-generator';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,6 +13,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private mensapiIntegration: MensapiIntegrationService,
+    private externalEmailService: ExternalEmailService,
   ) {}
 
   findAll() {
@@ -65,9 +68,11 @@ export class UsersService {
       throw new ConflictException('El email ya está en uso');
     }
 
-    // Generar contraseña por defecto si no se proporciona
-    const password = createUserDto.password || 'password123';
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generar contraseña automáticamente (siempre, para mayor seguridad)
+    const generatedPassword = PasswordGenerator.generateTempPassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    console.log(`🔐 Contraseña generada para ${createUserDto.email}: ${generatedPassword}`);
 
     // Obtener permisos según el rol
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
@@ -97,9 +102,35 @@ export class UsersService {
       },
     });
 
+    // Enviar email de bienvenida con credenciales
+    try {
+      console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
+      
+      const emailResult = await this.externalEmailService.sendWelcomeEmail({
+        to: createUserDto.email,
+        name: createUserDto.nombre,
+        email: createUserDto.email,
+        password: generatedPassword, // Enviar la contraseña en texto plano
+        role: createUserDto.tipo,
+        clinicaName: 'Clinera', // Nombre por defecto
+      });
+
+      if (emailResult.success) {
+        console.log(`✅ Email de bienvenida enviado exitosamente a ${createUserDto.email}`);
+      } else {
+        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}:`, emailResult.error);
+        // No lanzamos error para no interrumpir la creación del usuario
+      }
+    } catch (emailError) {
+      console.error(`❌ Error inesperado al enviar email de bienvenida a ${createUserDto.email}:`, emailError);
+      // No lanzamos error para no interrumpir la creación del usuario
+    }
+
     return {
       ...user,
       permisos,
+      // No devolver la contraseña en la respuesta por seguridad
+      message: 'Usuario creado exitosamente. Se ha enviado un email con las credenciales de acceso.',
     };
   }
 
@@ -122,9 +153,11 @@ export class UsersService {
       throw new ConflictException('El email ya está en uso');
     }
 
-    // Generar contraseña por defecto si no se proporciona
-    const password = createUserDto.password || 'password123';
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generar contraseña automáticamente (siempre, para mayor seguridad)
+    const generatedPassword = PasswordGenerator.generateTempPassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    console.log(`🔐 Contraseña generada para ${createUserDto.email}: ${generatedPassword}`);
 
     // Obtener permisos según el rol
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
@@ -154,13 +187,37 @@ export class UsersService {
       },
     });
 
+    // Enviar email de bienvenida con credenciales
+    try {
+      console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
+      
+      const emailResult = await this.externalEmailService.sendWelcomeEmail({
+        to: createUserDto.email,
+        name: createUserDto.nombre,
+        email: createUserDto.email,
+        password: generatedPassword, // Enviar la contraseña en texto plano
+        role: createUserDto.tipo,
+        clinicaName: clinica.name,
+      });
+
+      if (emailResult.success) {
+        console.log(`✅ Email de bienvenida enviado exitosamente a ${createUserDto.email}`);
+      } else {
+        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}:`, emailResult.error);
+        // No lanzamos error para no interrumpir la creación del usuario
+      }
+    } catch (emailError) {
+      console.error(`❌ Error inesperado al enviar email de bienvenida a ${createUserDto.email}:`, emailError);
+      // No lanzamos error para no interrumpir la creación del usuario
+    }
+
     // Intentar registrar el usuario en mensapi (no bloquea si falla)
     let mensapiResult: any = null;
     try {
       mensapiResult = await this.mensapiIntegration.registerUser({
         name: createUserDto.nombre,
         email: createUserDto.email,
-        password: password, // Usar la misma contraseña
+        password: generatedPassword, // Usar la contraseña generada
         phone: createUserDto.phone,
       }, clinica.mensapiServiceEmail || undefined, clinica.mensapiServicePassword || undefined);
     } catch (error) {

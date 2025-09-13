@@ -30,13 +30,20 @@ export class EmailService {
 
   async sendEmail(emailData: EmailData): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      console.log(`📧 EmailService: Iniciando envío de email a ${emailData.to}`);
+      console.log(`📧 EmailService: Asunto: ${emailData.subject}`);
+      console.log(`📧 EmailService: Template: ${emailData.template || 'HTML directo'}`);
+      
       let html: string;
       let text: string;
 
       if (emailData.html) {
         html = emailData.html;
+        console.log(`📧 EmailService: Usando HTML directo`);
       } else if (emailData.template) {
+        console.log(`📧 EmailService: Generando template ${emailData.template}`);
         html = this.getTemplate(emailData.template, emailData.variables || emailData.data);
+        console.log(`📧 EmailService: Template generado exitosamente`);
       } else {
         throw new Error('Se requiere template o html');
       }
@@ -56,11 +63,23 @@ export class EmailService {
         text,
       };
 
+      console.log(`📧 EmailService: Configuración SMTP:`, {
+        host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+        port: process.env.SMTP_PORT || '587',
+        user: process.env.SMTP_USER || 'test@ethereal.email',
+        from: mailOptions.from
+      });
+
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email enviado:', info.messageId);
+      console.log(`✅ EmailService: Email enviado exitosamente - MessageId: ${info.messageId}`);
       return { success: true, messageId: info.messageId };
     } catch (error) {
-      console.error('Error al enviar email:', error);
+      console.error('❌ EmailService: Error al enviar email:', error);
+      console.error('❌ EmailService: Error details:', {
+        message: error.message,
+        code: error.code,
+        response: error.response
+      });
       return { success: false, error: error.message };
     }
   }
@@ -475,6 +494,9 @@ export class EmailService {
     role: string,
     clinicaName?: string,
   ): Promise<boolean> {
+    console.log(`📧 EmailService: Enviando email de bienvenida a ${email}`);
+    console.log(`📧 EmailService: Datos - userName: ${userName}, role: ${role}, clinicaName: ${clinicaName}`);
+    
     const result = await this.sendEmail({
       to: email,
       subject: `Bienvenido/a a ${clinicaName || 'Clinera'} - Tus credenciales de acceso`,
@@ -487,6 +509,8 @@ export class EmailService {
         clinicaName 
       },
     });
+    
+    console.log(`📧 EmailService: Resultado del envío:`, result);
     return result.success;
   }
 }
