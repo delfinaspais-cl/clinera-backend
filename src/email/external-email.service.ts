@@ -13,7 +13,7 @@ interface WelcomeEmailData {
 @Injectable()
 export class ExternalEmailService {
   private readonly logger = new Logger(ExternalEmailService.name);
-  private readonly emailServiceUrl = 'https://fluentia-emails-staging.up.railway.app/emails/health';
+  private readonly emailServiceUrl = 'https://fluentia-emails-staging.up.railway.app/emails/send';
 
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<{ success: boolean; error?: string }> {
     try {
@@ -22,15 +22,23 @@ export class ExternalEmailService {
       const emailPayload = {
         to: data.to,
         subject: `Bienvenido/a a ${data.clinicaName || 'Clinera'} - Tus credenciales de acceso`,
-        template: 'welcome-credentials',
-        data: {
-          name: data.name,
-          email: data.email,
-          password: data.password,
-          role: data.role,
-          clinicaName: data.clinicaName,
-          loginUrl: this.getLoginUrl(data.clinicaName)
-        }
+        text: `Hola ${data.name},
+
+Bienvenido/a a ${data.clinicaName || 'Clinera'}!
+
+Tu cuenta ha sido creada exitosamente. Aquí están tus credenciales de acceso:
+
+📧 Email: ${data.email}
+🔑 Contraseña: ${data.password}
+👤 Rol: ${data.role}
+
+Para acceder al sistema, visita: ${this.getLoginUrl(data.clinicaName)}
+
+Por seguridad, te recomendamos cambiar tu contraseña en tu primer inicio de sesión.
+
+¡Que tengas un excelente día!
+
+Equipo de ${data.clinicaName || 'Clinera'}`
       };
 
       this.logger.debug('Payload del email:', JSON.stringify(emailPayload, null, 2));

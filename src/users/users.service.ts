@@ -103,10 +103,11 @@ export class UsersService {
     });
 
     // Enviar email de bienvenida con credenciales
+    let emailResult: { success: boolean; error?: string } = { success: false, error: 'No se intentó enviar' };
     try {
       console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
       
-      const emailResult = await this.externalEmailService.sendWelcomeEmail({
+      emailResult = await this.externalEmailService.sendWelcomeEmail({
         to: createUserDto.email,
         name: createUserDto.nombre,
         email: createUserDto.email,
@@ -123,14 +124,20 @@ export class UsersService {
       }
     } catch (emailError) {
       console.error(`❌ Error inesperado al enviar email de bienvenida a ${createUserDto.email}:`, emailError);
+      emailResult = { success: false, error: emailError.message || 'Error inesperado' };
       // No lanzamos error para no interrumpir la creación del usuario
     }
 
     return {
       ...user,
       permisos,
+      emailEnviado: emailResult.success,
+      fechaEmailEnviado: emailResult.success ? new Date().toISOString() : null,
+      emailError: emailResult.error,
       // No devolver la contraseña en la respuesta por seguridad
-      message: 'Usuario creado exitosamente. Se ha enviado un email con las credenciales de acceso.',
+      message: emailResult.success 
+        ? 'Usuario creado exitosamente. Se ha enviado un email con las credenciales de acceso.'
+        : 'Usuario creado exitosamente, pero no se pudo enviar el email de bienvenida.',
     };
   }
 
@@ -188,10 +195,11 @@ export class UsersService {
     });
 
     // Enviar email de bienvenida con credenciales
+    let emailResult: { success: boolean; error?: string } = { success: false, error: 'No se intentó enviar' };
     try {
       console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
       
-      const emailResult = await this.externalEmailService.sendWelcomeEmail({
+      emailResult = await this.externalEmailService.sendWelcomeEmail({
         to: createUserDto.email,
         name: createUserDto.nombre,
         email: createUserDto.email,
@@ -208,6 +216,7 @@ export class UsersService {
       }
     } catch (emailError) {
       console.error(`❌ Error inesperado al enviar email de bienvenida a ${createUserDto.email}:`, emailError);
+      emailResult = { success: false, error: emailError.message || 'Error inesperado' };
       // No lanzamos error para no interrumpir la creación del usuario
     }
 
@@ -233,6 +242,9 @@ export class UsersService {
         name: clinica.name,
         url: clinica.url,
       },
+      emailEnviado: emailResult.success,
+      fechaEmailEnviado: emailResult.success ? new Date().toISOString() : null,
+      emailError: emailResult.error,
       mensapi: mensapiResult ? {
         registered: true,
         accessToken: mensapiResult.content.accessToken,
