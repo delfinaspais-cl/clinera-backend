@@ -4,6 +4,7 @@ import {
   Post,
   Patch,
   Delete,
+  Put,
   Param,
   Body,
   UseGuards,
@@ -12,6 +13,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @Controller('clinica/:clinicaUrl/usuarios')
@@ -53,5 +55,24 @@ export class ClinicaUsuariosController {
   @Get('patients')
   async findAllPatients(@Param('clinicaUrl') clinicaUrl: string) {
     return this.usersService.findPatientsForClinica(clinicaUrl);
+  }
+
+  // Endpoint público para actualizar un usuario específico
+  @Put(':userId')
+  updateUser(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('userId') userId: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.updateUserForClinica(clinicaUrl, userId, updateUserDto);
+  }
+
+  // Endpoint público para eliminar un usuario específico
+  @Delete(':userId')
+  deleteUser(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.usersService.deleteUserForClinica(clinicaUrl, userId);
   }
 }

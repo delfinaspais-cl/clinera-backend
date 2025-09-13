@@ -1,6 +1,7 @@
 import { Injectable, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PermissionsService } from './services/permissions.service';
 import { MensapiIntegrationService } from './services/mensapi-integration.service';
@@ -358,5 +359,101 @@ export class UsersService {
         clinicaId: clinica.id,
       },
     });
+  }
+
+  async updateUserForClinica(clinicaUrl: string, userId: string, dto: UpdateUserDto) {
+    // Buscar la clínica por URL
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
+    }
+
+    // Verificar que el usuario existe y pertenece a la clínica
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        clinicaId: clinica.id,
+      },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException('Usuario no encontrado en esta clínica');
+    }
+
+    // Si se está cambiando el email, verificar que no esté en uso por otro usuario
+    if (dto.email && dto.email !== existingUser.email) {
+      const emailExists = await this.prisma.user.findFirst({
+        where: {
+          email: dto.email,
+          id: { not: userId }, // Excluir el usuario actual
+        },
+      });
+
+      if (emailExists) {
+        throw new ConflictException('El email ya está en uso por otro usuario');
+      }
+    }
+
+    // Preparar datos para actualizar
+    const updateData: any = {};
+    
+    if (dto.name !== undefined) updateData.name = dto.name;
+    if (dto.email !== undefined) updateData.email = dto.email;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.role !== undefined) updateData.role = dto.role;
+    if (dto.estado !== undefined) updateData.estado = dto.estado;
+    if (dto.configuracion !== undefined) updateData.configuracion = dto.configuracion;
+
+    // Actualizar el usuario
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        estado: true,
+        createdAt: true,
+        phone: true,
+        clinicaId: true,
+        configuracion: true,
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async deleteUserForClinica(clinicaUrl: string, userId: string) {
+    // Buscar la clínica por URL
+    const clinica = await this.prisma.clinica.findUnique({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
+    }
+
+    // Verificar que el usuario existe y pertenece a la clínica
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        clinicaId: clinica.id,
+      },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException('Usuario no encontrado en esta clínica');
+    }
+
+    // Eliminar el usuario
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'Usuario eliminado exitosamente' };
   }
 }
