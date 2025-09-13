@@ -1,103 +1,40 @@
 export interface Permisos {
-  // Permisos generales
-  puedeVerDashboard: boolean;
+  puedeGestionarCitas: boolean;
+  puedeGestionarVentas: boolean;
+  puedeGestionarPacientes: boolean;
+  puedeGestionarProfesionales: boolean;
   puedeGestionarUsuarios: boolean;
-  puedeGestionarClinica: boolean;
-  
-  // Permisos de ventas
-  puedeVerVentas: boolean;
-  puedeCrearVentas: boolean;
-  puedeEditarVentas: boolean;
-  puedeEliminarVentas: boolean;
-  
-  // Permisos de turnos
-  puedeVerTurnos: boolean;
-  puedeCrearTurnos: boolean;
-  puedeEditarTurnos: boolean;
-  puedeCancelarTurnos: boolean;
-  
-  // Permisos de pacientes
-  puedeVerPacientes: boolean;
-  puedeCrearPacientes: boolean;
-  puedeEditarPacientes: boolean;
-  puedeEliminarPacientes: boolean;
-  
-  // Permisos de reportes
-  puedeVerReportes: boolean;
-  puedeExportarDatos: boolean;
-  
-  // Permisos de configuración
-  puedeConfigurarSistema: boolean;
+  puedeGestionarTratamientosYEspecialidades: boolean;
   puedeGestionarSucursales: boolean;
-  puedeGestionarTratamientos: boolean;
 }
 
 export const PERMISOS_PREDEFINIDOS: Record<string, Permisos> = {
   ADMIN: {
-    puedeVerDashboard: true,
+    puedeGestionarCitas: true,
+    puedeGestionarVentas: true,
+    puedeGestionarPacientes: true,
+    puedeGestionarProfesionales: true,
     puedeGestionarUsuarios: true,
-    puedeGestionarClinica: true,
-    puedeVerVentas: true,
-    puedeCrearVentas: true,
-    puedeEditarVentas: true,
-    puedeEliminarVentas: true,
-    puedeVerTurnos: true,
-    puedeCrearTurnos: true,
-    puedeEditarTurnos: true,
-    puedeCancelarTurnos: true,
-    puedeVerPacientes: true,
-    puedeCrearPacientes: true,
-    puedeEditarPacientes: true,
-    puedeEliminarPacientes: true,
-    puedeVerReportes: true,
-    puedeExportarDatos: true,
-    puedeConfigurarSistema: true,
+    puedeGestionarTratamientosYEspecialidades: true,
     puedeGestionarSucursales: true,
-    puedeGestionarTratamientos: true,
   },
   SECRETARY: {
-    puedeVerDashboard: true,
-    puedeGestionarUsuarios: false,
-    puedeGestionarClinica: false,
-    puedeVerVentas: true,
-    puedeCrearVentas: true,
-    puedeEditarVentas: true,
-    puedeEliminarVentas: false,
-    puedeVerTurnos: true,
-    puedeCrearTurnos: true,
-    puedeEditarTurnos: true,
-    puedeCancelarTurnos: true,
-    puedeVerPacientes: true,
-    puedeCrearPacientes: true,
-    puedeEditarPacientes: true,
-    puedeEliminarPacientes: false,
-    puedeVerReportes: true,
-    puedeExportarDatos: true,
-    puedeConfigurarSistema: false,
-    puedeGestionarSucursales: false,
-    puedeGestionarTratamientos: false,
+    puedeGestionarCitas: true,
+    puedeGestionarVentas: true,
+    puedeGestionarPacientes: true,
+    puedeGestionarProfesionales: true,
+    puedeGestionarUsuarios: true,
+    puedeGestionarTratamientosYEspecialidades: true,
+    puedeGestionarSucursales: true,
   },
   PROFESSIONAL: {
-    puedeVerDashboard: true,
-    puedeGestionarUsuarios: false,
-    puedeGestionarClinica: false,
-    puedeVerVentas: false,
-    puedeCrearVentas: false,
-    puedeEditarVentas: false,
-    puedeEliminarVentas: false,
-    puedeVerTurnos: true,
-    puedeCrearTurnos: false,
-    puedeEditarTurnos: false,
-    puedeCancelarTurnos: false,
-    puedeVerPacientes: true,
-    puedeCrearPacientes: false,
-    puedeEditarPacientes: false,
-    puedeEliminarPacientes: false,
-    puedeVerReportes: false,
-    puedeExportarDatos: false,
-    puedeConfigurarSistema: false,
-    puedeGestionarSucursales: false,
-    puedeGestionarTratamientos: false,
+    puedeGestionarCitas: true,
+    puedeGestionarVentas: true,
+    puedeGestionarPacientes: true,
+    puedeGestionarProfesionales: true,
+    puedeGestionarUsuarios: true,
+    puedeGestionarTratamientosYEspecialidades: true,
+    puedeGestionarSucursales: true,
   },
 };
 

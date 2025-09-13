@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEmail, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsEnum, IsObject } from 'class-validator';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
@@ -11,6 +11,16 @@ export enum UserEstado {
   ACTIVO = 'activo',
   INACTIVO = 'inactivo',
   PENDIENTE = 'pendiente',
+}
+
+export interface Permisos {
+  puedeGestionarCitas: boolean;
+  puedeGestionarVentas: boolean;
+  puedeGestionarPacientes: boolean;
+  puedeGestionarProfesionales: boolean;
+  puedeGestionarUsuarios: boolean;
+  puedeGestionarTratamientosYEspecialidades: boolean;
+  puedeGestionarSucursales: boolean;
 }
 
 export class UpdateUserDto {
@@ -35,6 +45,6 @@ export class UpdateUserDto {
   estado?: UserEstado;
 
   @IsOptional()
-  @IsString()
-  configuracion?: string; // Para permisos personalizados
+  @IsObject()
+  permisos?: Permisos; // Para permisos personalizados
 }

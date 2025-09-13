@@ -405,7 +405,7 @@ export class UsersService {
     if (dto.phone !== undefined) updateData.phone = dto.phone;
     if (dto.role !== undefined) updateData.role = dto.role;
     if (dto.estado !== undefined) updateData.estado = dto.estado;
-    if (dto.configuracion !== undefined) updateData.configuracion = dto.configuracion;
+    if (dto.permisos !== undefined) updateData.configuracion = JSON.stringify(dto.permisos);
 
     // Actualizar el usuario
     const updatedUser = await this.prisma.user.update({
