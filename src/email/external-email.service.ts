@@ -13,11 +13,40 @@ interface WelcomeEmailData {
 @Injectable()
 export class ExternalEmailService {
   private readonly logger = new Logger(ExternalEmailService.name);
-  private readonly emailServiceUrl = 'https://fluentia-emails-staging.up.railway.app/emails/send';
+  private readonly baseUrl = 'https://fluentia-emails-staging.up.railway.app';
+  private readonly registerUrl = `${this.baseUrl}/auth/register`;
+  private readonly sendEmailUrl = `${this.baseUrl}/emails/send`;
 
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<{ success: boolean; error?: string }> {
     try {
-      this.logger.log(`📧 Enviando email de bienvenida a ${data.to} via microservicio externo`);
+      this.logger.log(`📧 Iniciando proceso de envío de email a ${data.to} via microservicio`);
+      
+      // Paso 1: Registrar en el microservicio
+      this.logger.log(`1️⃣ Registrando usuario en el microservicio de emails...`);
+      
+      const registerPayload = {
+        name: data.name,
+        email: data.email,
+        password: data.password
+      };
+      
+      this.logger.debug('Payload de registro:', JSON.stringify(registerPayload, null, 2));
+      
+      const registerResponse = await axios.post(this.registerUrl, registerPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      });
+      
+      if (registerResponse.status >= 200 && registerResponse.status < 300) {
+        this.logger.log(`✅ Usuario registrado exitosamente en el microservicio: ${JSON.stringify(registerResponse.data)}`);
+      } else {
+        throw new Error(`Error en registro: ${registerResponse.status} - ${registerResponse.statusText}`);
+      }
+      
+      // Paso 2: Enviar email
+      this.logger.log(`2️⃣ Enviando email de bienvenida...`);
       
       const emailPayload = {
         to: data.to,
@@ -40,24 +69,27 @@ Por seguridad, te recomendamos cambiar tu contraseña en tu primer inicio de ses
 
 Equipo de ${data.clinicaName || 'Clinera'}`
       };
-
+      
       this.logger.debug('Payload del email:', JSON.stringify(emailPayload, null, 2));
-
-      const response = await axios.post(this.emailServiceUrl, emailPayload, {
+      
+      // Extraer el token de acceso de la respuesta de registro
+      const accessToken = registerResponse.data.data.accessToken;
+      
+      const emailResponse = await axios.post(this.sendEmailUrl, emailPayload, {
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-        timeout: 10000, // 10 segundos timeout
+        timeout: 10000,
       });
-
-      if (response.status >= 200 && response.status < 300) {
-        this.logger.log(`✅ Email de bienvenida enviado exitosamente a ${data.to}`);
+      
+      if (emailResponse.status >= 200 && emailResponse.status < 300) {
+        this.logger.log(`✅ Email de bienvenida enviado exitosamente a ${data.to} via microservicio`);
         return { success: true };
       } else {
-        this.logger.error(`❌ Error en respuesta del microservicio: ${response.status} - ${response.statusText}`);
-        return { success: false, error: `HTTP ${response.status}: ${response.statusText}` };
+        throw new Error(`Error enviando email: ${emailResponse.status} - ${emailResponse.statusText}`);
       }
-
+      
     } catch (error) {
       this.logger.error(`❌ Error al enviar email de bienvenida a ${data.to}:`, error.message);
       
@@ -95,7 +127,7 @@ Equipo de ${data.clinicaName || 'Clinera'}`
     try {
       this.logger.log('🔍 Probando conexión con el microservicio de emails...');
       
-      const response = await axios.get(this.emailServiceUrl.replace('/emails/health', '/health'), {
+      const response = await axios.get(`${this.baseUrl}/health`, {
         timeout: 5000,
       });
 
