@@ -437,6 +437,7 @@ model FichaMedica {
   diagnostico             String?
   tratamiento             String?
   evolucion               String?
+  tratamientosEsteticosPrevios String?
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
@@ -475,6 +476,7 @@ model FichaMedicaHistorial {
   diagnostico    String?
   tratamiento    String?
   evolucion      String?
+  tratamientosEsteticosPrevios String?
 
   // Metadatos
   notasCambio     String?

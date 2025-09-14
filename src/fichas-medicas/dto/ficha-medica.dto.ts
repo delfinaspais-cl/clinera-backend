@@ -71,6 +71,11 @@ export class FichaMedicaDto {
   @IsOptional()
   @IsString()
   evolucion?: string;
+
+  @ApiProperty({ description: 'Tratamientos estéticos previos del paciente' })
+  @IsOptional()
+  @IsString()
+  tratamientosEsteticosPrevios?: string;
 }
 
 export class FichaMedicaResponseDto extends FichaMedicaDto {
