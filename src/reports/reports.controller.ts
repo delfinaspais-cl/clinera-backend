@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Res, Query } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Res, Query, Request, UnauthorizedException } from '@nestjs/common';
 import type { Response } from 'express';
 import {
   ApiTags,
@@ -120,7 +120,7 @@ export class ReportsController {
     );
   }
 
-  // Endpoint para exportar ventas a PDF (sin autenticación)
+  // Endpoint para exportar ventas a PDF
   @ApiOperation({ summary: 'Exportar ventas a PDF' })
   @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
   @ApiResponse({
@@ -132,6 +132,7 @@ export class ReportsController {
       },
     },
   })
+  @UseGuards(JwtAuthGuard)
   @Get('export/ventas/pdf')
   async exportVentasPDF(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -155,13 +156,14 @@ export class ReportsController {
     await this.exportService.generateVentasPDF(ventas, clinica.name, res);
   }
 
-  // Endpoint para obtener estadísticas de ventas (sin autenticación)
+  // Endpoint para obtener estadísticas de ventas
   @ApiOperation({ summary: 'Obtener estadísticas de ventas' })
   @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
   @ApiResponse({
     status: 200,
     description: 'Estadísticas de ventas obtenidas',
   })
+  @UseGuards(JwtAuthGuard)
   @Get('ventas/stats')
   async getVentasStats(@Param('clinicaUrl') clinicaUrl: string) {
     return await this.reportesService.getVentasStats(clinicaUrl);

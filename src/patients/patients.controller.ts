@@ -31,11 +31,13 @@ export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(@Param('clinicaUrl') clinicaUrl: string) {
     return this.patientsService.findAll(clinicaUrl);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear nuevo paciente' })
   @ApiResponse({ status: 201, description: 'Paciente creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -48,11 +50,13 @@ export class PatientsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.patientsService.findOne(clinicaUrl, id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('id') id: string,
@@ -62,7 +66,8 @@ export class PatientsController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Actualizar paciente completo (sin autenticación)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Actualizar paciente completo' })
   @ApiResponse({ status: 200, description: 'Paciente actualizado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
@@ -75,11 +80,13 @@ export class PatientsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.patientsService.remove(clinicaUrl, id);
   }
 
   @Get('mis-turnos')
+  @UseGuards(JwtAuthGuard)
   async getMisTurnos(@Request() req) {
     return this.patientsService.getMisTurnos(req.user.email);
   }
@@ -101,28 +108,11 @@ export class PatientsController {
   })
   @ApiBearerAuth()
   @Get('search')
+  @UseGuards(JwtAuthGuard)
   async searchPatients(
-    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() searchDto: SearchPatientsDto,
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    if (req.user.role === 'OWNER') {
-      return this.patientsService.searchPatients(clinicaUrl, searchDto);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.patientsService.searchPatients(clinicaUrl, searchDto);
-    } else if (
-      req.user.role === 'SECRETARY' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      return this.patientsService.searchPatients(clinicaUrl, searchDto);
-    } else {
-      throw new Error(
-        'Acceso denegado. No tienes permisos para buscar pacientes en esta clínica.',
-      );
-    }
+    return this.patientsService.searchPatients(clinicaUrl, searchDto);
   }
 }

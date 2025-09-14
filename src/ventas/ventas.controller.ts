@@ -8,6 +8,9 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  UseGuards,
+  Request,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +21,7 @@ import {
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 import { UpdateVentaDto } from './dto/update-venta.dto';
+import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 
 @ApiTags('Ventas')
 @Controller('ventas')
@@ -25,6 +29,7 @@ export class VentasController {
   constructor(private readonly ventasService: VentasService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear nueva venta' })
   @ApiResponse({ status: 201, description: 'Venta creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -33,6 +38,7 @@ export class VentasController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Listar todas las ventas' })
   @ApiResponse({ status: 200, description: 'Lista de ventas obtenida exitosamente' })
   @ApiQuery({ name: 'clinicaId', required: false, description: 'Filtrar por clínica' })
@@ -60,6 +66,7 @@ export class VentasController {
   }
 
   @Get('stats/:clinicaId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener estadísticas de ventas de una clínica' })
   @ApiResponse({ status: 200, description: 'Estadísticas obtenidas exitosamente' })
   async getStats(@Param('clinicaId') clinicaId: string) {
@@ -67,6 +74,7 @@ export class VentasController {
   }
 
   @Get('clinica/:clinicaId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener ventas de una clínica específica' })
   @ApiResponse({ status: 200, description: 'Ventas de la clínica obtenidas exitosamente' })
   @ApiQuery({ name: 'estado', required: false, description: 'Filtrar por estado' })
@@ -93,6 +101,7 @@ export class VentasController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener venta por ID' })
   @ApiResponse({ status: 200, description: 'Venta obtenida exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
@@ -101,6 +110,7 @@ export class VentasController {
   }
 
   @Get('venta-id/:ventaId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener venta por ventaId personalizado' })
   @ApiResponse({ status: 200, description: 'Venta obtenida exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
@@ -109,6 +119,7 @@ export class VentasController {
   }
 
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Actualizar venta' })
   @ApiResponse({ status: 200, description: 'Venta actualizada exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
@@ -120,6 +131,7 @@ export class VentasController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Eliminar venta' })
   @ApiResponse({ status: 200, description: 'Venta eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })

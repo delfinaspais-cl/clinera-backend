@@ -19,11 +19,13 @@ export class ProfessionalsController {
   constructor(private readonly professionalsService: ProfessionalsService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(@Param('clinicaUrl') clinicaUrl: string) {
     return this.professionalsService.findAll(clinicaUrl);
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   create(
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() dto: CreateProfessionalDto,
@@ -32,6 +34,7 @@ export class ProfessionalsController {
   }
 
   @Post('test')
+  @UseGuards(JwtAuthGuard)
   async testCreate(
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() dto: any,
@@ -74,11 +77,13 @@ export class ProfessionalsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.professionalsService.findOne(clinicaUrl, id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   update(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('id') id: string,
@@ -88,6 +93,7 @@ export class ProfessionalsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
     return this.professionalsService.remove(clinicaUrl, id);
   }

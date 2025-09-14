@@ -124,6 +124,7 @@ export class ClinicasController {
   }
 
   @Delete(':clinicaUrl/usuarios/:userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Eliminar usuario de la clínica' })
   @ApiResponse({ status: 200, description: 'Usuario eliminado exitosamente' })
   async deleteUsuario(
@@ -194,6 +195,7 @@ export class ClinicasController {
   }
 
   @Patch(':clinicaUrl/turnos/:turnoId/estado')
+  @UseGuards(JwtAuthGuard)
   async updateTurnoEstado(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
@@ -203,6 +205,7 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/confirm')
+  @UseGuards(JwtAuthGuard)
   async confirmTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
@@ -211,7 +214,8 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/cancel')
-  @ApiOperation({ summary: 'Cancelar turno (sin autenticación)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Cancelar turno' })
   @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
   @ApiParam({ name: 'turnoId', description: 'ID del turno a cancelar' })
   @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
@@ -224,6 +228,7 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/complete')
+  @UseGuards(JwtAuthGuard)
   async completeTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
@@ -291,6 +296,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl')
+  @UseGuards(JwtAuthGuard)
   async getClinicaInfo(
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
@@ -417,6 +423,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/turnos')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener turnos de la clínica' })
   @ApiResponse({ status: 200, description: 'Turnos obtenidos exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
@@ -428,6 +435,7 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Crear nuevo turno' })
   @ApiResponse({ status: 201, description: 'Turno creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -445,6 +453,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener detalles de un turno específico' })
   @ApiResponse({ status: 200, description: 'Detalles del turno obtenidos exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
@@ -456,6 +465,7 @@ export class ClinicasController {
   }
 
   @Put(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Actualizar fecha y hora de un turno existente' })
   @ApiResponse({ status: 200, description: 'Fecha y hora del turno actualizadas exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -469,6 +479,7 @@ export class ClinicasController {
   }
 
   @Delete(':clinicaUrl/turnos/:turnoId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Eliminar un turno' })
   @ApiResponse({ status: 200, description: 'Turno eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
@@ -480,6 +491,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/notificaciones')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener notificaciones de la clínica' })
   @ApiResponse({ status: 200, description: 'Notificaciones obtenidas exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
@@ -518,6 +530,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/estadisticas')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener estadísticas de turnos/ventas' })
   @ApiResponse({ 
     status: 200, 
@@ -534,6 +547,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/dashboard-ventas')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener datos del dashboard de ventas' })
   @ApiResponse({ 
     status: 200, 
@@ -549,6 +563,7 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/ventas')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener turnos para panel de ventas con información completa de pago' })
   @ApiResponse({ status: 200, description: 'Datos de ventas obtenidos exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
@@ -560,7 +575,8 @@ export class ClinicasController {
   }
 
   @Post(':clinicaUrl/turnos/email')
-  @ApiOperation({ summary: 'Enviar email de confirmación de turno (sin autenticación)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Enviar email de confirmación de turno' })
   @ApiResponse({ 
     status: 200, 
     description: 'Email enviado exitosamente',
