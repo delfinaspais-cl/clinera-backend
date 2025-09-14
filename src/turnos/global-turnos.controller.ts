@@ -644,6 +644,92 @@ export class GlobalTurnosController {
     }
   }
 
+  @Get('paciente-id/:pacienteId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener turnos de un paciente por ID' })
+  @ApiResponse({ status: 200, description: 'Turnos del paciente obtenidos exitosamente' })
+  @ApiQuery({ name: 'clinicaId', required: false, description: 'Filtrar por clínica' })
+  @ApiQuery({ name: 'estado', required: false, description: 'Filtrar por estado' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Límite de resultados' })
+  @ApiQuery({ name: 'offset', required: false, description: 'Offset para paginación' })
+  async getTurnosByPacienteId(
+    @Param('pacienteId') pacienteId: string,
+    @Query('clinicaId') clinicaId?: string,
+    @Query('estado') estado?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    try {
+      const limitNum = limit ? parseInt(limit, 10) : 50;
+      const offsetNum = offset ? parseInt(offset, 10) : 0;
+
+      // Primero obtener el paciente para conseguir su email
+      const paciente = await this.prisma.patient.findUnique({
+        where: { id: pacienteId },
+        include: {
+          user: {
+            select: {
+              email: true,
+              clinicaId: true,
+            },
+          },
+        },
+      });
+
+      if (!paciente) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+
+      const where: any = { email: paciente.user.email };
+      if (clinicaId) where.clinicaId = clinicaId;
+      if (estado) where.estado = estado;
+
+      const turnos = await this.prisma.turno.findMany({
+        where,
+        take: limitNum,
+        skip: offsetNum,
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+        orderBy: {
+          fecha: 'desc',
+        },
+      });
+
+      // Procesar datos de pago para cada turno
+      const turnosProcesados = turnos.map(turno => this.procesarDatosPago(turno));
+
+      return {
+        success: true,
+        data: turnosProcesados,
+        message: 'Turnos del paciente obtenidos exitosamente',
+        pagination: {
+          limit: limitNum,
+          offset: offsetNum,
+          total: await this.prisma.turno.count({ where }),
+        },
+        paciente: {
+          id: paciente.id,
+          name: paciente.name,
+          email: paciente.user.email,
+        },
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error obteniendo turnos del paciente:', error);
+      throw new BadRequestException('Error al obtener los turnos del paciente');
+    }
+  }
+
   @Post('email')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

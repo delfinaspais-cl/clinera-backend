@@ -34,6 +34,7 @@ import { GlobalProfessionalsController } from './professionals/global-profession
 import { GlobalNotificationsController } from './notifications/global-notifications.controller';
 import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-medicas.controller';
 import { GlobalVentasController } from './ventas/global-ventas.controller';
+import { ClinicPatientsController } from './patients/clinic-patients.controller';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { GlobalVentasController } from './ventas/global-ventas.controller';
     GlobalNotificationsController,
     GlobalFichasMedicasController,
     GlobalVentasController,
+    ClinicPatientsController,
   ],
   providers: [AppService, OwnersService],
 })

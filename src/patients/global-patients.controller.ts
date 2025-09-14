@@ -397,4 +397,97 @@ export class GlobalPatientsController {
       throw new BadRequestException('Error al obtener los pacientes de la clínica');
     }
   }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener estadísticas de pacientes' })
+  @ApiResponse({ status: 200, description: 'Estadísticas de pacientes obtenidas exitosamente' })
+  @ApiQuery({ name: 'clinicaId', required: false, description: 'Filtrar por clínica' })
+  async getStats(@Query('clinicaId') clinicaId?: string) {
+    try {
+      const where: any = {};
+      if (clinicaId) {
+        where.user = {
+          clinicaId: clinicaId,
+        };
+      }
+
+      // Contar total de pacientes
+      const totalPacientes = await this.prisma.patient.count({ where });
+
+      // Contar pacientes por estado
+      const pacientesActivos = await this.prisma.patient.count({
+        where: {
+          ...where,
+          user: {
+            ...where.user,
+            estado: 'activo',
+          },
+        },
+      });
+
+      const pacientesInactivos = await this.prisma.patient.count({
+        where: {
+          ...where,
+          user: {
+            ...where.user,
+            estado: 'inactivo',
+          },
+        },
+      });
+
+      // Obtener pacientes con turnos
+      const pacientesConTurnos = await this.prisma.patient.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              email: true,
+            },
+          },
+        },
+      });
+
+      // Contar turnos por paciente
+      const turnosPorPaciente = await Promise.all(
+        pacientesConTurnos.map(async (paciente) => {
+          const turnosCount = await this.prisma.turno.count({
+            where: {
+              email: paciente.user.email,
+              ...(clinicaId && { clinicaId }),
+            },
+          });
+          return {
+            pacienteId: paciente.id,
+            pacienteName: paciente.name,
+            email: paciente.user.email,
+            turnosCount,
+          };
+        })
+      );
+
+      // Estadísticas de turnos
+      const totalTurnos = turnosPorPaciente.reduce((sum, p) => sum + p.turnosCount, 0);
+      const pacientesConTurnosCount = turnosPorPaciente.filter(p => p.turnosCount > 0).length;
+
+      return {
+        success: true,
+        data: {
+          totalPacientes,
+          pacientesActivos,
+          pacientesInactivos,
+          pacientesConTurnos: pacientesConTurnosCount,
+          pacientesSinTurnos: totalPacientes - pacientesConTurnosCount,
+          totalTurnos,
+          promedioTurnosPorPaciente: totalPacientes > 0 ? Math.round((totalTurnos / totalPacientes) * 100) / 100 : 0,
+          turnosPorPaciente: turnosPorPaciente.filter(p => p.turnosCount > 0),
+        },
+        message: 'Estadísticas de pacientes obtenidas exitosamente',
+      };
+    } catch (error) {
+      console.error('Error obteniendo estadísticas de pacientes:', error);
+      throw new BadRequestException('Error al obtener las estadísticas de pacientes');
+    }
+  }
 } 
