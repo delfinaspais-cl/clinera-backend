@@ -21,6 +21,7 @@ import { EmailModule } from './email/email.module';
 import { PlansModule } from './plans/plans.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
 import { VentasModule } from './ventas/ventas.module';
+import { MediosPagoModule } from './medios-pago/medios-pago.module';
 import { ConfigModule } from '@nestjs/config';
 import { RootController } from './app.controller';
 import { AppService } from './app.service';
@@ -34,6 +35,7 @@ import { GlobalProfessionalsController } from './professionals/global-profession
 import { GlobalNotificationsController } from './notifications/global-notifications.controller';
 import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-medicas.controller';
 import { GlobalVentasController } from './ventas/global-ventas.controller';
+import { GlobalMediosPagoController } from './medios-pago/global-medios-pago.controller';
 import { ClinicPatientsController } from './patients/clinic-patients.controller';
 
 @Module({
@@ -64,6 +66,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     PlansModule,
     FichasMedicasModule,
     VentasModule,
+    MediosPagoModule,
   ],
   controllers: [
     RootController, 
@@ -74,6 +77,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     GlobalNotificationsController,
     GlobalFichasMedicasController,
     GlobalVentasController,
+    GlobalMediosPagoController,
     ClinicPatientsController,
   ],
   providers: [AppService, OwnersService],

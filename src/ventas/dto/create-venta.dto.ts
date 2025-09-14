@@ -40,8 +40,11 @@ export class CreateVentaDto {
   @ApiProperty({ description: 'Estado del pago', enum: ['pendiente', 'parcial', 'pagado'] })
   estadoPago?: string;
 
-  @ApiProperty({ description: 'Medio de pago utilizado' })
+  @ApiProperty({ description: 'Medio de pago utilizado (texto libre)' })
   medioPago?: string;
+
+  @ApiProperty({ description: 'ID del medio de pago (relación con tabla medios de pago)' })
+  medioPagoId?: string;
 
   @ApiProperty({ description: 'Origen de la venta (ej: instagram, facebook, etc.)' })
   origen?: string;

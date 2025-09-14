@@ -51,6 +51,14 @@ export class VentasService {
               url: true,
             },
           },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
+            },
+          },
         },
       });
 
@@ -94,6 +102,14 @@ export class VentasService {
               url: true,
             },
           },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
+            },
+          },
         },
         orderBy: {
           fechaCreacion: 'desc',
@@ -129,6 +145,14 @@ export class VentasService {
               url: true,
             },
           },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
+            },
+          },
         },
       });
 
@@ -161,6 +185,14 @@ export class VentasService {
               id: true,
               name: true,
               url: true,
+            },
+          },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
             },
           },
         },
@@ -212,6 +244,14 @@ export class VentasService {
               id: true,
               name: true,
               url: true,
+            },
+          },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
             },
           },
         },
@@ -282,6 +322,14 @@ export class VentasService {
               id: true,
               name: true,
               url: true,
+            },
+          },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+              activo: true,
             },
           },
         },

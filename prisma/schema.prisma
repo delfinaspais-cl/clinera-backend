@@ -46,6 +46,7 @@ model Clinica {
   whatsappTemplates      WhatsAppTemplate[]
   fichasMedicas          FichaMedica[]
   fichasMedicasHistorial FichaMedicaHistorial[] @relation("ClinicaFichaHistorial")
+  mediosPago             MedioPago[]
 }
 
 model Mensaje {
@@ -547,9 +548,25 @@ model ImagenMedica {
   @@index([fichaMedicaId])
 }
 
+model MedioPago {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  clinicaId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  ventas      Venta[]
+
+  @@index([clinicaId])
+  @@index([activo])
+  @@unique([nombre, clinicaId]) // Evitar duplicados por clínica
+}
+
 model Venta {
-  id               String    @id @default(cuid())
-  ventaId          String    @unique // ID personalizado para el frontend
+  id               String     @id @default(cuid())
+  ventaId          String     @unique // ID personalizado para el frontend
   comprador        String
   paciente         String
   email            String
@@ -561,23 +578,26 @@ model Venta {
   montoTotal       String
   montoAbonado     String
   montoPendiente   String
-  estado           String    @default("activa")
-  estadoPago       String    @default("pendiente")
-  medioPago        String?
+  estado           String     @default("activa")
+  estadoPago       String     @default("pendiente")
+  medioPago        String?    // Mantener para compatibilidad
+  medioPagoId      String?    // Nueva relación con MedioPago
   origen           String?
   ate              String?
-  sesiones         Int       @default(1)
-  sesionesUsadas   Int       @default(0)
-  fechaCreacion    DateTime  @default(now())
+  sesiones         Int        @default(1)
+  sesionesUsadas   Int        @default(0)
+  fechaCreacion    DateTime   @default(now())
   fechaVencimiento DateTime?
   notas            String?
   clinicaId        String
-  clinica          Clinica   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  clinica          Clinica    @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  medioPagoRel     MedioPago? @relation(fields: [medioPagoId], references: [id])
 
   @@index([clinicaId])
   @@index([estado])
   @@index([estadoPago])
   @@index([fechaCreacion])
+  @@index([medioPagoId])
 }
 
 enum Role {
