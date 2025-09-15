@@ -59,7 +59,7 @@ export class UsersService {
     });
   }
 
-  async createUser(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto, clinicaId?: string) {
     // Verificar si el email ya existe
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
@@ -79,7 +79,7 @@ export class UsersService {
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
     const permisosString = PermissionsService.getPermisosAsString(permisos);
 
-    // Crear el usuario (sin clinicaId específico)
+    // Crear el usuario
     const user = await this.prisma.user.create({
       data: {
         name: createUserDto.nombre,
@@ -87,7 +87,7 @@ export class UsersService {
         password: hashedPassword,
         role: createUserDto.tipo,
         phone: createUserDto.phone,
-        clinicaId: null, // No asociado a clínica específica
+        clinicaId: clinicaId || null, // Asociar a clínica si se proporciona
         estado: 'pendiente', // Estado inicial como pendiente
         configuracion: permisosString, // Guardar permisos en configuracion
       },
@@ -108,13 +108,29 @@ export class UsersService {
     try {
       console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
       
+      // Obtener nombre de la clínica si hay clinicaId
+      let clinicaName = 'Clinera'; // Nombre por defecto
+      if (clinicaId) {
+        try {
+          const clinica = await this.prisma.clinica.findUnique({
+            where: { id: clinicaId },
+            select: { name: true }
+          });
+          if (clinica) {
+            clinicaName = clinica.name;
+          }
+        } catch (error) {
+          console.warn('No se pudo obtener el nombre de la clínica:', error);
+        }
+      }
+      
       emailResult = await this.externalEmailService.sendWelcomeEmail({
         to: createUserDto.email,
         name: createUserDto.nombre,
         email: createUserDto.email,
         password: generatedPassword, // Enviar la contraseña en texto plano
         role: createUserDto.tipo,
-        clinicaName: 'Clinera', // Nombre por defecto
+        clinicaName: clinicaName,
       });
 
       if (emailResult.success) {
