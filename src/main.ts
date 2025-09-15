@@ -36,6 +36,7 @@ async function bootstrap() {
           config.get<string>('ALLOWED_ORIGIN'),
           'http://localhost:3000',
           'http://localhost:3001',
+          'https://app.clinera.io', // Dominio principal del frontend
           'https://clinera-frontend.vercel.app',
           'https://clinera.vercel.app',
           'https://clinera-web-git-develop-clinera-io-b8a9d478.vercel.app',

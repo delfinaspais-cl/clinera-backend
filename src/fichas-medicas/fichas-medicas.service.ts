@@ -244,7 +244,7 @@ export class FichasMedicasService {
     try {
       // Intentar subir archivo al microservicio primero
       const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
-      uploadResult = await this.fileMicroserviceService.uploadFile({
+      const microserviceResult = await this.fileMicroserviceService.uploadFile({
         file,
         visibility: 'private', // Los archivos médicos son privados
         scope,
@@ -252,6 +252,12 @@ export class FichasMedicasService {
         messageId: `archivo-${Date.now()}` // Generar un message_id único
       }, userToken);
       
+      // Verificar si el resultado es un error
+      if ('error' in microserviceResult) {
+        throw new Error(microserviceResult.error);
+      }
+      
+      uploadResult = microserviceResult;
       console.log('✅ Archivo subido exitosamente al microservicio');
     } catch (error) {
       console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
@@ -346,7 +352,7 @@ export class FichasMedicasService {
     try {
       // Intentar subir imagen al microservicio primero
       const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
-      uploadResult = await this.fileMicroserviceService.uploadFile({
+      const microserviceResult = await this.fileMicroserviceService.uploadFile({
         file,
         visibility: 'private', // Las imágenes médicas son privadas
         scope,
@@ -354,6 +360,12 @@ export class FichasMedicasService {
         messageId: `imagen-${Date.now()}` // Generar un message_id único
       }, userToken);
       
+      // Verificar si el resultado es un error
+      if ('error' in microserviceResult) {
+        throw new Error(microserviceResult.error);
+      }
+      
+      uploadResult = microserviceResult;
       console.log('✅ Imagen subida exitosamente al microservicio');
     } catch (error) {
       console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);

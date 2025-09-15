@@ -40,7 +40,7 @@ export class FileMicroserviceService {
   /**
    * Sube un archivo al microservicio de archivos
    */
-  async uploadFile(params: FileUploadParams, userToken?: string): Promise<FileUploadResponse> {
+  async uploadFile(params: FileUploadParams, userToken?: string): Promise<FileUploadResponse | { error: string; statusCode: number }> {
     try {
       const formData = new FormData();
       
@@ -158,20 +158,20 @@ export class FileMicroserviceService {
           });
 
           if (statusCode === 401 || statusCode === 403) {
-            throw new BadRequestException('Error de autenticación con el microservicio. Verifica la configuración.');
+            return { error: 'Error de autenticación con el microservicio. Verifica la configuración.', statusCode };
           } else if (statusCode === 400) {
-            throw new BadRequestException(`Error en la petición: ${errorMessage}`);
+            return { error: `Error en la petición: ${errorMessage}`, statusCode };
           } else {
-            throw new BadRequestException(`Error del microservicio (${statusCode}): ${errorMessage}`);
+            return { error: `Error del microservicio (${statusCode}): ${errorMessage}`, statusCode };
           }
         } else if (error.request) {
           // La petición fue hecha pero no se recibió respuesta
           console.error('No se recibió respuesta del microservicio:', error.request);
-          throw new BadRequestException('No se pudo conectar con el microservicio de archivos. Verifica tu conexión a internet.');
+          return { error: 'No se pudo conectar con el microservicio de archivos. Verifica tu conexión a internet.', statusCode: 503 };
         }
       }
       
-      throw new BadRequestException('Error interno al subir archivo');
+      return { error: 'Error interno al subir archivo', statusCode: 500 };
     }
   }
 
