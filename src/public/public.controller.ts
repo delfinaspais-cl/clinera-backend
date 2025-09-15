@@ -520,82 +520,9 @@ export class PublicController {
   }
 
   // ===== ENDPOINTS PÚBLICOS PARA CITAS/TURNOS =====
-  
-  @Post('clinica/:clinicaUrl/citas')
-  async createAppointmentPublic(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Body() dto: any,
-  ) {
-    try {
-      // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl },
-      });
-
-      if (!clinica) {
-        throw new BadRequestException('Clínica no encontrada');
-      }
-
-      if (clinica.estado !== 'activa') {
-        throw new BadRequestException('La clínica no está activa');
-      }
-
-      // Validar campos requeridos
-      const requiredFields = ['nombre', 'email', 'fecha', 'hora'];
-      const missingFields = requiredFields.filter(field => !dto[field]);
-      
-      if (missingFields.length > 0) {
-        throw new BadRequestException(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
-      }
-
-      // Crear el turno
-      const turno = await this.prisma.turno.create({
-        data: {
-          paciente: dto.nombre,
-          email: dto.email,
-          telefono: dto.telefono || '',
-          doctor: dto.profesional || 'Por asignar',
-          fecha: new Date(dto.fecha),
-          hora: dto.hora,
-          motivo: dto.motivo || 'Consulta',
-          clinicaId: clinica.id,
-          estado: 'pendiente',
-        },
-        include: {
-          clinica: {
-            select: {
-              id: true,
-              name: true,
-              url: true,
-            },
-          },
-        },
-      });
-
-      // Crear notificación para la clínica
-      await this.prisma.notificacion.create({
-        data: {
-          titulo: 'Nueva cita solicitada',
-          mensaje: `Se ha solicitado una nueva cita para ${dto.nombre} el ${dto.fecha} a las ${dto.hora}`,
-          tipo: 'info',
-          prioridad: 'media',
-          clinicaId: clinica.id,
-        },
-      });
-
-      return {
-        success: true,
-        data: turno,
-        message: 'Cita creada exitosamente. Nos pondremos en contacto contigo pronto.',
-      };
-    } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
-      console.error('Error creando cita pública:', error);
-      throw new BadRequestException('Error al crear la cita');
-    }
-  }
+  // NOTA: El endpoint para crear citas ya existe como:
+  // POST /api/public/clinica/:clinicaUrl/landing/turnos
+  // Este endpoint usa el servicio de clínicas y está completamente funcional
 
   // ===== ENDPOINTS PÚBLICOS PARA SUCURSALES (CLÍNICAS) =====
   
