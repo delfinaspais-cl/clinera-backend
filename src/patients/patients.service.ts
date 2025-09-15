@@ -60,9 +60,14 @@ export class PatientsService {
       // Generar contraseña automáticamente
       const password = this.generateRandomPassword();
 
-      // Verificar si ya existe un usuario con ese email
+      // Verificar si ya existe un usuario con ese email en esta clínica
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.email },
+        where: { 
+          unique_email_per_clinic: {
+            email: dto.email,
+            clinicaId: clinica.id
+          }
+        },
       });
 
       console.log('🔍 Usuario existente:', existingUser ? 'Sí' : 'No');
