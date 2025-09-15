@@ -529,6 +529,54 @@ export class PublicController {
 
   // ===== ENDPOINTS PÚBLICOS PARA SUCURSALES (CLÍNICAS) =====
   
+  @Post('clinica/:clinicaUrl/sucursales')
+  async createSucursalPublic(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() createSucursalDto: any,
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Crear la sucursal
+      const sucursal = await this.prisma.sucursal.create({
+        data: {
+          nombre: createSucursalDto.nombre,
+          direccion: createSucursalDto.direccion,
+          telefono: createSucursalDto.telefono,
+          email: createSucursalDto.email,
+          ciudad: createSucursalDto.ciudad,
+          provincia: createSucursalDto.provincia,
+          pais: createSucursalDto.pais,
+          clinicaId: clinica.id,
+          estado: 'activa', // Por defecto activa
+        },
+      });
+
+      return {
+        success: true,
+        data: sucursal,
+        message: 'Sucursal creada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error creando sucursal:', error);
+      throw new BadRequestException('Error al crear la sucursal');
+    }
+  }
+  
   @Get('clinica/:clinicaUrl/sucursales')
   async getBranchesPublic(@Param('clinicaUrl') clinicaUrl: string) {
     try {
@@ -545,20 +593,51 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Por ahora, retornamos la clínica principal como única sucursal
-      // En el futuro se puede expandir para manejar múltiples sucursales
+      // Obtener sucursales reales de la base de datos
+      const sucursales = await this.prisma.sucursal.findMany({
+        where: { 
+          clinicaId: clinica.id,
+          estado: 'activa' // Solo sucursales activas
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Si no hay sucursales específicas, incluir la clínica principal como sucursal
+      if (sucursales.length === 0) {
+        return {
+          success: true,
+          data: [{
+            id: clinica.id,
+            nombre: clinica.name,
+            direccion: clinica.address,
+            telefono: clinica.phone,
+            email: clinica.email,
+            url: clinica.url,
+            colorPrimario: clinica.colorPrimario,
+            colorSecundario: clinica.colorSecundario,
+          }],
+          message: 'Sucursales obtenidas exitosamente',
+        };
+      }
+
+      // Formatear las sucursales para que tengan la misma estructura que la clínica principal
+      const sucursalesFormateadas = sucursales.map(sucursal => ({
+        id: sucursal.id,
+        nombre: sucursal.nombre,
+        direccion: sucursal.direccion,
+        telefono: sucursal.telefono,
+        email: sucursal.email,
+        url: clinica.url, // Mantener la URL de la clínica principal
+        colorPrimario: clinica.colorPrimario,
+        colorSecundario: clinica.colorSecundario,
+        ciudad: sucursal.ciudad,
+        provincia: sucursal.provincia,
+        pais: sucursal.pais,
+      }));
+
       return {
         success: true,
-        data: [{
-          id: clinica.id,
-          nombre: clinica.name,
-          direccion: clinica.address,
-          telefono: clinica.phone,
-          email: clinica.email,
-          url: clinica.url,
-          colorPrimario: clinica.colorPrimario,
-          colorSecundario: clinica.colorSecundario,
-        }],
+        data: sucursalesFormateadas,
         message: 'Sucursales obtenidas exitosamente',
       };
     } catch (error) {

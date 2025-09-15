@@ -60,13 +60,17 @@ export class UsersService {
   }
 
   async createUser(createUserDto: CreateUserDto, clinicaId?: string) {
-    // Verificar si el email ya existe
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
+    // Verificar si el email ya existe en la misma clínica
+    const whereCondition = clinicaId 
+      ? { email: createUserDto.email, clinicaId: clinicaId }
+      : { email: createUserDto.email, clinicaId: null };
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: whereCondition,
     });
 
     if (existingUser) {
-      throw new ConflictException('El email ya está en uso');
+      throw new ConflictException('El email ya está en uso en esta clínica');
     }
 
     // Generar contraseña automáticamente (siempre, para mayor seguridad)
@@ -108,19 +112,21 @@ export class UsersService {
     try {
       console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
       
-      // Obtener nombre de la clínica si hay clinicaId
+      // Obtener nombre y URL de la clínica si hay clinicaId
       let clinicaName = 'Clinera'; // Nombre por defecto
+      let clinicaUrl: string | undefined = undefined; // URL por defecto
       if (clinicaId) {
         try {
           const clinica = await this.prisma.clinica.findUnique({
             where: { id: clinicaId },
-            select: { name: true }
+            select: { name: true, url: true }
           });
           if (clinica) {
             clinicaName = clinica.name;
+            clinicaUrl = clinica.url;
           }
         } catch (error) {
-          console.warn('No se pudo obtener el nombre de la clínica:', error);
+          console.warn('No se pudo obtener la información de la clínica:', error);
         }
       }
       
@@ -131,6 +137,7 @@ export class UsersService {
         password: generatedPassword, // Enviar la contraseña en texto plano
         role: createUserDto.tipo,
         clinicaName: clinicaName,
+        clinicaUrl: clinicaUrl,
       });
 
       if (emailResult.success) {
@@ -168,13 +175,16 @@ export class UsersService {
       throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
     }
 
-    // Verificar si el email ya existe
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
+    // Verificar si el email ya existe en esta clínica específica
+    const existingUser = await this.prisma.user.findFirst({
+      where: { 
+        email: createUserDto.email,
+        clinicaId: clinica.id
+      },
     });
 
     if (existingUser) {
-      throw new ConflictException('El email ya está en uso');
+      throw new ConflictException('El email ya está en uso en esta clínica');
     }
 
     // Generar contraseña automáticamente (siempre, para mayor seguridad)
@@ -223,6 +233,7 @@ export class UsersService {
         password: generatedPassword, // Enviar la contraseña en texto plano
         role: createUserDto.tipo,
         clinicaName: clinica.name,
+        clinicaUrl: clinica.url,
       });
 
       if (emailResult.success) {
@@ -399,17 +410,18 @@ export class UsersService {
       throw new NotFoundException('Usuario no encontrado en esta clínica');
     }
 
-    // Si se está cambiando el email, verificar que no esté en uso por otro usuario
+    // Si se está cambiando el email, verificar que no esté en uso por otro usuario en la misma clínica
     if (dto.email && dto.email !== existingUser.email) {
       const emailExists = await this.prisma.user.findFirst({
         where: {
           email: dto.email,
+          clinicaId: clinica.id, // Solo verificar en la misma clínica
           id: { not: userId }, // Excluir el usuario actual
         },
       });
 
       if (emailExists) {
-        throw new ConflictException('El email ya está en uso por otro usuario');
+        throw new ConflictException('El email ya está en uso por otro usuario en esta clínica');
       }
     }
 

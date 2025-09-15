@@ -16,6 +16,7 @@ export class EmailTestController {
     name: string;
     role: string;
     clinicaName?: string;
+    clinicaUrl?: string;
   }) {
     const generatedPassword = 'TestPassword123!'; // Contraseña de prueba
     
@@ -26,6 +27,7 @@ export class EmailTestController {
       password: generatedPassword,
       role: body.role,
       clinicaName: body.clinicaName || 'Clinera',
+      clinicaUrl: body.clinicaUrl,
     });
   }
 }

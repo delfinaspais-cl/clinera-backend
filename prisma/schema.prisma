@@ -124,7 +124,7 @@ model Notificacion {
 
 model User {
   id                   String                  @id @default(cuid())
-  email                String                  @unique
+  email                String
   password             String
   name                 String?
   phone                String?
@@ -149,6 +149,10 @@ model User {
   clinica              Clinica?                @relation(fields: [clinicaId], references: [id])
   whatsappMessages     WhatsAppMessage[]
   fichasMedicasCreadas FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
+
+  @@unique([email, clinicaId], name: "unique_email_per_clinic")
+  @@index([email])
+  @@index([clinicaId])
 }
 
 model Turno {

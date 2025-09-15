@@ -62,8 +62,8 @@ export class AuthService {
         );
       }
 
-      // Verificar si el email ya existe
-      const existingUser = await this.prisma.user.findUnique({
+      // Verificar si el email ya existe (sin restricción de clínica para el registro general)
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: dto.email },
       });
 

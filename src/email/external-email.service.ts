@@ -8,6 +8,7 @@ interface WelcomeEmailData {
   password: string;
   role: string;
   clinicaName?: string;
+  clinicaUrl?: string;
 }
 
 @Injectable()
@@ -61,7 +62,7 @@ Tu cuenta ha sido creada exitosamente. Aquí están tus credenciales de acceso:
 🔑 Contraseña: ${data.password}
 👤 Rol: ${data.role}
 
-Para acceder al sistema, visita: ${this.getLoginUrl(data.clinicaName)}
+Para acceder al sistema, visita: ${this.getLoginUrl(data.clinicaUrl)}
 
 Por seguridad, te recomendamos cambiar tu contraseña en tu primer inicio de sesión.
 
@@ -117,9 +118,12 @@ Equipo de ${data.clinicaName || 'Clinera'}`
     }
   }
 
-  private getLoginUrl(clinicaName?: string): string {
-    // Aquí puedes personalizar la URL de login según tu frontend
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  private getLoginUrl(clinicaUrl?: string): string {
+    // URL del frontend con la URL de la clínica
+    const baseUrl = 'https://app.clinera.io';
+    if (clinicaUrl) {
+      return `${baseUrl}/${clinicaUrl}`;
+    }
     return `${baseUrl}/login`;
   }
 

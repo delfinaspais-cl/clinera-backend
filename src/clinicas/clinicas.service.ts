@@ -157,13 +157,16 @@ export class ClinicasService {
         throw new BadRequestException('Clínica no encontrada');
       }
 
-      // Verificar si el email ya existe
-      const existingUser = await this.prisma.user.findUnique({
-        where: { email: dto.email },
+      // Verificar si el email ya existe en esta clínica específica
+      const existingUser = await this.prisma.user.findFirst({
+        where: { 
+          email: dto.email,
+          clinicaId: clinica.id
+        },
       });
 
       if (existingUser) {
-        throw new BadRequestException('El email ya está registrado');
+        throw new BadRequestException('El email ya está registrado en esta clínica');
       }
 
       // Mapear el rol del DTO al enum de Prisma
