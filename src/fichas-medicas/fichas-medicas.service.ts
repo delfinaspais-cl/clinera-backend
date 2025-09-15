@@ -186,7 +186,7 @@ export class FichasMedicasService {
     };
   }
 
-  async uploadFile(clinicaUrl: string, pacienteId: string, file: Express.Multer.File): Promise<ArchivoMedicoDto> {
+  async uploadFile(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ArchivoMedicoDto> {
     // Verificar que la clínica y paciente existen
     const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl }
@@ -243,7 +243,7 @@ export class FichasMedicasService {
       scope,
       conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
       messageId: `archivo-${Date.now()}` // Generar un message_id único
-    });
+    }, userToken);
 
     // Guardar en base de datos
     const archivoMedico = await this.prisma.archivoMedico.create({
@@ -267,7 +267,7 @@ export class FichasMedicasService {
     };
   }
 
-  async uploadImage(clinicaUrl: string, pacienteId: string, file: Express.Multer.File): Promise<ImagenMedicaDto> {
+  async uploadImage(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ImagenMedicaDto> {
     // Verificar que la clínica y paciente existen
     const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl }
@@ -324,7 +324,7 @@ export class FichasMedicasService {
       scope,
       conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
       messageId: `imagen-${Date.now()}` // Generar un message_id único
-    });
+    }, userToken);
 
     // Guardar en base de datos
     const imagenMedica = await this.prisma.imagenMedica.create({

@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Headers,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -100,11 +101,16 @@ export class FichasMedicasController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Headers('authorization') authHeader: string,
   ): Promise<ArchivoMedicoDto> {
     if (!file) {
       throw new BadRequestException('No se proporcionó archivo');
     }
-    return this.fichasMedicasService.uploadFile(clinicaUrl, pacienteId, file);
+    
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    
+    return this.fichasMedicasService.uploadFile(clinicaUrl, pacienteId, file, token);
   }
 
   @Post('upload-image')
@@ -150,11 +156,16 @@ export class FichasMedicasController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Headers('authorization') authHeader: string,
   ): Promise<ImagenMedicaDto> {
     if (!file) {
       throw new BadRequestException('No se proporcionó imagen');
     }
-    return this.fichasMedicasService.uploadImage(clinicaUrl, pacienteId, file);
+    
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    
+    return this.fichasMedicasService.uploadImage(clinicaUrl, pacienteId, file, token);
   }
 
   @Delete('files/:fileId')

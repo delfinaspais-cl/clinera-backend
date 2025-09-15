@@ -27,12 +27,18 @@ export class FileMicroserviceService {
   constructor(private readonly configService: ConfigService) {
     this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-staging.up.railway.app');
     this.authToken = this.configService.get<string>('FILE_MICROSERVICE_TOKEN', '');
+    
+    console.log('🔧 FileMicroserviceService configurado:', {
+      url: this.microserviceUrl,
+      hasToken: !!this.authToken,
+      tokenLength: this.authToken?.length || 0
+    });
   }
 
   /**
    * Sube un archivo al microservicio de archivos
    */
-  async uploadFile(params: FileUploadParams): Promise<FileUploadResponse> {
+  async uploadFile(params: FileUploadParams, userToken?: string): Promise<FileUploadResponse> {
     try {
       const formData = new FormData();
       
@@ -55,14 +61,33 @@ export class FileMicroserviceService {
         formData.append('message_id', params.messageId);
       }
 
+      console.log('📤 Enviando archivo al microservicio:', {
+        url: `${this.microserviceUrl}/files/upload`,
+        fileName: params.file.originalname,
+        fileSize: params.file.size,
+        scope: params.scope,
+        visibility: params.visibility,
+        hasUserToken: !!userToken,
+        hasConfigToken: !!this.authToken,
+        tokenSource: userToken ? 'user' : (this.authToken ? 'config' : 'none')
+      });
+
+      // Preparar headers
+      const headers = {
+        ...formData.getHeaders(),
+      };
+
+      // Usar el token del usuario si está disponible, sino usar el token de configuración
+      const tokenToUse = userToken || this.authToken;
+      if (tokenToUse) {
+        headers['Authorization'] = `Bearer ${tokenToUse}`;
+      }
+
       const response = await axios.post(
         `${this.microserviceUrl}/files/upload`,
         formData,
         {
-          headers: {
-            ...formData.getHeaders(),
-            'Authorization': `Bearer ${this.authToken}`,
-          },
+          headers,
           timeout: 30000, // 30 segundos timeout
         }
       );
@@ -70,6 +95,8 @@ export class FileMicroserviceService {
       if (response.status !== 200) {
         throw new BadRequestException('Error al subir archivo al microservicio');
       }
+
+      console.log('✅ Archivo subido exitosamente al microservicio:', response.data);
 
       // Transformar la respuesta al formato esperado
       return {
@@ -81,17 +108,31 @@ export class FileMicroserviceService {
       };
 
     } catch (error) {
-      console.error('Error en FileMicroserviceService.uploadFile:', error);
+      console.error('❌ Error en FileMicroserviceService.uploadFile:', error);
       
       if (axios.isAxiosError(error)) {
         if (error.response) {
           // El servidor respondió con un código de error
-          throw new BadRequestException(
-            `Error del microservicio: ${error.response.data?.message || error.response.statusText}`
-          );
+          const statusCode = error.response.status;
+          const errorMessage = error.response.data?.message || error.response.statusText;
+          
+          console.error('Error del microservicio:', {
+            status: statusCode,
+            message: errorMessage,
+            data: error.response.data
+          });
+
+          if (statusCode === 401 || statusCode === 403) {
+            throw new BadRequestException('Error de autenticación con el microservicio. Verifica la configuración.');
+          } else if (statusCode === 400) {
+            throw new BadRequestException(`Error en la petición: ${errorMessage}`);
+          } else {
+            throw new BadRequestException(`Error del microservicio (${statusCode}): ${errorMessage}`);
+          }
         } else if (error.request) {
           // La petición fue hecha pero no se recibió respuesta
-          throw new BadRequestException('No se pudo conectar con el microservicio de archivos');
+          console.error('No se recibió respuesta del microservicio:', error.request);
+          throw new BadRequestException('No se pudo conectar con el microservicio de archivos. Verifica tu conexión a internet.');
         }
       }
       
@@ -104,12 +145,18 @@ export class FileMicroserviceService {
    */
   async deleteFile(fileId: string): Promise<void> {
     try {
+      // Preparar headers
+      const headers = {};
+
+      // Solo agregar Authorization si hay token
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
       const response = await axios.delete(
         `${this.microserviceUrl}/files/${fileId}`,
         {
-          headers: {
-            'Authorization': `Bearer ${this.authToken}`,
-          },
+          headers,
           timeout: 10000, // 10 segundos timeout
         }
       );
@@ -140,12 +187,18 @@ export class FileMicroserviceService {
    */
   async getFileInfo(fileId: string): Promise<FileUploadResponse> {
     try {
+      // Preparar headers
+      const headers = {};
+
+      // Solo agregar Authorization si hay token
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
+
       const response = await axios.get(
         `${this.microserviceUrl}/files/${fileId}`,
         {
-          headers: {
-            'Authorization': `Bearer ${this.authToken}`,
-          },
+          headers,
           timeout: 10000,
         }
       );
