@@ -36,6 +36,8 @@ export class PatientsService {
     try {
       console.log('🔍 Creando paciente para clínica:', clinicaUrl);
       console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+      console.log('🔍 Tipo de datos DTO:', typeof dto);
+      console.log('🔍 Claves del DTO:', Object.keys(dto));
       
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
@@ -43,6 +45,17 @@ export class PatientsService {
       
       console.log('🔍 Clínica encontrada:', clinica ? 'Sí' : 'No');
       if (!clinica) throw new NotFoundException('Clínica no encontrada');
+
+      // Validar que el email esté presente y sea válido
+      if (!dto.email || dto.email.trim() === '') {
+        throw new BadRequestException('El email es requerido');
+      }
+
+      // Validar formato básico de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(dto.email)) {
+        throw new BadRequestException('El formato del email no es válido');
+      }
 
       // Generar contraseña automáticamente
       const password = this.generateRandomPassword();

@@ -2,9 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, RequestMethod } from '@nestjs/common';
+import { ValidationPipe, RequestMethod, BadRequestException } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -18,7 +19,25 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: false, // Permitir campos adicionales
     transform: true,
+    exceptionFactory: (errors) => {
+      console.error('🚨 ValidationPipe errors:', errors);
+      const errorMessages = errors.map(error => ({
+        property: error.property,
+        value: error.value,
+        constraints: error.constraints,
+        children: error.children
+      }));
+      console.error('🚨 Formatted validation errors:', errorMessages);
+      return new BadRequestException({
+        message: 'Errores de validación',
+        errors: errorMessages,
+        details: errors.map(error => Object.values(error.constraints || {}).join(', ')).join('; ')
+      });
+    }
   }));
+
+  // Usar filtro de excepción global para validación
+  app.useGlobalFilters(new ValidationExceptionFilter());
 
   // Interceptor global simplificado
   app.useGlobalInterceptors(new (class {
