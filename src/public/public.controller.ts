@@ -302,7 +302,7 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Obtener profesionales de la clínica
+      // Obtener profesionales de la clínica con sus especialidades y tratamientos
       const professionals = await this.prisma.professional.findMany({
         where: {
           user: {
@@ -318,6 +318,16 @@ export class PublicController {
               phone: true,
               role: true,
               estado: true,
+            },
+          },
+          especialidades: {
+            include: {
+              especialidad: true,
+            },
+          },
+          tratamientos: {
+            include: {
+              tratamiento: true,
             },
           },
         },
@@ -710,7 +720,7 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Obtener profesionales de la clínica
+      // Obtener profesionales de la clínica con sus especialidades y tratamientos
       const professionals = await this.prisma.professional.findMany({
         where: {
           user: {
@@ -726,6 +736,16 @@ export class PublicController {
               phone: true,
               role: true,
               estado: true,
+            },
+          },
+          especialidades: {
+            include: {
+              especialidad: true,
+            },
+          },
+          tratamientos: {
+            include: {
+              tratamiento: true,
             },
           },
         },
@@ -768,7 +788,7 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Obtener el profesional específico
+      // Obtener el profesional específico con sus especialidades y tratamientos
       const professional = await this.prisma.professional.findFirst({
         where: {
           id: professionalId,
@@ -785,6 +805,16 @@ export class PublicController {
               phone: true,
               role: true,
               estado: true,
+            },
+          },
+          especialidades: {
+            include: {
+              especialidad: true,
+            },
+          },
+          tratamientos: {
+            include: {
+              tratamiento: true,
             },
           },
         },
