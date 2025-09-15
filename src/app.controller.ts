@@ -13,7 +13,7 @@ import { AppService } from './app.service';
 import type { Response } from 'express';
 
 @Controller()
-export class RootController {
+export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly clinicasService: ClinicasService,
