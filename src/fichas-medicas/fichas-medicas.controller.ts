@@ -103,12 +103,17 @@ export class FichasMedicasController {
     @UploadedFile() file: Express.Multer.File,
     @Headers('authorization') authHeader: string,
   ): Promise<ArchivoMedicoDto> {
+    console.log('🔍 DEBUG: uploadFile controller - authHeader:', authHeader);
+    console.log('🔍 DEBUG: uploadFile controller - file:', file?.originalname, file?.size);
+    
     if (!file) {
       throw new BadRequestException('No se proporcionó archivo');
     }
     
     // Extraer el token del header Authorization
     const token = authHeader?.replace('Bearer ', '') || '';
+    console.log('🔍 DEBUG: uploadFile controller - token extraído:', token ? 'SÍ' : 'NO');
+    console.log('🔍 DEBUG: uploadFile controller - token length:', token.length);
     
     return this.fichasMedicasService.uploadFile(clinicaUrl, pacienteId, file, token);
   }

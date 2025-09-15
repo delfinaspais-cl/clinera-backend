@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import FormData from 'form-data';
+import * as jwt from 'jsonwebtoken';
 
 export interface FileUploadResponse {
   id: string;
@@ -23,15 +24,16 @@ export interface FileUploadParams {
 export class FileMicroserviceService {
   private readonly microserviceUrl: string;
   private readonly authToken: string;
+  private readonly microserviceJwtSecret: string;
 
   constructor(private readonly configService: ConfigService) {
     this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-staging.up.railway.app');
-    this.authToken = this.configService.get<string>('FILE_MICROSERVICE_TOKEN', '');
+    this.authToken = ''; // No se usa, el microservicio acepta el JWT del usuario
+    this.microserviceJwtSecret = '@leaf$MVC*JWT#AUTH.Secret'; // JWT_SECRET del microservicio
     
     console.log('🔧 FileMicroserviceService configurado:', {
       url: this.microserviceUrl,
-      hasToken: !!this.authToken,
-      tokenLength: this.authToken?.length || 0
+      authMethod: 'JWT del usuario con secret del microservicio'
     });
   }
 
@@ -68,8 +70,7 @@ export class FileMicroserviceService {
         scope: params.scope,
         visibility: params.visibility,
         hasUserToken: !!userToken,
-        hasConfigToken: !!this.authToken,
-        tokenSource: userToken ? 'user' : (this.authToken ? 'config' : 'none')
+        tokenSource: userToken ? 'user' : 'none'
       });
 
       // Preparar headers
@@ -77,10 +78,44 @@ export class FileMicroserviceService {
         ...formData.getHeaders(),
       };
 
-      // Usar el token del usuario si está disponible, sino usar el token de configuración
-      const tokenToUse = userToken || this.authToken;
-      if (tokenToUse) {
-        headers['Authorization'] = `Bearer ${tokenToUse}`;
+      // Generar un nuevo JWT con el secret del microservicio
+      if (userToken) {
+        try {
+          // Decodificar el JWT del usuario para obtener el payload
+          const decoded = jwt.decode(userToken) as any;
+          if (!decoded) {
+            throw new BadRequestException('Token de usuario inválido');
+          }
+          
+          // Crear un nuevo JWT con el secret del microservicio
+          const microserviceToken = jwt.sign(
+            {
+              sub: decoded.sub,
+              email: decoded.email,
+              role: decoded.role,
+              name: decoded.name,
+              clinicaId: decoded.clinicaId,
+              clinicaUrl: decoded.clinicaUrl,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
+            },
+            this.microserviceJwtSecret
+          );
+          
+          headers['Authorization'] = `Bearer ${microserviceToken}`;
+          
+          console.log('🔑 JWT regenerado para microservicio:', {
+            originalTokenLength: userToken.length,
+            newTokenLength: microserviceToken.length,
+            payload: decoded
+          });
+          
+        } catch (error) {
+          console.error('❌ Error generando JWT para microservicio:', error);
+          throw new BadRequestException('Error procesando token de autenticación');
+        }
+      } else {
+        throw new BadRequestException('Token de autenticación del usuario requerido.');
       }
 
       const response = await axios.post(

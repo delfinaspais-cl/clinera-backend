@@ -187,6 +187,9 @@ export class FichasMedicasService {
   }
 
   async uploadFile(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ArchivoMedicoDto> {
+    console.log('🔍 DEBUG: uploadFile service - userToken recibido:', userToken ? 'SÍ' : 'NO');
+    console.log('🔍 DEBUG: uploadFile service - userToken length:', userToken?.length || 0);
+    
     // Verificar que la clínica y paciente existen
     const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl }
