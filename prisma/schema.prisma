@@ -151,6 +151,7 @@ model User {
   fichasMedicasCreadas FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
 
   @@unique([email, clinicaId], name: "unique_email_per_clinic")
+  @@unique([email], name: "unique_email_global", map: "User_email_key")
   @@index([email])
   @@index([clinicaId])
 }
