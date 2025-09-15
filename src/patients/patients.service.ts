@@ -93,6 +93,15 @@ export class PatientsService {
       }
 
       console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
+      console.log('🔍 Datos del usuario a crear:', {
+        email: dto.email,
+        password: '***',
+        role: 'PATIENT',
+        name: patientName,
+        phone: phoneNumber,
+        location: dto.direccion,
+        clinicaId: clinica.id
+      });
 
       console.log('🔍 Creando usuario...');
       const user = await this.prisma.user.create({
@@ -138,11 +147,24 @@ export class PatientsService {
         message: 'Paciente creado exitosamente',
       };
     } catch (error) {
-      console.error('Error creando paciente:', error);
+      console.error('🚨 Error creando paciente:', error);
+      console.error('🚨 Error stack:', error.stack);
+      console.error('🚨 Error message:', error.message);
+      console.error('🚨 Error name:', error.name);
+      
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        console.error('🚨 Re-throwing known exception:', error);
         throw error;
       }
-      throw new BadRequestException('Error interno del servidor al crear paciente');
+      
+      // Si es un error de Prisma, capturar más detalles
+      if (error.code) {
+        console.error('🚨 Prisma error code:', error.code);
+        console.error('🚨 Prisma error meta:', error.meta);
+        throw new BadRequestException(`Error de base de datos: ${error.message}`);
+      }
+      
+      throw new BadRequestException(`Error interno del servidor al crear paciente: ${error.message}`);
     }
   }
 
