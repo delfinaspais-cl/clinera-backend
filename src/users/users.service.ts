@@ -5,7 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PermissionsService } from './services/permissions.service';
 import { MensapiIntegrationService } from './services/mensapi-integration.service';
-import { ExternalEmailService } from '../email/external-email.service';
+import { EmailService } from '../email/email.service';
 import { PasswordGenerator } from '../common/utils/password-generator';
 import * as bcrypt from 'bcrypt';
 
@@ -14,7 +14,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private mensapiIntegration: MensapiIntegrationService,
-    private externalEmailService: ExternalEmailService,
+    private emailService: EmailService,
   ) {}
 
   findAll() {
@@ -130,20 +130,20 @@ export class UsersService {
         }
       }
       
-      emailResult = await this.externalEmailService.sendWelcomeEmail({
-        to: createUserDto.email,
-        name: createUserDto.nombre,
-        email: createUserDto.email,
-        password: generatedPassword, // Enviar la contraseña en texto plano
-        role: createUserDto.tipo,
-        clinicaName: clinicaName,
-        clinicaUrl: clinicaUrl,
-      });
+      const emailSent = await this.emailService.sendWelcomeCredentialsEmail(
+        createUserDto.email,
+        generatedPassword,
+        createUserDto.nombre,
+        createUserDto.tipo,
+        clinicaName
+      );
 
-      if (emailResult.success) {
+      if (emailSent) {
         console.log(`✅ Email de bienvenida enviado exitosamente a ${createUserDto.email}`);
+        emailResult = { success: true };
       } else {
-        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}:`, emailResult.error);
+        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}`);
+        emailResult = { success: false, error: 'Error al enviar email' };
         // No lanzamos error para no interrumpir la creación del usuario
       }
     } catch (emailError) {
@@ -226,20 +226,20 @@ export class UsersService {
     try {
       console.log(`📧 Enviando email de bienvenida a ${createUserDto.email}...`);
       
-      emailResult = await this.externalEmailService.sendWelcomeEmail({
-        to: createUserDto.email,
-        name: createUserDto.nombre,
-        email: createUserDto.email,
-        password: generatedPassword, // Enviar la contraseña en texto plano
-        role: createUserDto.tipo,
-        clinicaName: clinica.name,
-        clinicaUrl: clinica.url,
-      });
+      const emailSent = await this.emailService.sendWelcomeCredentialsEmail(
+        createUserDto.email,
+        generatedPassword,
+        createUserDto.nombre,
+        createUserDto.tipo,
+        clinica.name
+      );
 
-      if (emailResult.success) {
+      if (emailSent) {
         console.log(`✅ Email de bienvenida enviado exitosamente a ${createUserDto.email}`);
+        emailResult = { success: true };
       } else {
-        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}:`, emailResult.error);
+        console.error(`❌ Error al enviar email de bienvenida a ${createUserDto.email}`);
+        emailResult = { success: false, error: 'Error al enviar email' };
         // No lanzamos error para no interrumpir la creación del usuario
       }
     } catch (emailError) {

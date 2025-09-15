@@ -1,18 +1,18 @@
 import { IsString, IsOptional, IsDateString, IsEmail, IsNotEmpty } from 'class-validator';
 
 export class CreatePatientDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
   // Campo alternativo para compatibilidad con frontend
   @IsOptional()
   @IsString()
   nombre?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  telefono: string;
+  telefono?: string;
 
   @IsNotEmpty()
   @IsEmail()

@@ -74,6 +74,11 @@ export class PatientsService {
         throw new BadRequestException('El nombre del paciente es requerido');
       }
 
+      // Validar que al menos uno de los campos de teléfono esté presente
+      if (!phoneNumber || phoneNumber.trim() === '') {
+        throw new BadRequestException('El teléfono del paciente es requerido');
+      }
+
       console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
 
       console.log('🔍 Creando usuario...');

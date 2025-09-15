@@ -44,7 +44,7 @@ export class PatientsController {
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async create(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Body() dto: any, // Usar any para evitar validación
+    @Body() dto: CreatePatientDto,
   ) {
     return this.patientsService.create(clinicaUrl, dto);
   }
