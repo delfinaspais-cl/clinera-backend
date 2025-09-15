@@ -9,8 +9,11 @@ import {
   Headers,
   Res,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ClinicasService } from '../clinicas/clinicas.service';
 import { CreateTurnoLandingDto } from './dto/create-turno-landing.dto';
 import { CreateClinicaPendienteDto } from './dto/create-clinica-pendiente.dto';
@@ -723,6 +726,72 @@ export class PublicController {
       }
       console.error('Error obteniendo profesional:', error);
       throw new BadRequestException('Error al obtener el profesional');
+    }
+  }
+
+  // ===== ENDPOINT PARA SERVIR ARCHIVOS ESTÁTICOS =====
+  
+  @Get('files/*')
+  async serveFile(@Param('0') filePath: string, @Res() res: Response) {
+    try {
+      // Construir la ruta completa del archivo
+      const fullPath = path.join(process.cwd(), 'uploads', filePath);
+      
+      // Verificar que el archivo existe
+      if (!fs.existsSync(fullPath)) {
+        throw new NotFoundException('Archivo no encontrado');
+      }
+      
+      // Verificar que es un archivo (no un directorio)
+      const stats = fs.statSync(fullPath);
+      if (!stats.isFile()) {
+        throw new NotFoundException('Archivo no encontrado');
+      }
+      
+      // Determinar el tipo de contenido basado en la extensión
+      const ext = path.extname(fullPath).toLowerCase();
+      let contentType = 'application/octet-stream';
+      
+      switch (ext) {
+        case '.pdf':
+          contentType = 'application/pdf';
+          break;
+        case '.doc':
+          contentType = 'application/msword';
+          break;
+        case '.docx':
+          contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        case '.jpg':
+        case '.jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case '.png':
+          contentType = 'image/png';
+          break;
+        case '.gif':
+          contentType = 'image/gif';
+          break;
+        case '.webp':
+          contentType = 'image/webp';
+          break;
+      }
+      
+      // Configurar headers
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', stats.size);
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache por 1 hora
+      
+      // Enviar el archivo
+      const fileStream = fs.createReadStream(fullPath);
+      fileStream.pipe(res);
+      
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error sirviendo archivo:', error);
+      throw new NotFoundException('Error al servir el archivo');
     }
   }
 }

@@ -76,7 +76,10 @@ export class StorageService {
 
   getFileUrl(url: string): string {
     // En producción, esto debería retornar una URL completa del CDN o servicio de almacenamiento
-    return `${process.env.API_BASE_URL || 'http://localhost:3000'}${url}`;
+    const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    // Remover el / del inicio de la URL si existe
+    const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return `${baseUrl}/api/public/files/${cleanUrl}`;
   }
 }
 

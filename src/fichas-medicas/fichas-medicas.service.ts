@@ -238,15 +238,36 @@ export class FichasMedicasService {
       });
     }
 
-    // Subir archivo al microservicio
-    const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
-    const uploadResult = await this.fileMicroserviceService.uploadFile({
-      file,
-      visibility: 'private', // Los archivos médicos son privados
-      scope,
-      conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
-      messageId: `archivo-${Date.now()}` // Generar un message_id único
-    }, userToken);
+    let uploadResult: any;
+    let useLocalStorage = false;
+
+    try {
+      // Intentar subir archivo al microservicio primero
+      const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
+      uploadResult = await this.fileMicroserviceService.uploadFile({
+        file,
+        visibility: 'private', // Los archivos médicos son privados
+        scope,
+        conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+        messageId: `archivo-${Date.now()}` // Generar un message_id único
+      }, userToken);
+      
+      console.log('✅ Archivo subido exitosamente al microservicio');
+    } catch (error) {
+      console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
+      useLocalStorage = true;
+      
+      // Usar almacenamiento local como respaldo
+      const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'archivos');
+      
+      uploadResult = {
+        id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        url: this.storageService.getFileUrl(localUploadResult.url),
+        nombre: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype
+      };
+    }
 
     // Guardar en base de datos
     const archivoMedico = await this.prisma.archivoMedico.create({
@@ -257,7 +278,7 @@ export class FichasMedicasService {
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
         url: uploadResult.url,
         tamañoBytes: BigInt(uploadResult.size),
-        microserviceFileId: uploadResult.id // Guardar el ID del microservicio
+        microserviceFileId: useLocalStorage ? null : uploadResult.id // Solo guardar ID del microservicio si se usó
       }
     });
 
@@ -265,7 +286,7 @@ export class FichasMedicasService {
       id: archivoMedico.id,
       nombre: archivoMedico.nombre,
       tipo: archivoMedico.tipo,
-      url: uploadResult.url, // Usar la URL del microservicio directamente
+      url: uploadResult.url,
       fecha: archivoMedico.fechaSubida.toISOString().split('T')[0]
     };
   }
@@ -319,15 +340,36 @@ export class FichasMedicasService {
       });
     }
 
-    // Subir imagen al microservicio
-    const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
-    const uploadResult = await this.fileMicroserviceService.uploadFile({
-      file,
-      visibility: 'private', // Las imágenes médicas son privadas
-      scope,
-      conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
-      messageId: `imagen-${Date.now()}` // Generar un message_id único
-    }, userToken);
+    let uploadResult: any;
+    let useLocalStorage = false;
+
+    try {
+      // Intentar subir imagen al microservicio primero
+      const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
+      uploadResult = await this.fileMicroserviceService.uploadFile({
+        file,
+        visibility: 'private', // Las imágenes médicas son privadas
+        scope,
+        conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+        messageId: `imagen-${Date.now()}` // Generar un message_id único
+      }, userToken);
+      
+      console.log('✅ Imagen subida exitosamente al microservicio');
+    } catch (error) {
+      console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
+      useLocalStorage = true;
+      
+      // Usar almacenamiento local como respaldo
+      const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'imagenes');
+      
+      uploadResult = {
+        id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        url: this.storageService.getFileUrl(localUploadResult.url),
+        nombre: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype
+      };
+    }
 
     // Guardar en base de datos
     const imagenMedica = await this.prisma.imagenMedica.create({
@@ -337,14 +379,14 @@ export class FichasMedicasService {
         nombreArchivo: uploadResult.nombre,
         url: uploadResult.url,
         tamañoBytes: BigInt(uploadResult.size),
-        microserviceFileId: uploadResult.id // Guardar el ID del microservicio
+        microserviceFileId: useLocalStorage ? null : uploadResult.id // Solo guardar ID del microservicio si se usó
       }
     });
 
     return {
       id: imagenMedica.id,
       nombre: imagenMedica.nombre,
-      url: uploadResult.url, // Usar la URL del microservicio directamente
+      url: uploadResult.url,
       fecha: imagenMedica.fechaSubida.toISOString().split('T')[0],
       descripcion: imagenMedica.descripcion || undefined
     };
