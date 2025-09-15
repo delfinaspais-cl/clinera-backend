@@ -5,9 +5,18 @@ import { ClinicasModule } from '../clinicas/clinicas.module';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProfessionalsModule } from '../professionals/professionals.module';
+import { PatientsModule } from '../patients/patients.module';
+import { TratamientosModule } from '../tratamientos/tratamientos.module';
 
 @Module({
-  imports: [ClinicasModule, AuthModule, PrismaModule, ProfessionalsModule],
+  imports: [
+    ClinicasModule, 
+    AuthModule, 
+    PrismaModule, 
+    ProfessionalsModule,
+    PatientsModule,
+    TratamientosModule,
+  ],
   controllers: [PublicController],
   providers: [PublicClinicasPendientesService],
 })

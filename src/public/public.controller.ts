@@ -20,6 +20,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProfessionalsService } from '../professionals/professionals.service';
 import { CreateProfessionalDto } from '../professionals/dto/create-professional.dto';
 import { UpdateProfessionalDto } from '../professionals/dto/update-professional.dto';
+import { PatientsService } from '../patients/patients.service';
+import { CreatePatientDto } from '../patients/dto/create-patient.dto';
+import { TratamientosService } from '../tratamientos/tratamientos.service';
 
 @Controller('public')
 export class PublicController {
@@ -29,6 +32,8 @@ export class PublicController {
     private readonly prisma: PrismaService,
     private readonly professionalsService: ProfessionalsService,
     private readonly publicClinicasPendientesService: PublicClinicasPendientesService,
+    private readonly patientsService: PatientsService,
+    private readonly tratamientosService: TratamientosService,
   ) {}
 
   // ===== ENDPOINT DE REDIRECCIÓN TEMPORAL =====
@@ -473,6 +478,324 @@ export class PublicController {
     } catch (error) {
       console.error('Error en registro temporal:', error);
       throw error;
+    }
+  }
+
+  // ===== ENDPOINTS PÚBLICOS PARA PACIENTES =====
+  
+  @Post('clinica/:clinicaUrl/pacientes')
+  async createPatientPublic(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreatePatientDto,
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Crear el paciente usando el servicio existente
+      const result = await this.patientsService.create(clinicaUrl, dto);
+
+      return {
+        success: true,
+        message: 'Paciente creado exitosamente',
+        data: result.data,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error creando paciente público:', error);
+      throw new BadRequestException('Error al crear el paciente');
+    }
+  }
+
+  // ===== ENDPOINTS PÚBLICOS PARA CITAS/TURNOS =====
+  
+  @Post('clinica/:clinicaUrl/citas')
+  async createAppointmentPublic(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: any,
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Validar campos requeridos
+      const requiredFields = ['nombre', 'email', 'fecha', 'hora'];
+      const missingFields = requiredFields.filter(field => !dto[field]);
+      
+      if (missingFields.length > 0) {
+        throw new BadRequestException(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+      }
+
+      // Crear el turno
+      const turno = await this.prisma.turno.create({
+        data: {
+          paciente: dto.nombre,
+          email: dto.email,
+          telefono: dto.telefono || '',
+          doctor: dto.profesional || 'Por asignar',
+          fecha: new Date(dto.fecha),
+          hora: dto.hora,
+          motivo: dto.motivo || 'Consulta',
+          clinicaId: clinica.id,
+          estado: 'pendiente',
+        },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      // Crear notificación para la clínica
+      await this.prisma.notificacion.create({
+        data: {
+          titulo: 'Nueva cita solicitada',
+          mensaje: `Se ha solicitado una nueva cita para ${dto.nombre} el ${dto.fecha} a las ${dto.hora}`,
+          tipo: 'info',
+          prioridad: 'media',
+          clinicaId: clinica.id,
+        },
+      });
+
+      return {
+        success: true,
+        data: turno,
+        message: 'Cita creada exitosamente. Nos pondremos en contacto contigo pronto.',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error creando cita pública:', error);
+      throw new BadRequestException('Error al crear la cita');
+    }
+  }
+
+  // ===== ENDPOINTS PÚBLICOS PARA SUCURSALES (CLÍNICAS) =====
+  
+  @Get('clinica/:clinicaUrl/sucursales')
+  async getBranchesPublic(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Por ahora, retornamos la clínica principal como única sucursal
+      // En el futuro se puede expandir para manejar múltiples sucursales
+      return {
+        success: true,
+        data: [{
+          id: clinica.id,
+          nombre: clinica.name,
+          direccion: clinica.address,
+          telefono: clinica.phone,
+          email: clinica.email,
+          url: clinica.url,
+          colorPrimario: clinica.colorPrimario,
+          colorSecundario: clinica.colorSecundario,
+        }],
+        message: 'Sucursales obtenidas exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo sucursales:', error);
+      throw new BadRequestException('Error al obtener las sucursales');
+    }
+  }
+
+  // ===== ENDPOINTS PÚBLICOS PARA TRATAMIENTOS =====
+  
+  @Get('clinica/:clinicaUrl/tratamientos')
+  async getTreatmentsPublic(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Obtener tratamientos de la clínica
+      const tratamientos = await this.prisma.tratamiento.findMany({
+        where: {
+          clinicaId: clinica.id,
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      return {
+        success: true,
+        data: tratamientos,
+        message: 'Tratamientos obtenidos exitosamente',
+        total: tratamientos.length,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo tratamientos:', error);
+      throw new BadRequestException('Error al obtener los tratamientos');
+    }
+  }
+
+  // ===== ENDPOINTS PÚBLICOS PARA PROFESIONALES =====
+  
+  @Get('clinica/:clinicaUrl/profesionales')
+  async getProfessionalsPublic(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Obtener profesionales de la clínica
+      const professionals = await this.prisma.professional.findMany({
+        where: {
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return {
+        success: true,
+        data: professionals,
+        message: 'Profesionales obtenidos exitosamente',
+        total: professionals.length,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo profesionales:', error);
+      throw new BadRequestException('Error al obtener los profesionales');
+    }
+  }
+
+  @Get('clinica/:clinicaUrl/profesionales/:id')
+  async getProfessionalPublic(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') professionalId: string,
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Obtener el profesional específico
+      const professional = await this.prisma.professional.findFirst({
+        where: {
+          id: professionalId,
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+            },
+          },
+        },
+      });
+
+      if (!professional) {
+        throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
+      }
+
+      return {
+        success: true,
+        data: professional,
+        message: 'Profesional obtenido exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo profesional:', error);
+      throw new BadRequestException('Error al obtener el profesional');
     }
   }
 }
