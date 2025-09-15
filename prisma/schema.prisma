@@ -515,16 +515,17 @@ model FichaMedicaArchivo {
 }
 
 model ArchivoMedico {
-  id            String   @id @default(cuid())
-  fichaMedicaId String
-  nombre        String
-  nombreArchivo String
-  tipo          String // 'pdf', 'doc', 'docx'
-  url           String
-  tamañoBytes  BigInt?
-  fechaSubida   DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  fichaMedicaId        String
+  nombre               String
+  nombreArchivo        String
+  tipo                 String // 'pdf', 'doc', 'docx'
+  url                  String
+  tamañoBytes         BigInt?
+  microserviceFileId  String? // ID del archivo en el microservicio
+  fechaSubida          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   fichaMedica FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
@@ -532,16 +533,17 @@ model ArchivoMedico {
 }
 
 model ImagenMedica {
-  id            String   @id @default(cuid())
-  fichaMedicaId String
-  nombre        String
-  nombreArchivo String
-  url           String
-  descripcion   String?
-  tamañoBytes  BigInt?
-  fechaSubida   DateTime @default(now())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  fichaMedicaId        String
+  nombre               String
+  nombreArchivo        String
+  url                  String
+  descripcion          String?
+  tamañoBytes         BigInt?
+  microserviceFileId  String? // ID del archivo en el microservicio
+  fechaSubida          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   fichaMedica FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './services/storage.service';
+import { FileMicroserviceService } from './services/file-microservice.service';
 import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto } from './dto/ficha-medica.dto';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class FichasMedicasService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly fileMicroserviceService: FileMicroserviceService,
   ) {}
 
   async getFichaMedica(clinicaUrl: string, pacienteId: string): Promise<FichaMedicaResponseDto> {
@@ -209,8 +211,14 @@ export class FichasMedicasService {
 
     // Validar tipo de archivo
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(file.mimetype)) {
+    if (!this.fileMicroserviceService.validateFileType(file, allowedTypes)) {
       throw new BadRequestException('Tipo de archivo no permitido');
+    }
+
+    // Validar tamaño del archivo (10MB máximo)
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (!this.fileMicroserviceService.validateFileSize(file, maxSizeBytes)) {
+      throw new BadRequestException('El archivo es demasiado grande. Máximo 10MB');
     }
 
     // Obtener o crear ficha médica
@@ -227,18 +235,26 @@ export class FichasMedicasService {
       });
     }
 
-    // Subir archivo
-    const uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'archivos');
+    // Subir archivo al microservicio
+    const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
+    const uploadResult = await this.fileMicroserviceService.uploadFile({
+      file,
+      visibility: 'private', // Los archivos médicos son privados
+      scope,
+      conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+      messageId: `archivo-${Date.now()}` // Generar un message_id único
+    });
 
     // Guardar en base de datos
     const archivoMedico = await this.prisma.archivoMedico.create({
       data: {
         fichaMedicaId: fichaMedica.id,
-        nombre: file.originalname,
-        nombreArchivo: uploadResult.nombreArchivo,
+        nombre: uploadResult.nombre,
+        nombreArchivo: uploadResult.nombre,
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
         url: uploadResult.url,
-        tamañoBytes: BigInt(file.size)
+        tamañoBytes: BigInt(uploadResult.size),
+        microserviceFileId: uploadResult.id // Guardar el ID del microservicio
       }
     });
 
@@ -246,7 +262,7 @@ export class FichasMedicasService {
       id: archivoMedico.id,
       nombre: archivoMedico.nombre,
       tipo: archivoMedico.tipo,
-      url: this.storageService.getFileUrl(archivoMedico.url),
+      url: uploadResult.url, // Usar la URL del microservicio directamente
       fecha: archivoMedico.fechaSubida.toISOString().split('T')[0]
     };
   }
@@ -275,8 +291,15 @@ export class FichasMedicasService {
     }
 
     // Validar tipo de imagen
-    if (!file.mimetype.startsWith('image/')) {
-      throw new BadRequestException('El archivo debe ser una imagen');
+    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!this.fileMicroserviceService.validateFileType(file, allowedImageTypes)) {
+      throw new BadRequestException('El archivo debe ser una imagen válida (JPEG, PNG, GIF, WebP)');
+    }
+
+    // Validar tamaño del archivo (10MB máximo)
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (!this.fileMicroserviceService.validateFileSize(file, maxSizeBytes)) {
+      throw new BadRequestException('La imagen es demasiado grande. Máximo 10MB');
     }
 
     // Obtener o crear ficha médica
@@ -293,24 +316,32 @@ export class FichasMedicasService {
       });
     }
 
-    // Subir imagen
-    const uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'imagenes');
+    // Subir imagen al microservicio
+    const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
+    const uploadResult = await this.fileMicroserviceService.uploadFile({
+      file,
+      visibility: 'private', // Las imágenes médicas son privadas
+      scope,
+      conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+      messageId: `imagen-${Date.now()}` // Generar un message_id único
+    });
 
     // Guardar en base de datos
     const imagenMedica = await this.prisma.imagenMedica.create({
       data: {
         fichaMedicaId: fichaMedica.id,
-        nombre: file.originalname,
-        nombreArchivo: uploadResult.nombreArchivo,
+        nombre: uploadResult.nombre,
+        nombreArchivo: uploadResult.nombre,
         url: uploadResult.url,
-        tamañoBytes: BigInt(file.size)
+        tamañoBytes: BigInt(uploadResult.size),
+        microserviceFileId: uploadResult.id // Guardar el ID del microservicio
       }
     });
 
     return {
       id: imagenMedica.id,
       nombre: imagenMedica.nombre,
-      url: this.storageService.getFileUrl(imagenMedica.url),
+      url: uploadResult.url, // Usar la URL del microservicio directamente
       fecha: imagenMedica.fechaSubida.toISOString().split('T')[0],
       descripcion: imagenMedica.descripcion || undefined
     };
@@ -353,8 +384,18 @@ export class FichasMedicasService {
       throw new NotFoundException('Archivo no encontrado');
     }
 
-    // Eliminar de almacenamiento
-    await this.storageService.deleteFile(archivo.url);
+    // Eliminar del microservicio si tiene microserviceFileId
+    if (archivo.microserviceFileId) {
+      try {
+        await this.fileMicroserviceService.deleteFile(archivo.microserviceFileId);
+      } catch (error) {
+        console.warn('Error eliminando archivo del microservicio:', error);
+        // Continuar con la eliminación de la base de datos aunque falle el microservicio
+      }
+    } else {
+      // Fallback: eliminar del almacenamiento local si no tiene microserviceFileId
+      await this.storageService.deleteFile(archivo.url);
+    }
 
     // Eliminar de base de datos
     await this.prisma.archivoMedico.delete({
@@ -404,8 +445,18 @@ export class FichasMedicasService {
       throw new NotFoundException('Imagen no encontrada');
     }
 
-    // Eliminar de almacenamiento
-    await this.storageService.deleteFile(imagen.url);
+    // Eliminar del microservicio si tiene microserviceFileId
+    if (imagen.microserviceFileId) {
+      try {
+        await this.fileMicroserviceService.deleteFile(imagen.microserviceFileId);
+      } catch (error) {
+        console.warn('Error eliminando imagen del microservicio:', error);
+        // Continuar con la eliminación de la base de datos aunque falle el microservicio
+      }
+    } else {
+      // Fallback: eliminar del almacenamiento local si no tiene microserviceFileId
+      await this.storageService.deleteFile(imagen.url);
+    }
 
     // Eliminar de base de datos
     await this.prisma.imagenMedica.delete({

@@ -4,6 +4,7 @@ import { FichasMedicasService } from './fichas-medicas.service';
 import { FichasMedicasHistorialController, FichasMedicasGlobalController } from './fichas-medicas-historial.controller';
 import { FichasMedicasHistorialService } from './fichas-medicas-historial.service';
 import { StorageService } from './services/storage.service';
+import { FileMicroserviceService } from './services/file-microservice.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
@@ -16,7 +17,8 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [
     FichasMedicasService,
     FichasMedicasHistorialService,
-    StorageService
+    StorageService,
+    FileMicroserviceService
   ],
   exports: [
     FichasMedicasService,
