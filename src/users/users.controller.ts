@@ -6,6 +6,7 @@ import {
   Patch,
   Body,
   Post,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/jwt.auth.guard';
