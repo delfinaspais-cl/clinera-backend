@@ -93,4 +93,21 @@ export class UsersController {
   async findAllPatients() {
     return this.usersService.findPatients();
   }
+
+  // Endpoint público para crear usuario ADMIN (sin autenticación)
+  @Post('admin')
+  async createAdminUser(@Body() createUserDto: CreateUserDto & { clinicaId: string }) {
+    console.log('🔓 Creando usuario ADMIN (endpoint público)');
+    console.log('Datos recibidos:', JSON.stringify(createUserDto, null, 2));
+    
+    // Validar que se proporcione clinicaId
+    if (!createUserDto.clinicaId) {
+      throw new BadRequestException('clinicaId es requerido para crear usuario ADMIN');
+    }
+    
+    // Forzar el tipo a ADMIN
+    createUserDto.tipo = 'ADMIN' as any;
+    
+    return this.usersService.createUser(createUserDto, createUserDto.clinicaId);
+  }
 }
