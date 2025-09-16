@@ -25,7 +25,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       return user;
     }
@@ -117,7 +117,7 @@ export class AuthService {
       console.log('Owner login DTO:', dto); // Debug log
 
       // Buscar usuario por username (que será el email para owners)
-      const user = await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findFirst({
         where: { email: dto.username },
       });
 
@@ -269,8 +269,8 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     try {
       // Buscar usuario por email
-      const user = await this.prisma.user.findUnique({
-        where: { email: dto.email },
+      const user = await this.prisma.user.findFirst({
+          where: { email: dto.email },
       });
 
       if (!user) {
@@ -341,8 +341,8 @@ export class AuthService {
       }
 
       // Buscar usuario
-      const user = await this.prisma.user.findUnique({
-        where: { email: resetToken.email },
+      const user = await this.prisma.user.findFirst({
+          where: { email: resetToken.email },
       });
 
       if (!user) {
@@ -384,8 +384,8 @@ export class AuthService {
   async changePassword(dto: ChangePasswordDto) {
     try {
       // Buscar usuario por email
-      const user = await this.prisma.user.findUnique({
-        where: { email: dto.email },
+      const user = await this.prisma.user.findFirst({
+          where: { email: dto.email },
       });
 
       if (!user) {
@@ -466,7 +466,7 @@ export class AuthService {
   }
 
   async validateEmail(email: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: { email },
     });
     return { available: !user };

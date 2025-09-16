@@ -67,7 +67,7 @@ export class OwnersService {
     const urlNormalizada = dto.url.toLowerCase();
     
     // Verificar que la URL no exista
-    const existingClinica = await this.prisma.clinica.findUnique({
+    const existingClinica = await this.prisma.clinica.findFirst({
       where: { url: urlNormalizada },
     });
 
@@ -77,7 +77,7 @@ export class OwnersService {
 
     // Verificar que el email no exista
     if (dto.email) {
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: dto.email },
       });
 
@@ -177,7 +177,7 @@ export class OwnersService {
       }
     }
 
-    const clinicaConRelaciones = await this.prisma.clinica.findUnique({
+    const clinicaConRelaciones = await this.prisma.clinica.findFirst({
       where: { id: clinica.id },
       include: { especialidades: true, horarios: true },
     });
@@ -212,7 +212,7 @@ export class OwnersService {
   async updateClinica(clinicaId: string, dto: UpdateClinicaDto) {
     try {
       // Verificar si la clínica existe
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 
@@ -281,7 +281,7 @@ export class OwnersService {
       }
 
       // Devolver clínica actualizada con relaciones
-      const clinicaActualizada = await this.prisma.clinica.findUnique({
+      const clinicaActualizada = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
         include: {
           especialidades: true,
@@ -302,7 +302,7 @@ export class OwnersService {
   async sendMensaje(clinicaId: string, dto: SendMensajeDto) {
     try {
       // Verificar si la clínica existe
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 
@@ -424,13 +424,13 @@ export class OwnersService {
     try {
       // Si se especifica una clínica, verificar que existe (por ID o URL)
       if (dto.clinicaId) {
-        let clinica = await this.prisma.clinica.findUnique({
+        let clinica = await this.prisma.clinica.findFirst({
           where: { id: dto.clinicaId },
         });
 
         // Si no se encuentra por ID, intentar buscar por URL
         if (!clinica) {
-          clinica = await this.prisma.clinica.findUnique({
+          clinica = await this.prisma.clinica.findFirst({
             where: { url: dto.clinicaId },
           });
         }
@@ -677,7 +677,7 @@ export class OwnersService {
   async getAdminCredentials(clinicaId: string) {
     try {
       // Buscar la clínica
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 
@@ -722,7 +722,7 @@ export class OwnersService {
   async resetAdminPassword(clinicaId: string) {
     try {
       // Buscar la clínica
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 
@@ -789,7 +789,7 @@ export class OwnersService {
       }
 
       // Verificar si la URL ya existe
-      const existingClinica = await this.prisma.clinica.findUnique({
+      const existingClinica = await this.prisma.clinica.findFirst({
         where: { url },
       });
 
@@ -819,7 +819,7 @@ export class OwnersService {
       }
 
       // Verificar si el email ya existe
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email },
       });
 
@@ -842,7 +842,7 @@ export class OwnersService {
       console.log('🔍 Iniciando borrado de clínica:', clinicaId);
 
       // Verificar que la clínica existe
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 
@@ -1134,13 +1134,13 @@ export class OwnersService {
   async getConversationMessages(clinicaIdOrUrl: string) {
     try {
       // Primero intentar buscar por ID
-      let clinica = await this.prisma.clinica.findUnique({
+      let clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaIdOrUrl },
       });
 
       // Si no se encuentra por ID, intentar buscar por URL
       if (!clinica) {
-        clinica = await this.prisma.clinica.findUnique({
+        clinica = await this.prisma.clinica.findFirst({
           where: { url: clinicaIdOrUrl },
         });
       }
@@ -1175,13 +1175,13 @@ export class OwnersService {
   async sendMessageToConversation(clinicaIdOrUrl: string, dto: SendMensajeDto) {
     try {
       // Primero intentar buscar por ID
-      let clinica = await this.prisma.clinica.findUnique({
+      let clinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaIdOrUrl },
       });
 
       // Si no se encuentra por ID, intentar buscar por URL
       if (!clinica) {
-        clinica = await this.prisma.clinica.findUnique({
+        clinica = await this.prisma.clinica.findFirst({
           where: { url: clinicaIdOrUrl },
         });
       }
@@ -1342,7 +1342,7 @@ export class OwnersService {
       const urlNormalizada = dto.url.toLowerCase();
       
       // Verificar que la URL no exista
-      const existingClinica = await this.prisma.clinica.findUnique({
+      const existingClinica = await this.prisma.clinica.findFirst({
         where: { url: urlNormalizada },
       });
 
@@ -1352,7 +1352,7 @@ export class OwnersService {
 
       // Verificar que el email no exista
       if (dto.email) {
-        const existingUser = await this.prisma.user.findUnique({
+        const existingUser = await this.prisma.user.findFirst({
           where: { email: dto.email },
         });
 
@@ -1420,7 +1420,7 @@ export class OwnersService {
   async updateClinicaEstado(clinicaId: string, estado: 'activo' | 'inactiva') {
     try {
       // Verificar que la clínica existe
-      const existingClinica = await this.prisma.clinica.findUnique({
+      const existingClinica = await this.prisma.clinica.findFirst({
         where: { id: clinicaId },
       });
 

@@ -33,7 +33,7 @@ async function main() {
 
   // Crear usuario de prueba (OWNER)
   const testUser = await prisma.user.upsert({
-    where: { email: 'test@example.com' },
+    where: { id: 'test-user-id' },
     update: {},
     create: {
       name: 'Test Owner',

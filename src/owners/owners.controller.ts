@@ -379,10 +379,16 @@ export class OwnersController {
     });
 
     // Actualizar el usuario con la clínica
-    await this.prisma.user.update({
+    const userToUpdate = await this.prisma.user.findFirst({
       where: { email: admin.email },
-      data: { clinicaId: clinicaCreada.clinica.id },
     });
+    
+    if (userToUpdate) {
+      await this.prisma.user.update({
+        where: { id: userToUpdate.id },
+        data: { clinicaId: clinicaCreada.clinica.id },
+      });
+    }
 
     return {
       success: true,

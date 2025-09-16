@@ -47,7 +47,7 @@ async function main() {
   for (const role of roles) {
     for (let i = 1; i <= 2; i++) {
       await prisma.user.upsert({
-        where: { email: `${role.toLowerCase()}${i}@clinera.io` },
+        where: { id: `${role.toLowerCase()}${i}-user-id` },
         update: {},
         create: {
           email: `${role.toLowerCase()}${i}@clinera.io`,
@@ -67,7 +67,7 @@ async function main() {
   // 5. Crea usuarios OWNER (sin clinicaId)
   for (let i = 1; i <= 2; i++) {
     await prisma.user.upsert({
-      where: { email: `owner${i}@clinera.io` },
+      where: { id: `owner${i}-user-id` },
       update: {},
       create: {
         email: `owner${i}@clinera.io`,

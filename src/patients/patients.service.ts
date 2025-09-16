@@ -14,7 +14,7 @@ export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({
+    const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl },
       include: {
         especialidades: true,
@@ -39,7 +39,7 @@ export class PatientsService {
       console.log('🔍 Tipo de datos DTO:', typeof dto);
       console.log('🔍 Claves del DTO:', Object.keys(dto));
       
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
       
@@ -61,12 +61,10 @@ export class PatientsService {
       const password = this.generateRandomPassword();
 
       // Verificar si ya existe un usuario con ese email en esta clínica
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { 
-          unique_email_per_clinic: {
-            email: dto.email,
-            clinicaId: clinica.id
-          }
+          email: dto.email,
+          clinicaId: clinica.id
         },
       });
 
@@ -174,7 +172,7 @@ export class PatientsService {
   }
 
   async findOne(clinicaUrl: string, id: string) {
-    const paciente = await this.prisma.patient.findUnique({
+    const paciente = await this.prisma.patient.findFirst({
       where: { id },
       include: { user: true },
     });
@@ -185,7 +183,7 @@ export class PatientsService {
   }
 
   async update(clinicaUrl: string, id: string, dto: UpdatePatientDto) {
-    const clinica = await this.prisma.clinica.findUnique({
+    const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl },
     });
 
@@ -204,7 +202,7 @@ export class PatientsService {
       console.log('🔍 Actualizando paciente para clínica:', clinicaUrl);
       console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
       
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
       
@@ -212,7 +210,7 @@ export class PatientsService {
       if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
       // Buscar el paciente existente
-      const existingPatient = await this.prisma.patient.findUnique({
+      const existingPatient = await this.prisma.patient.findFirst({
         where: { id },
         include: { user: true },
       });
@@ -300,7 +298,7 @@ export class PatientsService {
   }
 
   async remove(clinicaUrl: string, id: string) {
-    const clinica = await this.prisma.clinica.findUnique({
+    const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl },
     });
 
@@ -338,14 +336,22 @@ export class PatientsService {
   }
 
   async getMisTurnos(email: string) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findFirst({
       where: { email },
       include: {
         patient: true,
       },
     });
 
-    if (!user || !user.patient) {
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    const patient = await this.prisma.patient.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (!patient) {
       throw new Error('Paciente no encontrado');
     }
 
@@ -363,7 +369,7 @@ export class PatientsService {
   async searchPatients(clinicaUrl: string, searchDto: SearchPatientsDto) {
     try {
       // Buscar la clínica por URL
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 

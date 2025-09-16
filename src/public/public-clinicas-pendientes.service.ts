@@ -13,7 +13,7 @@ export class PublicClinicasPendientesService {
       const urlNormalizada = dto.url.toLowerCase();
       
       // Verificar que la URL no exista
-      const existingClinica = await this.prisma.clinica.findUnique({
+      const existingClinica = await this.prisma.clinica.findFirst({
         where: { url: urlNormalizada },
       });
 
@@ -23,7 +23,7 @@ export class PublicClinicasPendientesService {
 
       // Verificar que el email no exista
       if (dto.email) {
-        const existingUser = await this.prisma.user.findUnique({
+        const existingUser = await this.prisma.user.findFirst({
           where: { email: dto.email },
         });
 
@@ -34,7 +34,7 @@ export class PublicClinicasPendientesService {
 
       // Verificar que el email del admin no exista
       if (dto.admin?.email) {
-        const existingAdminUser = await this.prisma.user.findUnique({
+        const existingAdminUser = await this.prisma.user.findFirst({
           where: { email: dto.admin.email },
         });
 

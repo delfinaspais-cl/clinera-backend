@@ -178,7 +178,7 @@ export class PublicController {
   ) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -229,7 +229,7 @@ export class PublicController {
   ) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -290,7 +290,7 @@ export class PublicController {
   async getProfessionalsFromLanding(@Param('clinicaUrl') clinicaUrl: string) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -354,7 +354,7 @@ export class PublicController {
   @Get('clinica/:clinicaUrl/debug-users')
   async debugUsers(@Param('clinicaUrl') clinicaUrl: string) {
     try {
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
         include: {
           users: {
@@ -412,7 +412,7 @@ export class PublicController {
       }
 
       // Verificar si la URL de clínica ya existe
-      const existingClinica = await this.prisma.clinica.findUnique({
+      const existingClinica = await this.prisma.clinica.findFirst({
         where: { url: clinica.url },
       });
 
@@ -421,7 +421,7 @@ export class PublicController {
       }
 
       // Verificar si el email del admin ya existe
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: admin.email },
       });
 
@@ -465,10 +465,16 @@ export class PublicController {
       });
 
       // Actualizar el usuario con la clínica
-      await this.prisma.user.update({
+      const userToUpdate = await this.prisma.user.findFirst({
         where: { email: admin.email },
-        data: { clinicaId: clinicaCreada.id },
       });
+      
+      if (userToUpdate) {
+        await this.prisma.user.update({
+          where: { id: userToUpdate.id },
+          data: { clinicaId: clinicaCreada.id },
+        });
+      }
 
       return {
         success: true,
@@ -503,7 +509,7 @@ export class PublicController {
   ) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -546,7 +552,7 @@ export class PublicController {
   ) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -591,7 +597,7 @@ export class PublicController {
   async getBranchesPublic(@Param('clinicaUrl') clinicaUrl: string) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -665,7 +671,7 @@ export class PublicController {
   async getTreatmentsPublic(@Param('clinicaUrl') clinicaUrl: string) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -708,7 +714,7 @@ export class PublicController {
   async getProfessionalsPublic(@Param('clinicaUrl') clinicaUrl: string) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
@@ -776,7 +782,7 @@ export class PublicController {
   ) {
     try {
       // Verificar que la clínica existe y está activa
-      const clinica = await this.prisma.clinica.findUnique({
+      const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
       });
 
