@@ -4,11 +4,13 @@ import { ProfessionalsController } from './professionals.controller';
 import { SucursalesController } from './sucursales.controller';
 // import { TratamientosController } from './tratamientos.controller'; // Removido - usando el nuevo módulo
 import { PrismaModule } from '../prisma/prisma.module';
+import { EmailService } from '../email/email.service';
+import { MensapiIntegrationService } from '../users/services/mensapi-integration.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [ProfessionalsController, SucursalesController], // TratamientosController removido
-  providers: [ProfessionalsService],
+  providers: [ProfessionalsService, EmailService, MensapiIntegrationService],
   exports: [ProfessionalsService], // Exportar el servicio para que otros módulos puedan usarlo
 })
 export class ProfessionalsModule {}

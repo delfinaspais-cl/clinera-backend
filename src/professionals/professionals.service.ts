@@ -2,11 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
+import { EmailService } from '../email/email.service';
+import { MensapiIntegrationService } from '../users/services/mensapi-integration.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ProfessionalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private mensapiIntegration: MensapiIntegrationService,
+  ) {}
 
   async findAll(clinicaUrl: string) {
     const clinica = await this.prisma.clinica.findUnique({
@@ -146,6 +152,49 @@ export class ProfessionalsService {
       });
 
       console.log('✅ Profesional creado:', professional.id);
+
+      // Enviar email de bienvenida con credenciales
+      let emailResult: { success: boolean; error?: string } = { success: false, error: 'No se intentó enviar' };
+      try {
+        console.log(`📧 Enviando email de bienvenida a ${dto.email}...`);
+        
+        const emailSent = await this.emailService.sendWelcomeCredentialsEmail(
+          dto.email,
+          dto.password, // Usar la contraseña original (antes del hash)
+          dto.name,
+          'PROFESSIONAL',
+          clinica.name
+        );
+
+        if (emailSent) {
+          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email}`);
+          emailResult = { success: true };
+        } else {
+          console.error(`❌ Error al enviar email de bienvenida a ${dto.email}`);
+          emailResult = { success: false, error: 'Error al enviar email' };
+        }
+      } catch (emailError) {
+        console.error(`❌ Error inesperado al enviar email de bienvenida a ${dto.email}:`, emailError);
+        emailResult = { success: false, error: emailError.message || 'Error inesperado' };
+      }
+
+      // Intentar registrar el usuario en mensapi (no bloquea si falla)
+      let mensapiResult: any = null;
+      try {
+        console.log(`📱 Registrando usuario en MensAPI: ${dto.email}...`);
+        mensapiResult = await this.mensapiIntegration.registerUser({
+          name: dto.name,
+          email: dto.email,
+          password: dto.password, // Usar la contraseña original (antes del hash)
+          phone: dto.phone,
+        }, clinica.mensapiServiceEmail || undefined, clinica.mensapiServicePassword || undefined);
+        
+        if (mensapiResult) {
+          console.log(`✅ Usuario registrado exitosamente en MensAPI: ${dto.email}`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Error registrando usuario en MensAPI:', error.message);
+      }
 
       // Asignar especialidades si se proporcionan
       if (dto.specialties && dto.specialties.length > 0) {
@@ -301,6 +350,17 @@ export class ProfessionalsService {
         success: true,
         data: response,
         message: 'Profesional creado exitosamente',
+        emailEnviado: emailResult.success,
+        fechaEmailEnviado: emailResult.success ? new Date().toISOString() : null,
+        emailError: emailResult.error,
+        mensapi: mensapiResult ? {
+          registered: true,
+          accessToken: mensapiResult.content?.accessToken,
+          refreshToken: mensapiResult.content?.refreshToken,
+        } : {
+          registered: false,
+          error: 'No se pudo registrar en MensAPI',
+        },
       };
       
     } catch (error) {
