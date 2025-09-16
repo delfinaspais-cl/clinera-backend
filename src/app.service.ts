@@ -6,7 +6,7 @@ export class AppService {
     return 'Clinera API is running!';
   }
 
-  healthCheck(): { status: string; timestamp: string } {
+  healthCheck(): { status: string; timestamp: string } { 
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
