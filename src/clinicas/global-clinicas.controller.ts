@@ -119,13 +119,10 @@ export class GlobalClinicasController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Crear nueva clínica' })
+  @ApiOperation({ summary: 'Crear nueva clínica (PÚBLICO)' })
   @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 401, description: 'Token requerido o inválido' })
-  async create(@Body() createClinicaDto: any, @Request() req) {
+  async create(@Body() createClinicaDto: any) {
     try {
       // Validar schema esperado por frontend
       const requiredFields = ['name', 'url', 'email', 'colorPrimario', 'colorSecundario'];
@@ -135,10 +132,7 @@ export class GlobalClinicasController {
         throw new BadRequestException(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
       }
 
-      // Validar que el usuario sea OWNER
-      if (req.user.role !== 'OWNER') {
-        throw new BadRequestException('Solo los propietarios pueden crear clínicas');
-      }
+      // Ya no validamos que el usuario sea OWNER - endpoint público
 
       // Crear la clínica
       const clinica = await this.prisma.clinica.create({
