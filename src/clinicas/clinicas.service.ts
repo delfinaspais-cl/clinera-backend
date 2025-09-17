@@ -3057,8 +3057,12 @@ export class ClinicasService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
+    console.log('🔧 ClinicasService: Iniciando creación de clínica');
+    console.log('🔧 ClinicasService: DTO recibido:', dto);
+    
     // Convertir URL a minúsculas para consistencia
     const urlNormalizada = dto.url.toLowerCase();
+    console.log('🔧 ClinicasService: URL normalizada:', urlNormalizada);
     
     // Verificar que la URL no exista
     const existingClinica = await this.prisma.clinica.findUnique({

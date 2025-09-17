@@ -53,7 +53,15 @@ export class ClinicasController {
   @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
   @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
   async createClinica(@Body() dto: CreateClinicaDto) {
-    return this.clinicasService.createClinica(dto);
+    try {
+      console.log('🏥 Creando clínica con datos:', dto);
+      const result = await this.clinicasService.createClinica(dto);
+      console.log('✅ Clínica creada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al crear clínica:', error);
+      throw error;
+    }
   }
 
   @Get(':clinicaUrl/usuarios')
