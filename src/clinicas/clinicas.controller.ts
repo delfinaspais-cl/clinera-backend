@@ -48,13 +48,40 @@ export class ClinicasController {
     private emailService: EmailService,
   ) {}
 
-  // Endpoint público para crear clínicas
+  // Endpoint de prueba simple
+  @Post('test')
+  @ApiOperation({ summary: 'Endpoint de prueba' })
+  async testEndpoint() {
+    return { message: 'Endpoint funcionando correctamente', timestamp: new Date().toISOString() };
+  }
+
+  // Endpoint público para crear clínicas (versión simplificada)
   @Post()
   @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
   @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
-  async createClinica(@Body() dto: CreateClinicaDto) {
+  async createClinica(@Body() body: any) {
     try {
-      console.log('🏥 Creando clínica con datos:', dto);
+      console.log('🏥 Creando clínica con datos:', body);
+      
+      // Validación manual básica
+      if (!body.nombre || !body.url || !body.email || !body.password) {
+        throw new BadRequestException('Faltan campos requeridos: nombre, url, email, password');
+      }
+
+      // Crear DTO manualmente
+      const dto: CreateClinicaDto = {
+        nombre: body.nombre,
+        url: body.url,
+        email: body.email,
+        password: body.password,
+        direccion: body.direccion || '',
+        telefono: body.telefono || '',
+        descripcion: body.descripcion || '',
+        colorPrimario: body.colorPrimario || '#3B82F6',
+        colorSecundario: body.colorSecundario || '#1E40AF',
+        estado: body.estado || 'activa'
+      };
+
       const result = await this.clinicasService.createClinica(dto);
       console.log('✅ Clínica creada exitosamente:', result);
       return result;
