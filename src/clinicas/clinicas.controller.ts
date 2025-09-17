@@ -38,6 +38,7 @@ import { TurnosStatsDto, TurnosStatsResponseDto } from './dto/turnos-stats.dto';
 import { DashboardVentasResponseDto } from './dto/dashboard-ventas.dto';
 import { EmailService } from '../email/email.service';
 import { SendEmailDto } from '../turnos/dto/send-email.dto';
+import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -46,6 +47,14 @@ export class ClinicasController {
     private clinicasService: ClinicasService,
     private emailService: EmailService,
   ) {}
+
+  // Endpoint público para crear clínicas
+  @Post()
+  @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
+  @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
+  async createClinica(@Body() dto: CreateClinicaDto) {
+    return this.clinicasService.createClinica(dto);
+  }
 
   @Get(':clinicaUrl/usuarios')
   @UseGuards(JwtAuthGuard)
