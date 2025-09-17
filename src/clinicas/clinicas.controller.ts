@@ -39,6 +39,7 @@ import { DashboardVentasResponseDto } from './dto/dashboard-ventas.dto';
 import { EmailService } from '../email/email.service';
 import { SendEmailDto } from '../turnos/dto/send-email.dto';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
+import { OwnersService } from '../owners/owners.service';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -46,6 +47,7 @@ export class ClinicasController {
   constructor(
     private clinicasService: ClinicasService,
     private emailService: EmailService,
+    private ownersService: OwnersService,
   ) {}
 
   // Endpoint de prueba simple
@@ -82,7 +84,8 @@ export class ClinicasController {
         estado: body.estado || 'activa'
       };
 
-      const result = await this.clinicasService.createClinica(dto);
+      // Llamar al servicio de owners en lugar del de clínicas
+      const result = await this.ownersService.createClinica(dto);
       console.log('✅ Clínica creada exitosamente:', result);
       return result;
     } catch (error) {
