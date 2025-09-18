@@ -14,7 +14,7 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @IsEnum(UserRole)
+  @IsEnum(UserRole, { message: 'El tipo debe ser ADMIN, SECRETARY o PROFESSIONAL' })
   tipo: UserRole;
 
   @IsOptional()

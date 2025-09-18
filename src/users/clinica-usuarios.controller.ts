@@ -162,4 +162,37 @@ export class ClinicaUsuariosController {
       throw error;
     }
   }
+
+  @Post('debug/test-create-with-dto')
+  async debugTestCreateWithDto(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    console.log(`🔍 DEBUG CREATE WITH DTO: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 DEBUG CREATE WITH DTO: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
+    console.log(`🔍 DEBUG CREATE WITH DTO: Tipo de DTO:`, typeof createUserDto);
+    console.log(`🔍 DEBUG CREATE WITH DTO: Keys del DTO:`, Object.keys(createUserDto || {}));
+    
+    try {
+      // Simular la lógica de creación con DTO
+      const result = {
+        message: 'Usuario creado exitosamente (con DTO)',
+        clinicaUrl,
+        userData: {
+          nombre: createUserDto.nombre,
+          email: createUserDto.email,
+          tipo: createUserDto.tipo,
+          phone: createUserDto.phone,
+          clinicaId: createUserDto.clinicaId
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log(`✅ DEBUG CREATE WITH DTO: Resultado:`, JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error(`❌ DEBUG CREATE WITH DTO: Error:`, error);
+      throw error;
+    }
+  }
 }
