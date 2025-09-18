@@ -28,11 +28,23 @@ export class ClinicaUsuariosController {
     @Body() createUserDto: any, // Cambiado a any para evitar problemas de validación
   ) {
     console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
-    console.log(`🔍 CONTROLLER: DTO recibido:`, createUserDto);
+    console.log(`🔍 CONTROLLER: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
+    
+    // Si el frontend envía clinicaId en el payload, usarlo; si no, usar el de la URL
+    const clinicaIdFromPayload = createUserDto?.clinicaId;
+    const finalClinicaUrl = clinicaIdFromPayload ? clinicaIdFromPayload : clinicaUrl;
+    
+    console.log(`🔍 CONTROLLER: clinicaId del payload: ${clinicaIdFromPayload}`);
+    console.log(`🔍 CONTROLLER: clinicaUrl de la URL: ${clinicaUrl}`);
+    console.log(`🔍 CONTROLLER: Usando clínica: ${finalClinicaUrl}`);
+    
     try {
-      return this.usersService.createUserForClinica(clinicaUrl, createUserDto);
+      const result = this.usersService.createUserForClinica(finalClinicaUrl, createUserDto);
+      console.log(`✅ CONTROLLER: Usuario creado exitosamente`);
+      return result;
     } catch (error) {
       console.error('❌ CONTROLLER: Error en createUser:', error);
+      console.error('❌ CONTROLLER: Stack trace:', error.stack);
       throw error;
     }
   }
