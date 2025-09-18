@@ -216,4 +216,47 @@ export class ClinicaUsuariosController {
       throw error;
     }
   }
+
+  @Get('debug/test-clinic-search/:clinicaUrl')
+  async debugTestClinicSearch(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log(`🔍 DEBUG CLINIC SEARCH: Buscando clínica con URL: ${clinicaUrl}`);
+    
+    try {
+      // Buscar la clínica directamente
+      const clinica = await this.usersService['prisma'].clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        console.log(`❌ DEBUG CLINIC SEARCH: Clínica no encontrada: ${clinicaUrl}`);
+        return {
+          found: false,
+          message: `Clínica con URL '${clinicaUrl}' no encontrada`,
+          clinicaUrl
+        };
+      }
+
+      console.log(`✅ DEBUG CLINIC SEARCH: Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
+      return {
+        found: true,
+        clinica: {
+          id: clinica.id,
+          name: clinica.name,
+          url: clinica.url
+        },
+        message: 'Clínica encontrada exitosamente'
+      };
+    } catch (error) {
+      console.error(`❌ DEBUG CLINIC SEARCH: Error:`, error);
+      console.error(`❌ DEBUG CLINIC SEARCH: Stack trace:`, error.stack);
+      return {
+        found: false,
+        error: error.message,
+        stack: error.stack,
+        clinicaUrl
+      };
+    }
+  }
 }
