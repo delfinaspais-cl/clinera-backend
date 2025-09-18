@@ -302,7 +302,7 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Obtener profesionales de la clínica con sus especialidades y tratamientos
+      // Obtener profesionales de la clínica con sus especialidades, tratamientos y agendas
       const professionals = await this.prisma.professional.findMany({
         where: {
           user: {
@@ -330,17 +330,36 @@ export class PublicController {
               tratamiento: true,
             },
           },
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
 
+      // Transformar los datos para incluir horariosDetallados en el formato esperado
+      const professionalsWithSchedules = professionals.map(professional => {
+        const horariosDetallados = (professional as any).agendas?.map((agenda: any) => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        })) || [];
+
+        return {
+          ...professional,
+          horariosDetallados,
+        };
+      });
+
       return {
         success: true,
         message: 'Profesionales obtenidos exitosamente',
-        data: professionals,
-        total: professionals.length,
+        data: professionalsWithSchedules,
+        total: professionalsWithSchedules.length,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -794,7 +813,7 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
-      // Obtener el profesional específico con sus especialidades y tratamientos
+      // Obtener el profesional específico con sus especialidades, tratamientos y agendas
       const professional = await this.prisma.professional.findFirst({
         where: {
           id: professionalId,
@@ -823,6 +842,11 @@ export class PublicController {
               tratamiento: true,
             },
           },
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            },
+          },
         },
       });
 
@@ -830,9 +854,21 @@ export class PublicController {
         throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
       }
 
+      // Transformar los datos para incluir horariosDetallados en el formato esperado
+      const horariosDetallados = (professional as any).agendas?.map((agenda: any) => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      })) || [];
+
+      const professionalWithSchedule = {
+        ...professional,
+        horariosDetallados,
+      };
+
       return {
         success: true,
-        data: professional,
+        data: professionalWithSchedule,
         message: 'Profesional obtenido exitosamente',
       };
     } catch (error) {
