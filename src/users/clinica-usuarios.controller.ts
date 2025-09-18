@@ -9,6 +9,7 @@ import {
   Body,
   UseGuards,
   Request,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -26,7 +27,14 @@ export class ClinicaUsuariosController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() createUserDto: CreateUserDto,
   ) {
-    return this.usersService.createUserForClinica(clinicaUrl, createUserDto);
+    console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 CONTROLLER: DTO recibido:`, createUserDto);
+    try {
+      return this.usersService.createUserForClinica(clinicaUrl, createUserDto);
+    } catch (error) {
+      console.error('❌ CONTROLLER: Error en createUser:', error);
+      throw error;
+    }
   }
 
   // Endpoint público para listar usuarios (sin autenticación JWT)
