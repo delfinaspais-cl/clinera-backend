@@ -3073,9 +3073,9 @@ export class ClinicasService {
       throw new BadRequestException('URL de clínica ya existe');
     }
 
-    // Verificar que el email no exista
+    // Verificar que el email no exista globalmente (para emails de clínicas)
     if (dto.email) {
-      const existingUser = await this.prisma.user.findUnique({
+      const existingUser = await this.prisma.user.findFirst({
         where: { email: dto.email },
       });
 

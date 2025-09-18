@@ -150,7 +150,7 @@ model User {
   whatsappMessages     WhatsAppMessage[]
   fichasMedicasCreadas FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
 
-  @@unique([email], name: "unique_email_global", map: "User_email_key")
+  @@unique([email, clinicaId], name: "unique_email_per_clinica")
   @@index([email])
   @@index([clinicaId])
 }

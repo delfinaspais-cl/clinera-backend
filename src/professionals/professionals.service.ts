@@ -15,66 +15,142 @@ export class ProfessionalsService {
   ) {}
 
   async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-      include: {
-        especialidades: true,
-        horarios: true,
-      },
-    });
+    try {
+      console.log(`🔍 [${new Date().toISOString()}] Iniciando consulta de profesionales para: ${clinicaUrl}`);
+      
+      // 1. Verificar clínica (consulta simple y rápida)
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        select: { id: true, name: true }
+      });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+      if (!clinica) {
+        console.log(`❌ Clínica no encontrada: ${clinicaUrl}`);
+        throw new NotFoundException('Clínica no encontrada');
+      }
 
-    const professionals = await this.prisma.professional.findMany({
-      where: { user: { clinicaId: clinica.id } },
-      include: { 
-        user: true,
-        agendas: {
-          orderBy: {
-            dia: 'asc',
+      console.log(`✅ [${new Date().toISOString()}] Clínica encontrada: ${clinica.name}`);
+
+      // 2. Obtener profesionales básicos (sin relaciones complejas)
+      const professionals = await this.prisma.professional.findMany({
+        where: { user: { clinicaId: clinica.id } },
+        include: { 
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              createdAt: true
+            }
+          }
+        },
+        orderBy: { name: 'asc' }
+      });
+
+      console.log(`✅ [${new Date().toISOString()}] Profesionales básicos obtenidos: ${professionals.length}`);
+
+      // Si no hay profesionales, retornar array vacío
+      if (professionals.length === 0) {
+        return {
+          success: true,
+          data: [],
+          message: 'No se encontraron profesionales',
+        };
+      }
+
+      // 3. Obtener IDs para consultas paralelas
+      const professionalIds = professionals.map(p => p.id);
+      console.log(`🔍 [${new Date().toISOString()}] IDs de profesionales: ${professionalIds.length}`);
+
+      // 4. Consultas paralelas optimizadas
+      const [agendas, especialidades, tratamientos] = await Promise.all([
+        // Agendas - consulta optimizada
+        this.prisma.agenda.findMany({
+          where: { professionalId: { in: professionalIds } },
+          select: {
+            professionalId: true,
+            dia: true,
+            horaInicio: true,
+            horaFin: true
           },
-        },
-        especialidades: {
-          include: {
-            especialidad: true
+          orderBy: [
+            { professionalId: 'asc' },
+            { dia: 'asc' }
+          ]
+        }),
+        
+        // Especialidades - consulta optimizada
+        this.prisma.professionalEspecialidad.findMany({
+          where: { professionalId: { in: professionalIds } },
+          select: {
+            professionalId: true,
+            especialidad: {
+              select: {
+                name: true
+              }
+            }
           }
-        },
-        tratamientos: {
-          include: {
-            tratamiento: true
+        }),
+        
+        // Tratamientos - consulta optimizada
+        this.prisma.professionalTratamiento.findMany({
+          where: { professionalId: { in: professionalIds } },
+          select: {
+            professionalId: true,
+            tratamiento: {
+              select: {
+                name: true
+              }
+            }
           }
-        }
-      },
-    });
+        })
+      ]);
 
-    // Formatear cada profesional con el formato unificado
-    const profesionalesTransformados = professionals.map(prof => {
-      const horariosDetallados = (prof as any).agendas?.map((agenda: any) => ({
-        dia: agenda.dia,
-        horaInicio: agenda.horaInicio,
-        horaFin: agenda.horaFin,
-      })) || [];
+      console.log(`✅ [${new Date().toISOString()}] Datos relacionados obtenidos - Agendas: ${agendas.length}, Especialidades: ${especialidades.length}, Tratamientos: ${tratamientos.length}`);
 
-      // Transformar especialidades al formato esperado
-      const specialties = (prof as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
+      // 5. Formatear datos de manera eficiente
+      const profesionalesTransformados = professionals.map(prof => {
+        // Filtrar y mapear agendas
+        const horariosDetallados = agendas
+          .filter(agenda => agenda.professionalId === prof.id)
+          .map(agenda => ({
+            dia: agenda.dia,
+            horaInicio: agenda.horaInicio,
+            horaFin: agenda.horaFin,
+          }));
 
-      // Transformar tratamientos al formato esperado
-      const tratamientos = (prof as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
+        // Filtrar y mapear especialidades
+        const specialties = especialidades
+          .filter(esp => esp.professionalId === prof.id)
+          .map(esp => esp.especialidad.name);
+
+        // Filtrar y mapear tratamientos
+        const tratamientosProf = tratamientos
+          .filter(trat => trat.professionalId === prof.id)
+          .map(trat => trat.tratamiento.name);
+
+        return {
+          ...prof,
+          horariosDetallados,
+          specialties,
+          tratamientos: tratamientosProf,
+          sucursal: (prof as any).sucursalId || null,
+        };
+      });
+
+      console.log(`✅ [${new Date().toISOString()}] Profesionales transformados: ${profesionalesTransformados.length}`);
 
       return {
-        ...prof,
-        horariosDetallados,
-        specialties,
-        tratamientos,
-        sucursal: (prof as any).sucursalId || null,
+        success: true,
+        data: profesionalesTransformados,
+        message: 'Profesionales obtenidos exitosamente',
       };
-    });
-
-    return {
-      success: true,
-      data: profesionalesTransformados,
-      message: 'Profesionales obtenidos exitosamente',
-    };
+    } catch (error) {
+      console.error(`❌ [${new Date().toISOString()}] Error en findAll profesionales:`, error);
+      throw error;
+    }
   }
 
   async create(clinicaUrl: string, dto: CreateProfessionalDto) {

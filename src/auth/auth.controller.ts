@@ -202,7 +202,7 @@ export class AuthController {
   }
 
   @Get('validate/email/:email')
-  validateEmail(@Param('email') email: string) {
-    return this.authService.validateEmail(email);
+  validateEmail(@Param('email') email: string, @Headers('x-clinica-id') clinicaId?: string) {
+    return this.authService.validateEmail(email, clinicaId);
   }
 }

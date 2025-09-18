@@ -4,6 +4,7 @@ import {
   MinLength,
   IsIn,
   IsString,
+  IsOptional,
 } from 'class-validator';
 
 export class RegisterAuthDto {
@@ -19,4 +20,8 @@ export class RegisterAuthDto {
 
   @IsIn(['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'])
   role: string;
+
+  @IsOptional()
+  @IsString()
+  clinicaId?: string;
 }

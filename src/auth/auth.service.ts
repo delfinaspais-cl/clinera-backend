@@ -62,13 +62,16 @@ export class AuthService {
         );
       }
 
-      // Verificar si el email ya existe (sin restricción de clínica para el registro general)
+      // Verificar si el email ya existe en la misma clínica
       const existingUser = await this.prisma.user.findFirst({
-        where: { email: dto.email },
+        where: { 
+          email: dto.email,
+          clinicaId: dto.clinicaId || null
+        },
       });
 
       if (existingUser) {
-        throw new BadRequestException('El email ya está registrado');
+        throw new BadRequestException('El email ya está registrado en esta clínica');
       }
 
       const hashed = await bcrypt.hash(dto.password, 10);
@@ -78,6 +81,7 @@ export class AuthService {
           password: hashed,
           name: dto.name,
           role: role as any,
+          clinicaId: dto.clinicaId || null,
         },
       });
 
@@ -465,9 +469,12 @@ export class AuthService {
     }
   }
 
-  async validateEmail(email: string) {
+  async validateEmail(email: string, clinicaId?: string) {
     const user = await this.prisma.user.findFirst({
-      where: { email },
+      where: { 
+        email,
+        clinicaId: clinicaId || null
+      },
     });
     return { available: !user };
   }
