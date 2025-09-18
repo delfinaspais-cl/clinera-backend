@@ -74,6 +74,7 @@ async function bootstrap() {
       'Authorization',
       'X-Requested-With',
       'Accept',
+      'x-skip-auth-redirect', // Header personalizado para evitar redirecciones
     ],
     // Agregar configuración para evitar redirecciones automáticas
     preflightContinue: false,
