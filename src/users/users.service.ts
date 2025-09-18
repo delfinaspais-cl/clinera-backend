@@ -199,6 +199,13 @@ export class UsersService {
 
     console.log(`✅ Email disponible en esta clínica: ${createUserDto.email}`);
 
+    // Log específico para el email problemático
+    if (createUserDto.email === 'delfina.spais@oacg.cl') {
+      console.log(`🔍 DEBUG ESPECÍFICO: Procesando email delfina.spais@oacg.cl`);
+      console.log(`🔍 DEBUG ESPECÍFICO: Clínica ID: ${clinica.id}`);
+      console.log(`🔍 DEBUG ESPECÍFICO: DTO completo:`, JSON.stringify(createUserDto, null, 2));
+    }
+
     // Generar contraseña automáticamente (siempre, para mayor seguridad)
     const generatedPassword = PasswordGenerator.generateTempPassword();
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
@@ -208,6 +215,19 @@ export class UsersService {
     // Obtener permisos según el rol
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
     const permisosString = PermissionsService.getPermisosAsString(permisos);
+
+    // Log específico para el email problemático antes de crear
+    if (createUserDto.email === 'delfina.spais@oacg.cl') {
+      console.log(`🔍 DEBUG ESPECÍFICO: Antes de crear usuario con email delfina.spais@oacg.cl`);
+      console.log(`🔍 DEBUG ESPECÍFICO: Datos a insertar:`, {
+        name: createUserDto.nombre,
+        email: createUserDto.email,
+        role: createUserDto.tipo,
+        phone: createUserDto.phone,
+        clinicaId: clinica.id,
+        estado: 'pendiente'
+      });
+    }
 
     // Crear el usuario asociado a la clínica
     const user = await this.prisma.user.create({
