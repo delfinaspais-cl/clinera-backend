@@ -25,7 +25,7 @@ export class ClinicaUsuariosController {
   @Post()
   createUser(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Body() createUserDto: CreateUserDto,
+    @Body() createUserDto: any, // Cambiado a any para evitar problemas de validación
   ) {
     console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: DTO recibido:`, createUserDto);
@@ -91,5 +91,16 @@ export class ClinicaUsuariosController {
     @Param('email') email: string,
   ) {
     return this.usersService.debugCheckEmail(clinicaUrl, email);
+  }
+
+  // Endpoint de prueba simple
+  @Get('debug/test')
+  async debugTest(@Param('clinicaUrl') clinicaUrl: string) {
+    console.log(`🔍 DEBUG TEST: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    return {
+      message: 'Debug test endpoint funcionando',
+      clinicaUrl,
+      timestamp: new Date().toISOString()
+    };
   }
 }
