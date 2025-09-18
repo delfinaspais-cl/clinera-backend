@@ -259,4 +259,74 @@ export class ClinicaUsuariosController {
       };
     }
   }
+
+  @Post('debug/test-minimal-create')
+  async debugTestMinimalCreate(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() body: any,
+  ) {
+    console.log(`🔍 DEBUG MINIMAL CREATE: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 DEBUG MINIMAL CREATE: Body recibido:`, JSON.stringify(body, null, 2));
+    
+    try {
+      // Solo buscar la clínica y verificar email, sin crear usuario
+      console.log(`🔍 DEBUG MINIMAL CREATE: Buscando clínica...`);
+      const clinica = await this.usersService['prisma'].clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        console.log(`❌ DEBUG MINIMAL CREATE: Clínica no encontrada: ${clinicaUrl}`);
+        return {
+          success: false,
+          error: `Clínica con URL '${clinicaUrl}' no encontrada`,
+          clinicaUrl
+        };
+      }
+
+      console.log(`✅ DEBUG MINIMAL CREATE: Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
+
+      // Verificar si el email ya existe
+      console.log(`🔍 DEBUG MINIMAL CREATE: Verificando email ${body.email}...`);
+      const existingUser = await this.usersService['prisma'].user.findFirst({
+        where: { 
+          email: body.email,
+          clinicaId: clinica.id
+        },
+      });
+
+      if (existingUser) {
+        console.log(`❌ DEBUG MINIMAL CREATE: Email ya existe en esta clínica: ${body.email}`);
+        return {
+          success: false,
+          error: 'El email ya está en uso en esta clínica',
+          email: body.email,
+          clinicaId: clinica.id
+        };
+      }
+
+      console.log(`✅ DEBUG MINIMAL CREATE: Email disponible: ${body.email}`);
+      
+      return {
+        success: true,
+        message: 'Validaciones pasaron correctamente',
+        clinica: {
+          id: clinica.id,
+          name: clinica.name,
+          url: clinica.url
+        },
+        email: body.email,
+        canCreate: true
+      };
+    } catch (error) {
+      console.error(`❌ DEBUG MINIMAL CREATE: Error:`, error);
+      console.error(`❌ DEBUG MINIMAL CREATE: Stack trace:`, error.stack);
+      return {
+        success: false,
+        error: error.message,
+        stack: error.stack,
+        clinicaUrl
+      };
+    }
+  }
 }
