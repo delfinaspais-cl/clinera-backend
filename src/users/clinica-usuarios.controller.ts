@@ -131,4 +131,35 @@ export class ClinicaUsuariosController {
       timestamp: new Date().toISOString()
     };
   }
+
+  @Post('debug/test-create-simple')
+  async debugTestCreateSimple(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() body: any,
+  ) {
+    console.log(`🔍 DEBUG CREATE SIMPLE: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 DEBUG CREATE SIMPLE: Body recibido:`, JSON.stringify(body, null, 2));
+    
+    try {
+      // Simular la lógica de creación sin validaciones complejas
+      const result = {
+        message: 'Usuario creado exitosamente (simulado)',
+        clinicaUrl,
+        userData: {
+          nombre: body.nombre,
+          email: body.email,
+          tipo: body.tipo,
+          phone: body.phone,
+          clinicaId: body.clinicaId
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log(`✅ DEBUG CREATE SIMPLE: Resultado:`, JSON.stringify(result, null, 2));
+      return result;
+    } catch (error) {
+      console.error(`❌ DEBUG CREATE SIMPLE: Error:`, error);
+      throw error;
+    }
+  }
 }
