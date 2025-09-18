@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
@@ -3053,5 +3054,156 @@ export class ClinicasService {
       console.error('Error al obtener clínica por URL:', error);
       return null;
     }
+  }
+
+  async createClinica(dto: CreateClinicaDto) {
+    console.log('🔧 ClinicasService: Iniciando creación de clínica');
+    console.log('🔧 ClinicasService: DTO recibido:', dto);
+    
+    // Convertir URL a minúsculas para consistencia
+    const urlNormalizada = dto.url.toLowerCase();
+    console.log('🔧 ClinicasService: URL normalizada:', urlNormalizada);
+    
+    // Verificar que la URL no exista
+    const existingClinica = await this.prisma.clinica.findUnique({
+      where: { url: urlNormalizada },
+    });
+
+    if (existingClinica) {
+      throw new BadRequestException('URL de clínica ya existe');
+    }
+
+    // Verificar que el email no exista
+    if (dto.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        throw new BadRequestException('El email ya está registrado');
+      }
+    }
+
+    const clinica = await this.prisma.clinica.create({
+      data: {
+        name: dto.nombre,
+        url: urlNormalizada,
+        address: dto.direccion || '',
+        phone: dto.telefono || '',
+        email: dto.email,
+        colorPrimario: dto.colorPrimario || dto.color_primario || '#3B82F6',
+        colorSecundario: dto.colorSecundario || dto.color_secundario || '#1E40AF',
+        descripcion: dto.descripcion || '',
+        estado: dto.estado || 'activa',
+        estadoPago: 'pendiente',
+        fechaCreacion: new Date(),
+        ultimoPago: null,
+        proximoPago: null,
+      },
+    });
+
+    // Crear usuario ADMIN automáticamente para la clínica
+    let adminUser: any = null;
+    if (dto.email && dto.password) {
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      adminUser = await this.prisma.user.create({
+        data: {
+          name: `Administrador de ${dto.nombre}`,
+          email: dto.email,
+          password: hashedPassword,
+          role: 'ADMIN',
+          clinicaId: clinica.id,
+          estado: 'activo',
+        },
+      });
+
+      // Enviar email de bienvenida con credenciales al admin
+      try {
+        await this.emailService.sendWelcomeCredentialsEmail(
+          dto.email,
+          dto.password, // Contraseña en texto plano para el email
+          `Administrador de ${dto.nombre}`,
+          'ADMIN',
+          dto.nombre,
+        );
+        console.log(`Email de bienvenida enviado al admin: ${dto.email}`);
+      } catch (emailError) {
+        console.error('Error al enviar email de bienvenida al admin:', emailError);
+        // No lanzamos error para no interrumpir la creación de la clínica
+      }
+    }
+
+    if (dto.especialidades?.length) {
+      await this.prisma.especialidad.createMany({
+        data: dto.especialidades.map((name) => ({
+          name,
+          clinicaId: clinica.id,
+        })),
+      });
+    }
+
+    // Manejar horarios (puede ser array o string JSON)
+    if (dto.horarios) {
+      let horariosArray: Array<{day: string, openTime: string, closeTime: string}> = [];
+      
+      if (typeof dto.horarios === 'string') {
+        try {
+          const horariosJson = JSON.parse(dto.horarios);
+          // Convertir el formato del frontend al formato de la base de datos
+          horariosArray = Object.entries(horariosJson).map(([day, schedule]: [string, any]) => ({
+            day: day,
+            openTime: schedule.inicio,
+            closeTime: schedule.fin,
+          }));
+        } catch (error) {
+          console.log('Error parsing horarios JSON:', error);
+        }
+      } else if (Array.isArray(dto.horarios)) {
+        horariosArray = dto.horarios;
+      }
+      
+      if (horariosArray.length > 0) {
+        await this.prisma.horario.createMany({
+          data: horariosArray.map((h) => ({
+            day: h.day,
+            openTime: h.openTime,
+            closeTime: h.closeTime,
+            clinicaId: clinica.id,
+          })),
+        });
+      }
+    }
+
+    const clinicaConRelaciones = await this.prisma.clinica.findUnique({
+      where: { id: clinica.id },
+      include: { especialidades: true, horarios: true },
+    });
+
+    if (!clinicaConRelaciones) {
+      throw new BadRequestException('Error al crear la clínica');
+    }
+
+    return {
+      success: true,
+      message: 'Clínica creada exitosamente',
+      clinica: {
+        id: clinicaConRelaciones.id,
+        nombre: clinicaConRelaciones.name,
+        url: clinicaConRelaciones.url,
+        email: clinicaConRelaciones.email,
+        colorPrimario: clinicaConRelaciones.colorPrimario,
+        colorSecundario: clinicaConRelaciones.colorSecundario,
+        descripcion: clinicaConRelaciones.descripcion,
+        direccion: clinicaConRelaciones.address,
+        telefono: clinicaConRelaciones.phone,
+        plan: dto.plan || 'basic',
+        estado: clinicaConRelaciones.estado,
+        estadoPago: clinicaConRelaciones.estadoPago,
+        fechaCreacion: clinicaConRelaciones.fechaCreacion,
+        createdAt: clinicaConRelaciones.createdAt,
+        updatedAt: clinicaConRelaciones.updatedAt,
+      },
+    };
   }
 }

@@ -38,6 +38,8 @@ import { TurnosStatsDto, TurnosStatsResponseDto } from './dto/turnos-stats.dto';
 import { DashboardVentasResponseDto } from './dto/dashboard-ventas.dto';
 import { EmailService } from '../email/email.service';
 import { SendEmailDto } from '../turnos/dto/send-email.dto';
+import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
+import { OwnersService } from '../owners/owners.service';
 
 @ApiTags('Gestión de Clínicas')
 @Controller('clinica')
@@ -45,7 +47,52 @@ export class ClinicasController {
   constructor(
     private clinicasService: ClinicasService,
     private emailService: EmailService,
+    private ownersService: OwnersService,
   ) {}
+
+  // Endpoint de prueba simple
+  @Post('test')
+  @ApiOperation({ summary: 'Endpoint de prueba' })
+  async testEndpoint() {
+    return { message: 'Endpoint funcionando correctamente', timestamp: new Date().toISOString() };
+  }
+
+  // Endpoint público para crear clínicas (versión simplificada)
+  @Post()
+  @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
+  @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
+  async createClinica(@Body() body: any) {
+    try {
+      console.log('🏥 Creando clínica con datos:', body);
+      
+      // Validación manual básica
+      if (!body.nombre || !body.url || !body.email || !body.password) {
+        throw new BadRequestException('Faltan campos requeridos: nombre, url, email, password');
+      }
+
+      // Crear DTO manualmente
+      const dto: CreateClinicaDto = {
+        nombre: body.nombre,
+        url: body.url,
+        email: body.email,
+        password: body.password,
+        direccion: body.direccion || '',
+        telefono: body.telefono || '',
+        descripcion: body.descripcion || '',
+        colorPrimario: body.colorPrimario || '#3B82F6',
+        colorSecundario: body.colorSecundario || '#1E40AF',
+        estado: body.estado || 'activa'
+      };
+
+      // Llamar al servicio de owners en lugar del de clínicas
+      const result = await this.ownersService.createClinica(dto);
+      console.log('✅ Clínica creada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error al crear clínica:', error);
+      throw error;
+    }
+  }
 
   @Get(':clinicaUrl/usuarios')
   @UseGuards(JwtAuthGuard)
