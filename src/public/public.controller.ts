@@ -10,6 +10,7 @@ import {
   Res,
   HttpStatus,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import * as fs from 'fs';
@@ -878,6 +879,244 @@ export class PublicController {
       console.error('Error obteniendo profesional:', error);
       throw new BadRequestException('Error al obtener el profesional');
     }
+  }
+
+  // ===== ENDPOINT PÚBLICO PARA OBTENER DISPONIBILIDAD DE PROFESIONAL =====
+  
+  @Get('clinica/:clinicaUrl/profesionales/:professionalId/disponibilidad')
+  async getProfessionalAvailability(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('professionalId') professionalId: string,
+    @Query('fecha') fecha?: string, // Formato: YYYY-MM-DD
+    @Query('fechaInicio') fechaInicio?: string, // Para rangos de fechas
+    @Query('fechaFin') fechaFin?: string,
+  ) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // if (clinica.estado !== 'activa') {
+      //   throw new BadRequestException('La clínica no está activa');
+      // }
+
+      // Verificar que el profesional existe y pertenece a la clínica
+      const professional = await this.prisma.professional.findFirst({
+        where: {
+          id: professionalId,
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+        include: {
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+        },
+      });
+
+      if (!professional) {
+        throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
+      }
+
+      // Determinar el rango de fechas
+      let startDate: Date;
+      let endDate: Date;
+
+      if (fecha) {
+        // Una fecha específica
+        startDate = new Date(fecha);
+        endDate = new Date(fecha);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (fechaInicio && fechaFin) {
+        // Rango de fechas
+        startDate = new Date(fechaInicio);
+        endDate = new Date(fechaFin);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // Por defecto, próximos 7 días
+        startDate = new Date();
+        endDate = new Date();
+        endDate.setDate(endDate.getDate() + 7);
+        endDate.setHours(23, 59, 59, 999);
+      }
+
+      // Obtener turnos ocupados en el rango de fechas
+      const turnosOcupados = await this.prisma.turno.findMany({
+        where: {
+          professionalId: professionalId,
+          fecha: {
+            gte: startDate,
+            lte: endDate,
+          },
+          estado: {
+            in: ['confirmado', 'pendiente'], // Solo turnos que están ocupando espacio
+          },
+        },
+        select: {
+          id: true,
+          fecha: true,
+          hora: true,
+          duracionMin: true,
+          estado: true,
+          paciente: true,
+          motivo: true,
+        },
+        orderBy: {
+          fecha: 'asc',
+        },
+      });
+
+      // Obtener horarios de atención del profesional
+      const horariosAtencion = (professional as any).agendas?.map((agenda: any) => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      })) || [];
+
+      // Generar slots de tiempo disponibles
+      const disponibilidad = this.generateAvailableSlots(
+        startDate,
+        endDate,
+        horariosAtencion,
+        turnosOcupados,
+        professional.defaultDurationMin,
+        professional.bufferMin,
+      );
+
+      return {
+        success: true,
+        data: {
+          professional: {
+            id: professional.id,
+            name: professional.name,
+            defaultDurationMin: professional.defaultDurationMin,
+            bufferMin: professional.bufferMin,
+          },
+          horariosAtencion,
+          turnosOcupados,
+          disponibilidad,
+          rangoFechas: {
+            inicio: startDate.toISOString(),
+            fin: endDate.toISOString(),
+          },
+        },
+        message: 'Disponibilidad obtenida exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo disponibilidad:', error);
+      throw new BadRequestException('Error al obtener la disponibilidad');
+    }
+  }
+
+  // Método auxiliar para generar slots de tiempo disponibles
+  private generateAvailableSlots(
+    startDate: Date,
+    endDate: Date,
+    horariosAtencion: any[],
+    turnosOcupados: any[],
+    duracionMin: number,
+    bufferMin: number,
+  ) {
+    const disponibilidad: any[] = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const diaSemana = this.getDayOfWeek(currentDate);
+      const horarioDia = horariosAtencion.find(h => h.dia === diaSemana);
+
+      if (horarioDia) {
+        const fechaStr = currentDate.toISOString().split('T')[0];
+        const turnosDelDia = turnosOcupados.filter(t => 
+          t.fecha.toISOString().split('T')[0] === fechaStr
+        );
+
+        const slotsDisponibles = this.generateSlotsForDay(
+          fechaStr,
+          horarioDia.horaInicio,
+          horarioDia.horaFin,
+          duracionMin,
+          bufferMin,
+          turnosDelDia,
+        );
+
+        if (slotsDisponibles.length > 0) {
+          disponibilidad.push({
+            fecha: fechaStr,
+            dia: diaSemana,
+            slots: slotsDisponibles,
+          });
+        }
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return disponibilidad;
+  }
+
+  private generateSlotsForDay(
+    fecha: string,
+    horaInicio: string,
+    horaFin: string,
+    duracionMin: number,
+    bufferMin: number,
+    turnosOcupados: any[],
+  ) {
+    const slots: any[] = [];
+    const [horaIni, minIni] = horaInicio.split(':').map(Number);
+    const [horaFinNum, minFin] = horaFin.split(':').map(Number);
+
+    let currentTime = new Date();
+    currentTime.setHours(horaIni, minIni, 0, 0);
+
+    const endTime = new Date();
+    endTime.setHours(horaFinNum, minFin, 0, 0);
+
+    while (currentTime < endTime) {
+      const slotStart = new Date(currentTime);
+      const slotEnd = new Date(currentTime.getTime() + duracionMin * 60000);
+
+      // Verificar si este slot está ocupado
+      const isOccupied = turnosOcupados.some(turno => {
+        const [turnoHora, turnoMin] = turno.hora.split(':').map(Number);
+        const turnoStart = new Date();
+        turnoStart.setHours(turnoHora, turnoMin, 0, 0);
+        const turnoEnd = new Date(turnoStart.getTime() + turno.duracionMin * 60000);
+
+        // Verificar solapamiento
+        return (slotStart < turnoEnd && slotEnd > turnoStart);
+      });
+
+      if (!isOccupied && slotEnd <= endTime) {
+        slots.push({
+          horaInicio: slotStart.toTimeString().slice(0, 5),
+          horaFin: slotEnd.toTimeString().slice(0, 5),
+          duracionMin: duracionMin,
+          disponible: true,
+        });
+      }
+
+      // Avanzar al siguiente slot (duración + buffer)
+      currentTime.setTime(currentTime.getTime() + (duracionMin + bufferMin) * 60000);
+    }
+
+    return slots;
+  }
+
+  private getDayOfWeek(date: Date): string {
+    const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+    return days[date.getDay()];
   }
 
   // ===== ENDPOINT PARA SERVIR ARCHIVOS ESTÁTICOS =====
