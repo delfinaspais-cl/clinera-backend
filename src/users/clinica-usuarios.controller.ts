@@ -115,4 +115,20 @@ export class ClinicaUsuariosController {
       timestamp: new Date().toISOString()
     };
   }
+
+  // Endpoint de prueba POST simple
+  @Post('debug/test-post')
+  async debugTestPost(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() body: any,
+  ) {
+    console.log(`🔍 DEBUG POST: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 DEBUG POST: Body recibido:`, JSON.stringify(body, null, 2));
+    return {
+      message: 'Debug POST endpoint funcionando',
+      clinicaUrl,
+      body,
+      timestamp: new Date().toISOString()
+    };
+  }
 }
