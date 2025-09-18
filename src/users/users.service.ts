@@ -166,16 +166,24 @@ export class UsersService {
   }
 
   async createUserForClinica(clinicaUrl: string, createUserDto: CreateUserDto) {
+    try {
+      console.log(`🔍 createUserForClinica: Buscando clínica con URL: ${clinicaUrl}`);
+      console.log(`🔍 createUserForClinica: DTO recibido:`, createUserDto);
+    
     // Buscar la clínica por URL
     const clinica = await this.prisma.clinica.findUnique({
       where: { url: clinicaUrl },
     });
 
     if (!clinica) {
+      console.log(`❌ Clínica no encontrada: ${clinicaUrl}`);
       throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
     }
 
+    console.log(`✅ Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
+
     // Verificar si el email ya existe en esta clínica específica
+    console.log(`🔍 Verificando si email ${createUserDto.email} ya existe en clínica ${clinica.id}`);
     const existingUser = await this.prisma.user.findFirst({
       where: { 
         email: createUserDto.email,
@@ -184,8 +192,11 @@ export class UsersService {
     });
 
     if (existingUser) {
+      console.log(`❌ Email ya existe en esta clínica: ${createUserDto.email}`);
       throw new ConflictException('El email ya está en uso en esta clínica');
     }
+
+    console.log(`✅ Email disponible en esta clínica: ${createUserDto.email}`);
 
     // Generar contraseña automáticamente (siempre, para mayor seguridad)
     const generatedPassword = PasswordGenerator.generateTempPassword();
@@ -282,6 +293,10 @@ export class UsersService {
         error: 'No se pudo registrar en mensapi',
       },
     };
+    } catch (error) {
+      console.error('❌ Error en createUserForClinica:', error);
+      throw error;
+    }
   }
 
   async findAllForClinica(clinicaUrl: string) {
