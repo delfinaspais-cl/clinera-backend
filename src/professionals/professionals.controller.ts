@@ -19,7 +19,6 @@ export class ProfessionalsController {
   constructor(private readonly professionalsService: ProfessionalsService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   findAll(@Param('clinicaUrl') clinicaUrl: string) {
     return this.professionalsService.findAll(clinicaUrl);
   }
