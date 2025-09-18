@@ -75,4 +75,13 @@ export class ClinicaUsuariosController {
   ) {
     return this.usersService.deleteUserForClinica(clinicaUrl, userId);
   }
+
+  // Endpoint de debug para verificar el estado de la base de datos
+  @Get('debug/check-email/:email')
+  async debugCheckEmail(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('email') email: string,
+  ) {
+    return this.usersService.debugCheckEmail(clinicaUrl, email);
+  }
 }

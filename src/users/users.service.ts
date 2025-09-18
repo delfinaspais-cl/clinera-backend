@@ -499,4 +499,65 @@ export class UsersService {
 
     return { message: 'Usuario eliminado exitosamente' };
   }
+
+  async debugCheckEmail(clinicaUrl: string, email: string) {
+    try {
+      console.log(`🔍 DEBUG: Verificando email ${email} para clínica ${clinicaUrl}`);
+      
+      // Buscar la clínica
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        return { error: `Clínica con URL '${clinicaUrl}' no encontrada` };
+      }
+
+      console.log(`✅ Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
+
+      // Buscar usuarios con ese email en esa clínica
+      const usersInClinica = await this.prisma.user.findMany({
+        where: { 
+          email: email,
+          clinicaId: clinica.id
+        },
+      });
+
+      // Buscar usuarios con ese email en cualquier clínica
+      const usersAnywhere = await this.prisma.user.findMany({
+        where: { 
+          email: email
+        },
+      });
+
+      // Buscar usuarios con ese email sin clínica
+      const usersWithoutClinica = await this.prisma.user.findMany({
+        where: { 
+          email: email,
+          clinicaId: null
+        },
+      });
+
+      return {
+        clinica: {
+          id: clinica.id,
+          name: clinica.name,
+          url: clinica.url
+        },
+        email: email,
+        usersInClinica: usersInClinica.length,
+        usersAnywhere: usersAnywhere.length,
+        usersWithoutClinica: usersWithoutClinica.length,
+        canCreate: usersInClinica.length === 0,
+        details: {
+          inClinica: usersInClinica.map(u => ({ id: u.id, clinicaId: u.clinicaId, role: u.role })),
+          anywhere: usersAnywhere.map(u => ({ id: u.id, clinicaId: u.clinicaId, role: u.role })),
+          withoutClinica: usersWithoutClinica.map(u => ({ id: u.id, clinicaId: u.clinicaId, role: u.role }))
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error en debugCheckEmail:', error);
+      return { error: error.message };
+    }
+  }
 }
