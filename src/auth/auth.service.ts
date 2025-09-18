@@ -63,11 +63,12 @@ export class AuthService {
       }
 
       // Verificar si el email ya existe en la misma clínica
+      const whereClause = dto.clinicaId 
+        ? { email: dto.email, clinicaId: dto.clinicaId }
+        : { email: dto.email, clinicaId: null };
+        
       const existingUser = await this.prisma.user.findFirst({
-        where: { 
-          email: dto.email,
-          clinicaId: dto.clinicaId || null
-        },
+        where: whereClause,
       });
 
       if (existingUser) {
