@@ -193,4 +193,27 @@ export class ClinicaUsuariosController {
       throw error;
     }
   }
+
+  @Post('debug/test-real-service')
+  async debugTestRealService(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() createUserDto: any,
+  ) {
+    console.log(`🔍 DEBUG REAL SERVICE: Endpoint llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 DEBUG REAL SERVICE: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
+    
+    try {
+      // Llamar al servicio real pero con try-catch detallado
+      console.log(`🔍 DEBUG REAL SERVICE: Llamando a createUserForClinica...`);
+      const result = await this.usersService.createUserForClinica(clinicaUrl, createUserDto);
+      console.log(`✅ DEBUG REAL SERVICE: Usuario creado exitosamente`);
+      return result;
+    } catch (error) {
+      console.error(`❌ DEBUG REAL SERVICE: Error en createUserForClinica:`, error);
+      console.error(`❌ DEBUG REAL SERVICE: Stack trace:`, error.stack);
+      console.error(`❌ DEBUG REAL SERVICE: Error message:`, error.message);
+      console.error(`❌ DEBUG REAL SERVICE: Error name:`, error.name);
+      throw error;
+    }
+  }
 }
