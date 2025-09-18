@@ -30,8 +30,8 @@ export class ClinicaUsuariosController {
     console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
     
-    // Si el frontend envía clinicaId en el payload, usarlo; si no, usar el de la URL
-    const clinicaIdFromPayload = createUserDto?.clinicaId;
+    // Si el frontend envía clinicaId o clinicalId en el payload, usarlo; si no, usar el de la URL
+    const clinicaIdFromPayload = createUserDto?.clinicaId || createUserDto?.clinicalId;
     const finalClinicaUrl = clinicaIdFromPayload ? clinicaIdFromPayload : clinicaUrl;
     
     console.log(`🔍 CONTROLLER: clinicaId del payload: ${clinicaIdFromPayload}`);

@@ -170,14 +170,15 @@ export class UsersService {
       console.log(`🔍 createUserForClinica: Buscando clínica con URL: ${clinicaUrl}`);
       console.log(`🔍 createUserForClinica: DTO recibido:`, createUserDto);
     
-    // Buscar la clínica por URL
+    // Buscar la clínica por ID (el frontend envía el ID de la clínica)
+    console.log(`🔍 Buscando clínica por ID: ${clinicaUrl}`);
     const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
+      where: { id: clinicaUrl },
     });
 
     if (!clinica) {
       console.log(`❌ Clínica no encontrada: ${clinicaUrl}`);
-      throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
+      throw new NotFoundException(`Clínica con ID '${clinicaUrl}' no encontrada`);
     }
 
     console.log(`✅ Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
