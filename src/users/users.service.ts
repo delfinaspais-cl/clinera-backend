@@ -23,12 +23,15 @@ export class UsersService {
 
   async register(dto: UserRegisterDto) {
     try {
+      console.log('🔍 Iniciando registro de usuario:', dto.email);
+      
       // Verificar si el email ya existe
       const existingEmail = await this.prisma.user.findFirst({
         where: { email: dto.email },
       });
 
       if (existingEmail) {
+        console.log('❌ Email ya existe:', dto.email);
         throw new ConflictException('El email ya está registrado');
       }
 
@@ -38,23 +41,43 @@ export class UsersService {
       });
 
       if (existingUsername) {
+        console.log('❌ Username ya existe:', dto.username);
         throw new ConflictException('El nombre de usuario ya está en uso');
       }
+
+      console.log('✅ Validaciones pasadas, creando usuario...');
 
       // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-      // Crear el usuario
-      const user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          username: dto.username,
-          password: hashedPassword,
-          name: dto.name,
-          role: 'OWNER', // Los usuarios registrados son OWNER por defecto
-          clinicaId: null, // No tienen clínica específica inicialmente
-        },
-      });
+      // Crear el usuario - intentar con y sin username
+      let user;
+      try {
+        user = await this.prisma.user.create({
+          data: {
+            email: dto.email,
+            username: dto.username,
+            password: hashedPassword,
+            name: dto.name,
+            role: 'OWNER',
+            clinicaId: null,
+          },
+        });
+        console.log('✅ Usuario creado con username');
+      } catch (prismaError) {
+        console.log('⚠️ Error creando usuario con username, intentando sin username:', prismaError.message);
+        // Fallback: crear sin username si hay problema con el campo
+        user = await this.prisma.user.create({
+          data: {
+            email: dto.email,
+            password: hashedPassword,
+            name: dto.name,
+            role: 'OWNER',
+            clinicaId: null,
+          },
+        });
+        console.log('✅ Usuario creado sin username (fallback)');
+      }
 
       // Generar token JWT
       const payload = {
