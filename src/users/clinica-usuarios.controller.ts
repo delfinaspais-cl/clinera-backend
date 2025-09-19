@@ -32,7 +32,7 @@ export class ClinicaUsuariosController {
     
     // Siempre usar el clinicaUrl de la URL, no el clinicaId del payload
     // El clinicaId del payload se usará para asociar el usuario a la clínica correcta
-    console.log(`🔍 CONTROLLER: clinicaId del payload: ${createUserDto?.clinicaId || createUserDto?.clinicalId}`);
+    console.log(`🔍 CONTROLLER: clinicaId del payload: ${createUserDto?.clinicaId}`);
     console.log(`🔍 CONTROLLER: clinicaUrl de la URL: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: Usando clínica URL: ${clinicaUrl}`);
     
