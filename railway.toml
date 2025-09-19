@@ -1,5 +1,7 @@
 [build]
 builder = "nixpacks"
+buildCommand = "npm run build"
+postBuildCommand = "npx prisma generate"
 
 [deploy]
 startCommand = "npm run start:prod"
