@@ -63,16 +63,30 @@ export class AuthService {
       }
 
       // Verificar si el email ya existe en la misma clínica
-      const whereClause = dto.clinicaId 
-        ? { email: dto.email, clinicaId: dto.clinicaId }
-        : { email: dto.email, clinicaId: null };
-        
-      const existingUser = await this.prisma.user.findFirst({
-        where: whereClause,
-      });
+      if (dto.clinicaId) {
+        // Si hay clínica, verificar solo en esa clínica
+        const existingUser = await this.prisma.user.findFirst({
+          where: { 
+            email: dto.email, 
+            clinicaId: dto.clinicaId 
+          },
+        });
 
-      if (existingUser) {
-        throw new BadRequestException('El email ya está registrado en esta clínica');
+        if (existingUser) {
+          throw new BadRequestException('El email ya está registrado en esta clínica');
+        }
+      } else {
+        // Si no hay clínica, verificar si existe globalmente
+        const existingUser = await this.prisma.user.findFirst({
+          where: { 
+            email: dto.email, 
+            clinicaId: null 
+          },
+        });
+
+        if (existingUser) {
+          throw new BadRequestException('El email ya está registrado');
+        }
       }
 
       const hashed = await bcrypt.hash(dto.password, 10);
