@@ -50,34 +50,18 @@ export class UsersService {
       // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-      // Crear el usuario - intentar con y sin username
-      let user;
-      try {
-        user = await this.prisma.user.create({
-          data: {
-            email: dto.email,
-            username: dto.username,
-            password: hashedPassword,
-            name: dto.name,
-            role: 'OWNER',
-            clinicaId: null,
-          },
-        });
-        console.log('✅ Usuario creado con username');
-      } catch (prismaError) {
-        console.log('⚠️ Error creando usuario con username, intentando sin username:', prismaError.message);
-        // Fallback: crear sin username si hay problema con el campo
-        user = await this.prisma.user.create({
-          data: {
-            email: dto.email,
-            password: hashedPassword,
-            name: dto.name,
-            role: 'OWNER',
-            clinicaId: null,
-          },
-        });
-        console.log('✅ Usuario creado sin username (fallback)');
-      }
+      // Crear el usuario con username
+    const user = await this.prisma.user.create({
+      data: {
+          email: dto.email,
+          username: dto.username,
+        password: hashedPassword,
+          name: dto.name,
+          role: 'OWNER',
+          clinicaId: null,
+      },
+    });
+      console.log('✅ Usuario creado exitosamente con username');
 
       // Generar token JWT
       const payload = {
@@ -90,7 +74,7 @@ export class UsersService {
 
       const token = this.jwtService.sign(payload);
 
-      // Enviar email de bienvenida con credenciales
+    // Enviar email de bienvenida con credenciales
       try {
         await this.emailService.sendWelcomeEmail(
           dto.email,
@@ -98,12 +82,12 @@ export class UsersService {
           dto.username,
           dto.password, // Pasar la contraseña en texto plano para el email
         );
-      } catch (emailError) {
+    } catch (emailError) {
         console.error('Error al enviar email de bienvenida:', emailError);
         // No lanzamos error para no interrumpir el registro
-      }
+    }
 
-      return {
+    return {
         success: true,
         message: 'Usuario registrado exitosamente',
         token,
@@ -128,14 +112,14 @@ export class UsersService {
     try {
       // Buscar usuario por username o email
       const user = await this.prisma.user.findFirst({
-        where: {
+        where: { 
           OR: [
             { username: dto.username },
             { email: dto.username },
           ],
         },
       });
-
+      
       if (!user) {
         throw new UnauthorizedException('Credenciales inválidas');
       }
@@ -182,31 +166,31 @@ export class UsersService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: {
-          id: true,
+      select: {
+        id: true,
           email: true,
           username: true,
-          name: true,
+        name: true,
           phone: true,
-          role: true,
-          estado: true,
-          createdAt: true,
+        role: true,
+        estado: true,
+        createdAt: true,
           avatar_url: true,
-        },
-      });
+      },
+    });
 
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
-      }
+    }
 
-      return {
+    return {
         success: true,
         user,
-      };
+    };
     } catch (error) {
       if (error instanceof NotFoundException) {
-        throw error;
-      }
+      throw error;
+    }
       console.error('Error al obtener perfil:', error);
       throw new BadRequestException('Error interno del servidor');
     }
@@ -218,21 +202,21 @@ export class UsersService {
         where: { id: userId },
         include: {
           clinicasAdministradas: {
-            select: {
-              id: true,
-              name: true,
+      select: {
+        id: true,
+        name: true,
               url: true,
-              estado: true,
+        estado: true,
               estadoPago: true,
-              createdAt: true,
+        createdAt: true,
               colorPrimario: true,
               colorSecundario: true,
             },
           },
-        },
-      });
+      },
+    });
 
-      if (!user) {
+    if (!user) {
         throw new NotFoundException('Usuario no encontrado');
       }
 
@@ -282,8 +266,8 @@ export class UsersService {
           colorSecundario: dto.colorSecundario,
           estado: dto.estado,
           administradorId: userId,
-        },
-      });
+      },
+    });
 
       // Crear un usuario ADMIN para la clínica
       const adminPassword = Math.random().toString(36).slice(-8); // Contraseña temporal
@@ -295,9 +279,9 @@ export class UsersService {
           password: hashedAdminPassword,
           name: `Admin ${dto.nombre}`,
           role: 'ADMIN',
-          clinicaId: clinica.id,
-        },
-      });
+        clinicaId: clinica.id,
+      },
+    });
 
       // Enviar email con credenciales del admin
       try {
@@ -340,19 +324,19 @@ export class UsersService {
   async checkClinicaAccess(userId: string, clinicaUrl: string) {
     try {
       const user = await this.prisma.user.findUnique({
-        where: { id: userId },
+      where: { id: userId },
         include: {
           clinicasAdministradas: {
             where: { url: clinicaUrl },
-            select: {
-              id: true,
-              name: true,
+      select: {
+        id: true,
+        name: true,
               url: true,
-              estado: true,
+        estado: true,
             },
           },
-        },
-      });
+      },
+    });
 
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
