@@ -1,115 +1,33 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, RequestMethod, BadRequestException } from '@nestjs/common';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
-import { ValidationExceptionFilter } from './common/filters/validation-exception.filter';
+import { AppMinimalModule } from './app-minimal.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const config = app.get<ConfigService>(ConfigService);
+  console.log('🚀 Iniciando aplicación simplificada...');
+  
+  try {
+    const app = await NestFactory.create(AppMinimalModule);
+    console.log('✅ Aplicación creada exitosamente');
 
-  // Sin prefijo global - todos los endpoints son accesibles directamente
-  // app.setGlobalPrefix('api'); // Comentado para endpoints sin prefijo
+    // Configuración básica de CORS
+    app.enableCors({
+      origin: true,
+      credentials: true,
+    });
+    console.log('✅ CORS habilitado');
 
-  // Configurar ValidationPipe global
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: false, // Permitir campos adicionales
-    transform: true,
-    exceptionFactory: (errors) => {
-      console.error('🚨 ValidationPipe errors:', errors);
-      const errorMessages = errors.map(error => ({
-        property: error.property,
-        value: error.value,
-        constraints: error.constraints,
-        children: error.children
-      }));
-      console.error('🚨 Formatted validation errors:', errorMessages);
-      return new BadRequestException({
-        message: 'Errores de validación',
-        errors: errorMessages,
-        details: errors.map(error => Object.values(error.constraints || {}).join(', ')).join('; ')
-      });
-    }
-  }));
-
-  // Usar filtro de excepción global para validación
-  app.useGlobalFilters(new ValidationExceptionFilter());
-
-  // Interceptor global simplificado
-  app.useGlobalInterceptors(new (class {
-    intercept(context: any, next: any) {
-      return next.handle();
-    }
-  })());
-
-  // Configuración de CORS más permisiva para desarrollo
-  const isProduction = config.get<string>('NODE_ENV') === 'production';
-
-  const corsOptions = {
-    origin: isProduction
-      ? [
-          config.get<string>('ALLOWED_ORIGIN'),
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'https://app.clinera.io', // Dominio principal del frontend
-          'https://clinera-frontend.vercel.app',
-          'https://clinera.vercel.app',
-          'https://clinera-web-git-develop-clinera-io-b8a9d478.vercel.app',
-          // Tu dominio específico de Vercel
-          'https://clinera-101a5caom-clinera-io-b8a9d478.vercel.app',
-          // Patrón para dominios de Vercel con preview deployments
-          /^https:\/\/clinera-web.*\.vercel\.app$/,
-          // Patrón más amplio para cualquier subdominio de clinera en Vercel
-          /^https:\/\/clinera.*\.vercel\.app$/,
-        ].filter((origin): origin is string | RegExp => Boolean(origin)) // Remueve valores undefined/null
-      : true, // Permite todos los orígenes en desarrollo
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-    ],
-    // Agregar configuración para evitar redirecciones automáticas
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  };
-
-  app.enableCors(corsOptions);
-
-  // Configurar archivos estáticos para servir uploads
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads/',
-  });
-
-  // Logging simple para debugging (sin modificar headers)
-  app.use((req, res, next) => {
-    console.log(`🌐 ${req.method} ${req.url} - ${new Date().toISOString()}`);
-    next();
-  });
-
-  // Configuración de Swagger
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Clinera API')
-    .setDescription('Documentación de la API de Clinera')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
-
-  // Configuración del puerto
-  const port = config.get<number>('PORT') || 3000;
-  await app.listen(port);
-
-  console.log(`Aplicación ejecutándose en: http://localhost:${port}`);
-  console.log(`Documentación disponible en: http://localhost:${port}/docs`);
+    // Configuración del puerto
+    const port = process.env.PORT || 3000;
+    console.log(`🔍 Puerto configurado: ${port}`);
+    console.log(`🔍 Variables de entorno PORT: ${process.env.PORT}`);
+    
+    await app.listen(port, '0.0.0.0');
+    console.log(`✅ Aplicación ejecutándose en puerto ${port} en 0.0.0.0`);
+    
+  } catch (error) {
+    console.error('❌ Error crítico:', error);
+    console.error('Stack:', error.stack);
+    process.exit(1);
+  }
 }
 
 bootstrap();
