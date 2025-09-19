@@ -184,13 +184,12 @@ export class UsersService {
     console.log(`✅ Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
 
     // Verificar si el email ya existe en esta clínica específica
-    // Usar el clinicaId del payload del frontend, no el ID de la clínica encontrada por URL
-    const targetClinicaId = createUserDto.clinicaId || clinica.id;
-    console.log(`🔍 Verificando si email ${createUserDto.email} ya existe en clínica ${targetClinicaId}`);
+    // Usar el ID de la clínica encontrada por URL, no el clinicaId del payload
+    console.log(`🔍 Verificando si email ${createUserDto.email} ya existe en clínica ${clinica.id}`);
     const existingUser = await this.prisma.user.findFirst({
       where: { 
         email: createUserDto.email,
-        clinicaId: targetClinicaId
+        clinicaId: clinica.id
       },
     });
 
@@ -226,7 +225,7 @@ export class UsersService {
         email: createUserDto.email,
         role: createUserDto.tipo,
         phone: createUserDto.phone,
-        clinicaId: targetClinicaId,
+        clinicaId: clinica.id,
         estado: 'pendiente'
       });
     }
@@ -239,7 +238,7 @@ export class UsersService {
         password: hashedPassword,
         role: createUserDto.tipo,
         phone: createUserDto.phone,
-        clinicaId: targetClinicaId, // Usar el clinicaId correcto del frontend
+        clinicaId: clinica.id, // Usar el ID de la clínica encontrada por URL
         estado: 'pendiente', // Estado inicial como pendiente
         configuracion: permisosString, // Guardar permisos en configuracion
       },
