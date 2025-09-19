@@ -32,6 +32,7 @@ model Clinica {
   pendienteAprobacion    Boolean                @default(false)
   mensapiServiceEmail    String?
   mensapiServicePassword String?
+  administradorId        String?                // ID del usuario administrador
   conversations          Conversation[]
   especialidades         Especialidad[]
   tratamientos           Tratamiento[]
@@ -47,6 +48,7 @@ model Clinica {
   fichasMedicas          FichaMedica[]
   fichasMedicasHistorial FichaMedicaHistorial[] @relation("ClinicaFichaHistorial")
   mediosPago             MedioPago[]
+  administrador           User?                 @relation("ClinicaAdministrador", fields: [administradorId], references: [id])
 }
 
 model Mensaje {
@@ -125,6 +127,7 @@ model Notificacion {
 model User {
   id                   String                  @id @default(cuid())
   email                String
+  username             String?                 // Nuevo campo para username
   password             String
   name                 String?
   phone                String?
@@ -149,9 +152,13 @@ model User {
   clinica              Clinica?                @relation(fields: [clinicaId], references: [id])
   whatsappMessages     WhatsAppMessage[]
   fichasMedicasCreadas FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
+  // Relación para clínicas que el usuario puede administrar
+  clinicasAdministradas Clinica[]              @relation("ClinicaAdministrador")
 
   @@unique([email, clinicaId], name: "unique_email_per_clinica")
+  @@unique([username], name: "unique_username") // Username único globalmente
   @@index([email])
+  @@index([username])
   @@index([clinicaId])
 }
 

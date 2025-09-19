@@ -98,6 +98,10 @@ export class EmailService {
         return this.getTurnoConfirmationTemplate(data);
       case 'welcome-credentials':
         return this.getWelcomeCredentialsTemplate(data);
+      case 'user-welcome':
+        return this.getUserWelcomeTemplate(data);
+      case 'admin-credentials':
+        return this.getAdminCredentialsTemplate(data);
       default:
         throw new Error(`Template '${template}' no encontrado`);
     }
@@ -512,5 +516,187 @@ export class EmailService {
     
     console.log(`📧 EmailService: Resultado del envío:`, result);
     return result.success;
+  }
+
+  // Nuevos métodos para el sistema de usuarios
+  async sendWelcomeEmail(
+    email: string,
+    userName: string,
+    username: string,
+    password: string,
+  ): Promise<boolean> {
+    const result = await this.sendEmail({
+      to: email,
+      subject: '¡Bienvenido a Clinera! - Tu cuenta ha sido creada',
+      template: 'user-welcome',
+      data: { 
+        email, 
+        userName, 
+        username,
+        password 
+      },
+    });
+    return result.success;
+  }
+
+  async sendAdminCredentialsEmail(
+    email: string,
+    password: string,
+    userName: string,
+    clinicaName: string,
+    clinicaUrl: string,
+  ): Promise<boolean> {
+    const result = await this.sendEmail({
+      to: email,
+      subject: `Credenciales de administrador - ${clinicaName}`,
+      template: 'admin-credentials',
+      data: { 
+        email, 
+        password, 
+        userName, 
+        clinicaName,
+        clinicaUrl 
+      },
+    });
+    return result.success;
+  }
+
+  private getUserWelcomeTemplate(data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3B82F6; margin: 0;">Clinera</h1>
+            <p style="color: #6B7280; margin: 10px 0 0 0;">Gestión Médica Inteligente</p>
+          </div>
+          
+          <h2 style="color: #10B981; margin-bottom: 20px;">¡Bienvenido a Clinera!</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hola <strong>${data.userName}</strong>,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            ¡Tu cuenta en Clinera ha sido creada exitosamente! Ahora puedes crear y administrar tus clínicas médicas.
+          </p>
+          
+          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">TUS CREDENCIALES DE ACCESO:</h3>
+            <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; border-left: 4px solid #3B82F6;">
+              <p style="color: #374151; margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>Usuario:</strong> ${data.username}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>Contraseña:</strong> ${data.password}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>Rol:</strong> Propietario</p>
+            </div>
+          </div>
+          
+          <div style="background-color: #FEF3C7; padding: 15px; border-radius: 8px; border-left: 4px solid #F59E0B; margin: 20px 0;">
+            <p style="color: #92400E; margin: 0; font-weight: bold;">
+              🔐 ¡IMPORTANTE! Guarda estas credenciales en un lugar seguro. Las necesitarás para acceder a tu cuenta.
+            </p>
+          </div>
+          
+          <div style="background-color: #D1FAE5; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
+            <h4 style="color: #1F2937; margin: 0 0 10px 0;">🎉 ¿Qué puedes hacer ahora?</h4>
+            <ul style="color: #374151; margin: 0; padding-left: 20px;">
+              <li>Crear tu primera clínica médica</li>
+              <li>Configurar especialidades y tratamientos</li>
+              <li>Gestionar turnos y citas</li>
+              <li>Administrar profesionales</li>
+              <li>Generar reportes y estadísticas</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://clinera.com'}/dashboard" 
+               style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Ir a mi Dashboard
+            </a>
+          </div>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Si tienes alguna pregunta o necesitas ayuda, no dudes en contactar con nuestro equipo de soporte.
+          </p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
+          
+          <p style="color: #6B7280; font-size: 14px; text-align: center; margin: 0;">
+            Este es un email automático, por favor no respondas a este mensaje.<br>
+            Si tienes alguna pregunta, contacta con nuestro equipo de soporte.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  private getAdminCredentialsTemplate(data: any): string {
+    const loginUrl = `${process.env.FRONTEND_URL || 'https://clinera.com'}/clinica/${data.clinicaUrl}/login`;
+    
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3B82F6; margin: 0;">${data.clinicaName}</h1>
+            <p style="color: #6B7280; margin: 10px 0 0 0;">Sistema de Gestión Médica</p>
+          </div>
+          
+          <h2 style="color: #10B981; margin-bottom: 20px;">Credenciales de Administrador</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hola <strong>${data.userName}</strong>,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Has sido asignado como administrador de <strong>${data.clinicaName}</strong>. 
+            Aquí tienes tus credenciales para acceder al sistema.
+          </p>
+          
+          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">TUS CREDENCIALES DE ACCESO:</h3>
+            <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; border-left: 4px solid #3B82F6;">
+              <p style="color: #374151; margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>Contraseña:</strong> ${data.password}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>Clínica:</strong> ${data.clinicaName}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>URL:</strong> ${data.clinicaUrl}</p>
+            </div>
+          </div>
+          
+          <div style="background-color: #D1FAE5; padding: 15px; border-radius: 8px; border-left: 4px solid #10B981; margin: 20px 0;">
+            <p style="color: #065F46; margin: 0; font-weight: bold;">
+              🔐 Por seguridad, te recomendamos cambiar tu contraseña en tu primer acceso.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${loginUrl}" 
+               style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Acceder a ${data.clinicaName}
+            </a>
+          </div>
+          
+          <div style="background-color: #FEF3C7; padding: 15px; border-radius: 8px; border-left: 4px solid #F59E0B; margin: 20px 0;">
+            <h4 style="color: #1F2937; margin: 0 0 10px 0;">📋 Como administrador puedes:</h4>
+            <ul style="color: #374151; margin: 0; padding-left: 20px;">
+              <li>Gestionar turnos y citas</li>
+              <li>Administrar profesionales</li>
+              <li>Configurar especialidades y tratamientos</li>
+              <li>Ver reportes y estadísticas</li>
+              <li>Gestionar usuarios de la clínica</li>
+            </ul>
+          </div>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Si tienes alguna pregunta o necesitas ayuda, contacta con el propietario de la clínica.
+          </p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
+          
+          <p style="color: #6B7280; font-size: 14px; text-align: center; margin: 0;">
+            Este es un email automático, por favor no respondas a este mensaje.<br>
+            Si tienes alguna pregunta, contacta con el propietario de la clínica.
+          </p>
+        </div>
+      </div>
+    `;
   }
 }

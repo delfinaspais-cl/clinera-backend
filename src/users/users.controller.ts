@@ -1,114 +1,88 @@
 import {
-  Controller,
-  Get,
-  Request,
-  UseGuards,
-  Patch,
   Body,
+  Controller,
   Post,
-  BadRequestException,
+  Get,
+  UseGuards,
+  Request,
+  Param,
+  Query,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { UserRegisterDto } from '../auth/dto/user-register.dto';
+import { UserLoginDto } from '../auth/dto/user-login.dto';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from 'src/auth/jwt.auth.guard';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { CreateUserDto } from './dto/create-user.dto';
+import { JwtAuthGuard } from '../auth/jwt.auth.guard';
+import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 
+@ApiTags('Usuarios')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private usersService: UsersService) {}
 
-  // Endpoint inteligente que detecta automáticamente la clínica del contexto
-  @Post()
-  createUser(@Request() req, @Body() createUserDto: CreateUserDto) {
-    // Verificar si hay un token de autorización en el header
-    const authHeader = req.headers.authorization;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        // Intentar decodificar el token para obtener información de la clínica
-        const token = authHeader.split(' ')[1];
-        const jwt = require('jsonwebtoken');
-        const secret = process.env.JWT_SECRET || 'supersecret123';
-        const decoded = jwt.verify(token, secret);
-        
-        // Si el token tiene información de clínica, crear usuario en esa clínica
-        if (decoded.clinicaId && decoded.clinicaUrl) {
-          console.log(`🔍 Token detectado con clínica: ${decoded.clinicaUrl} (ID: ${decoded.clinicaId})`);
-          return this.usersService.createUserForClinica(decoded.clinicaUrl, createUserDto);
-        }
-        
-        // Si el token tiene clinicaId pero no clinicaUrl, buscar la clínica
-        if (decoded.clinicaId && !decoded.clinicaUrl) {
-          console.log(`🔍 Token detectado con clinicaId: ${decoded.clinicaId}, buscando URL de la clínica`);
-          return this.usersService.createUser(createUserDto, decoded.clinicaId);
-        }
-      } catch (error) {
-        console.warn('Error decodificando token:', error.message);
-      }
-    }
-    
-    // Si no hay token válido o no tiene información de clínica, crear usuario sin clínica específica
-    console.log('🔍 No se detectó token válido con clínica, creando usuario sin clínica específica');
-    return this.usersService.createUser(createUserDto);
+  @Post('register')
+  @ApiOperation({ summary: 'Registrar nuevo usuario' })
+  @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 409, description: 'Email o username ya existe' })
+  async register(@Body() dto: UserRegisterDto) {
+    return this.usersService.register(dto);
   }
 
+  @Post('login')
+  @ApiOperation({ summary: 'Iniciar sesión con username/email y password' })
+  @ApiResponse({ status: 200, description: 'Login exitoso' })
+  @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
+  async login(@Body() dto: UserLoginDto) {
+    return this.usersService.login(dto);
+  }
 
-  // Endpoint autenticado para crear usuarios en la clínica del usuario logueado
+  @Get('profile')
   @UseGuards(JwtAuthGuard)
-  @Post('auth')
-  createUserWithAuth(@Request() req, @Body() createUserDto: CreateUserDto) {
-    // Verificar que el usuario autenticado tenga una clínica asociada
-    if (!req.user.clinicaId && req.user.role !== 'OWNER') {
-      throw new Error('No tienes una clínica asociada para crear usuarios');
-    }
-    
-    // Si es OWNER, usar la clínica del contexto o permitir crear sin clínica específica
-    if (req.user.role === 'OWNER') {
-      return this.usersService.createUser(createUserDto, req.user.clinicaId);
-    }
-    
-    // Para otros roles, crear usuario en la clínica del usuario autenticado
-    return this.usersService.createUserForClinica(req.user.clinicaUrl, createUserDto);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Perfil obtenido exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async getProfile(@Request() req) {
+    return this.usersService.getProfile(req.user.id);
   }
 
+  @Get('clinicas')
   @UseGuards(JwtAuthGuard)
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener clínicas del usuario' })
+  @ApiResponse({ status: 200, description: 'Clínicas obtenidas exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async getUserClinicas(@Request() req) {
+    return this.usersService.getUserClinicas(req.user.id);
   }
 
+  @Post('clinicas')
   @UseGuards(JwtAuthGuard)
-  @Get('me')
-  findMe(@Request() req) {
-    return this.usersService.findMe(req.user.id);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Crear nueva clínica para el usuario' })
+  @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
+    return this.usersService.createClinica(req.user.id, dto);
   }
 
+  @Get('clinicas/:clinicaUrl/access')
   @UseGuards(JwtAuthGuard)
-  @Patch('me')
-  updateMe(@Request() req, @Body() dto: UpdateProfileDto) {
-    return this.usersService.updateProfile(req.user.id, dto);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('patients')
-  async findAllPatients() {
-    return this.usersService.findPatients();
-  }
-
-  // Endpoint público para crear usuario ADMIN (sin autenticación)
-  @Post('admin')
-  async createAdminUser(@Body() createUserDto: CreateUserDto & { clinicaId: string }) {
-    console.log('🔓 Creando usuario ADMIN (endpoint público)');
-    console.log('Datos recibidos:', JSON.stringify(createUserDto, null, 2));
-    
-    // Validar que se proporcione clinicaId
-    if (!createUserDto.clinicaId) {
-      throw new BadRequestException('clinicaId es requerido para crear usuario ADMIN');
-    }
-    
-    // Forzar el tipo a ADMIN
-    createUserDto.tipo = 'ADMIN' as any;
-    
-    return this.usersService.createUser(createUserDto, createUserDto.clinicaId);
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verificar acceso a una clínica específica' })
+  @ApiResponse({ status: 200, description: 'Acceso verificado' })
+  @ApiResponse({ status: 403, description: 'Sin acceso a esta clínica' })
+  async checkClinicaAccess(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    return this.usersService.checkClinicaAccess(req.user.id, clinicaUrl);
   }
 }
