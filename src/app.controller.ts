@@ -26,12 +26,14 @@ export class AppController {
 
   @Get()
   getRoot() {
+    console.log('🌐 Endpoint raíz llamado');
     return {
       message: 'Clinera Backend API',
       version: '1.0.0',
       status: 'running',
       documentation: '/docs',
-      health: '/api/health',
+      health: '/health',
+      timestamp: new Date().toISOString(),
     };
   }
 

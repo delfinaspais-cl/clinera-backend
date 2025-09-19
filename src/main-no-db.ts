@@ -12,8 +12,11 @@ async function bootstrap() {
     console.log('✅ CORS habilitado');
     
     const port = process.env.PORT || 3000;
-    await app.listen(port);
-    console.log(`✅ Aplicación ejecutándose en puerto ${port}`);
+    console.log(`🔍 Puerto configurado: ${port}`);
+    console.log(`🔍 Variables de entorno PORT: ${process.env.PORT}`);
+    
+    await app.listen(port, '0.0.0.0');
+    console.log(`✅ Aplicación ejecutándose en puerto ${port} en 0.0.0.0`);
     
   } catch (error) {
     console.error('❌ Error crítico:', error);
