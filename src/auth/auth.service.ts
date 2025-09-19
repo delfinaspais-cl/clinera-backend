@@ -554,7 +554,7 @@ export class AuthService {
   private getPermisosByRole(role: string): string[] {
     switch (role) {
       case 'ADMIN':
-        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'ventas'];
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'ventas', 'pacientes', 'tratamientos', 'profesionales'];
       case 'PROFESSIONAL':
         return ['turnos', 'pacientes', 'reportes'];
       case 'SECRETARY':

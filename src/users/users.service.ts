@@ -57,7 +57,7 @@ export class UsersService {
           username: dto.username,
         password: hashedPassword,
           name: dto.name,
-          role: 'OWNER',
+                  role: 'ADMIN',
           clinicaId: null,
       },
     });
