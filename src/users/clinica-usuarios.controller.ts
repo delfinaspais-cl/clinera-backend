@@ -23,26 +23,42 @@ export class ClinicaUsuariosController {
 
   // Endpoint público para crear usuarios (sin autenticación JWT)
   @Post()
-  createUser(
+  async createUser(
     @Param('clinicaUrl') clinicaUrl: string,
     @Body() createUserDto: CreateUserDto,
   ) {
+    console.log(`🚀 ===== INICIO CREACIÓN USUARIO =====`);
     console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
+    console.log(`🔍 CONTROLLER: Timestamp: ${new Date().toISOString()}`);
+    
+    // Validar DTO
+    console.log(`🔍 CONTROLLER: Validando DTO...`);
+    console.log(`🔍 CONTROLLER: - nombre: ${createUserDto?.nombre}`);
+    console.log(`🔍 CONTROLLER: - email: ${createUserDto?.email}`);
+    console.log(`🔍 CONTROLLER: - tipo: ${createUserDto?.tipo}`);
+    console.log(`🔍 CONTROLLER: - phone: ${createUserDto?.phone}`);
+    console.log(`🔍 CONTROLLER: - clinicaId: ${createUserDto?.clinicaId}`);
     
     // Siempre usar el clinicaUrl de la URL, no el clinicaId del payload
-    // El clinicaId del payload se usará para asociar el usuario a la clínica correcta
     console.log(`🔍 CONTROLLER: clinicaId del payload: ${createUserDto?.clinicaId}`);
     console.log(`🔍 CONTROLLER: clinicaUrl de la URL: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: Usando clínica URL: ${clinicaUrl}`);
     
     try {
-      const result = this.usersService.createUserForClinica(clinicaUrl, createUserDto);
+      console.log(`🔍 CONTROLLER: Llamando a usersService.createUserForClinica...`);
+      const result = await this.usersService.createUserForClinica(clinicaUrl, createUserDto);
       console.log(`✅ CONTROLLER: Usuario creado exitosamente`);
+      console.log(`✅ CONTROLLER: Resultado:`, JSON.stringify(result, null, 2));
+      console.log(`🚀 ===== FIN CREACIÓN USUARIO (ÉXITO) =====`);
       return result;
     } catch (error) {
       console.error('❌ CONTROLLER: Error en createUser:', error);
-      console.error('❌ CONTROLLER: Stack trace:', error.stack);
+      console.error('❌ CONTROLLER: Error message:', error.message);
+      console.error('❌ CONTROLLER: Error stack:', error.stack);
+      console.error('❌ CONTROLLER: Error name:', error.name);
+      console.error('❌ CONTROLLER: Error code:', error.code);
+      console.error(`🚀 ===== FIN CREACIÓN USUARIO (ERROR) =====`);
       throw error;
     }
   }

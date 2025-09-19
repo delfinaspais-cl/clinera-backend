@@ -166,39 +166,55 @@ export class UsersService {
   }
 
   async createUserForClinica(clinicaUrl: string, createUserDto: CreateUserDto) {
-    try {
-      console.log(`🔍 createUserForClinica: Buscando clínica con URL: ${clinicaUrl}`);
-      console.log(`🔍 createUserForClinica: DTO recibido:`, createUserDto);
+    console.log(`🚀 ===== INICIO SERVICIO createUserForClinica =====`);
+    console.log(`🔍 SERVICE: createUserForClinica llamado con clinicaUrl: ${clinicaUrl}`);
+    console.log(`🔍 SERVICE: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
+    console.log(`🔍 SERVICE: Timestamp: ${new Date().toISOString()}`);
     
-    // Buscar la clínica por URL (el parámetro clinicaUrl es la URL de la clínica)
-    console.log(`🔍 Buscando clínica por URL: ${clinicaUrl}`);
-    const clinica = await this.prisma.clinica.findUnique({
-      where: { url: clinicaUrl },
-    });
+    try {
+      console.log(`🔍 SERVICE: Iniciando búsqueda de clínica...`);
+      console.log(`🔍 SERVICE: Buscando clínica con URL: ${clinicaUrl}`);
+      
+      // Buscar la clínica por URL (el parámetro clinicaUrl es la URL de la clínica)
+      console.log(`🔍 SERVICE: Ejecutando query: SELECT * FROM "Clinica" WHERE url = '${clinicaUrl}'`);
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+      
+      console.log(`🔍 SERVICE: Resultado de búsqueda de clínica:`, clinica ? 'ENCONTRADA' : 'NO ENCONTRADA');
+      if (clinica) {
+        console.log(`🔍 SERVICE: Clínica encontrada - ID: ${clinica.id}, Name: ${clinica.name}, URL: ${clinica.url}`);
+      }
 
-    if (!clinica) {
-      console.log(`❌ Clínica no encontrada: ${clinicaUrl}`);
-      throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
-    }
+      if (!clinica) {
+        console.log(`❌ SERVICE: Clínica no encontrada: ${clinicaUrl}`);
+        throw new NotFoundException(`Clínica con URL '${clinicaUrl}' no encontrada`);
+      }
 
-    console.log(`✅ Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
+      console.log(`✅ SERVICE: Clínica encontrada: ${clinica.name} (ID: ${clinica.id})`);
 
-    // Verificar si el email ya existe en esta clínica específica
-    // Usar el ID de la clínica encontrada por URL, no el clinicaId del payload
-    console.log(`🔍 Verificando si email ${createUserDto.email} ya existe en clínica ${clinica.id}`);
-    const existingUser = await this.prisma.user.findFirst({
-      where: { 
-        email: createUserDto.email,
-        clinicaId: clinica.id
-      },
-    });
+      // Verificar si el email ya existe en esta clínica específica
+      console.log(`🔍 SERVICE: Verificando si email ${createUserDto.email} ya existe en clínica ${clinica.id}`);
+      console.log(`🔍 SERVICE: Ejecutando query: SELECT * FROM "User" WHERE email = '${createUserDto.email}' AND "clinicaId" = '${clinica.id}'`);
+      
+      const existingUser = await this.prisma.user.findFirst({
+        where: { 
+          email: createUserDto.email,
+          clinicaId: clinica.id
+        },
+      });
+      
+      console.log(`🔍 SERVICE: Resultado de búsqueda de usuario existente:`, existingUser ? 'ENCONTRADO' : 'NO ENCONTRADO');
+      if (existingUser) {
+        console.log(`🔍 SERVICE: Usuario existente encontrado - ID: ${existingUser.id}, Email: ${existingUser.email}, Clínica: ${existingUser.clinicaId}`);
+      }
 
-    if (existingUser) {
-      console.log(`❌ Email ya existe en esta clínica: ${createUserDto.email}`);
-      throw new ConflictException('El email ya está en uso en esta clínica');
-    }
+      if (existingUser) {
+        console.log(`❌ SERVICE: Email ya existe en esta clínica: ${createUserDto.email}`);
+        throw new ConflictException('El email ya está en uso en esta clínica');
+      }
 
-    console.log(`✅ Email disponible en esta clínica: ${createUserDto.email}`);
+      console.log(`✅ SERVICE: Email disponible en esta clínica: ${createUserDto.email}`);
 
     // Log específico para el email problemático
     if (createUserDto.email === 'delfina.spais@oacg.cl') {
@@ -207,15 +223,19 @@ export class UsersService {
       console.log(`🔍 DEBUG ESPECÍFICO: DTO completo:`, JSON.stringify(createUserDto, null, 2));
     }
 
+    console.log(`🔍 SERVICE: Generando contraseña automáticamente...`);
     // Generar contraseña automáticamente (siempre, para mayor seguridad)
     const generatedPassword = PasswordGenerator.generateTempPassword();
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    console.log(`🔐 Contraseña generada para ${createUserDto.email}: ${generatedPassword}`);
+    console.log(`🔐 SERVICE: Contraseña generada para ${createUserDto.email}: ${generatedPassword}`);
 
+    console.log(`🔍 SERVICE: Obteniendo permisos según el rol: ${createUserDto.tipo}`);
     // Obtener permisos según el rol
     const permisos = PermissionsService.getPermisosPorRol(createUserDto.tipo);
     const permisosString = PermissionsService.getPermisosAsString(permisos);
+    console.log(`🔍 SERVICE: Permisos obtenidos:`, permisos);
+    console.log(`🔍 SERVICE: Permisos como string: ${permisosString}`);
 
     // Log específico para el email problemático antes de crear
     if (createUserDto.email === 'delfina.spais@oacg.cl') {
@@ -230,6 +250,22 @@ export class UsersService {
       });
     }
 
+    console.log(`🔍 SERVICE: Preparando datos para insertar en la base de datos...`);
+    const userData = {
+      name: createUserDto.nombre,
+      email: createUserDto.email,
+      password: hashedPassword,
+      role: createUserDto.tipo,
+      phone: createUserDto.phone,
+      clinicaId: clinica.id,
+      estado: 'pendiente',
+      configuracion: permisosString,
+    };
+    console.log(`🔍 SERVICE: Datos a insertar:`, JSON.stringify(userData, null, 2));
+
+    console.log(`🔍 SERVICE: Ejecutando INSERT en la base de datos...`);
+    console.log(`🔍 SERVICE: Query: INSERT INTO "User" (name, email, password, role, phone, "clinicaId", estado, configuracion) VALUES (...)`);
+    
     // Crear el usuario asociado a la clínica correcta
     const user = await this.prisma.user.create({
       data: {
@@ -316,7 +352,15 @@ export class UsersService {
       },
     };
     } catch (error) {
-      console.error('❌ Error en createUserForClinica:', error);
+      console.error(`🚀 ===== ERROR EN SERVICIO createUserForClinica =====`);
+      console.error('❌ SERVICE: Error en createUserForClinica:', error);
+      console.error('❌ SERVICE: Error message:', error.message);
+      console.error('❌ SERVICE: Error stack:', error.stack);
+      console.error('❌ SERVICE: Error name:', error.name);
+      console.error('❌ SERVICE: Error code:', error.code);
+      console.error('❌ SERVICE: Error cause:', error.cause);
+      console.error('❌ SERVICE: Error timestamp:', new Date().toISOString());
+      console.error(`🚀 ===== FIN ERROR EN SERVICIO =====`);
       throw error;
     }
   }
