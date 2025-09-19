@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { AppSimpleController } from './app-simple.controller';
 import { AppService } from './app.service';
 
 @Module({
-  controllers: [AppController],
+  controllers: [AppSimpleController],
   providers: [AppService],
 })
 export class AppMinimalModule {}
