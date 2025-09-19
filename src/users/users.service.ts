@@ -114,8 +114,8 @@ export class UsersService {
       const user = await this.prisma.user.findFirst({
         where: { 
           OR: [
-            { username: dto.username },
-            { email: dto.username },
+            { username: dto.identifier },
+            { email: dto.identifier },
           ],
         },
       });
