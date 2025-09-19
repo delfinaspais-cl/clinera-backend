@@ -31,7 +31,19 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 409, description: 'Email o username ya existe' })
   async register(@Body() dto: UserRegisterDto) {
+    console.log('📝 Registro de usuario recibido:', JSON.stringify(dto, null, 2));
     return this.usersService.register(dto);
+  }
+
+  @Post('test')
+  @ApiOperation({ summary: 'Endpoint de prueba' })
+  @ApiResponse({ status: 200, description: 'Prueba exitosa' })
+  async test() {
+    return {
+      success: true,
+      message: 'Endpoint de usuarios funcionando',
+      timestamp: new Date().toISOString()
+    };
   }
 
   @Post('login')
