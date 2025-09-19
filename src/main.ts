@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppMinimalModule } from './app-minimal.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   console.log('🚀 Iniciando aplicación simplificada...');
   
   try {
-    const app = await NestFactory.create(AppMinimalModule);
+    const app = await NestFactory.create(AppModule);
     console.log('✅ Aplicación creada exitosamente');
 
     // Configuración básica de CORS
