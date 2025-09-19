@@ -4,9 +4,21 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailModule } from '../email/email.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
-  imports: [JwtModule, EmailModule],
+  imports: [
+    ConfigModule.forRoot(),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
+    EmailModule
+  ],
   controllers: [UsersController],
   providers: [UsersService, PrismaService],
   exports: [UsersService],
