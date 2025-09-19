@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { EmailService } from '../email/email.service';
-import { MensapiIntegrationService } from '../users/services/mensapi-integration.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,7 +10,6 @@ export class ProfessionalsService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
-    private mensapiIntegration: MensapiIntegrationService,
   ) {}
 
   async findAll(clinicaUrl: string) {
@@ -254,23 +252,7 @@ export class ProfessionalsService {
         emailResult = { success: false, error: emailError.message || 'Error inesperado' };
       }
 
-      // Intentar registrar el usuario en mensapi (no bloquea si falla)
-      let mensapiResult: any = null;
-      try {
-        console.log(`📱 Registrando usuario en MensAPI: ${dto.email}...`);
-        mensapiResult = await this.mensapiIntegration.registerUser({
-          name: dto.name,
-          email: dto.email,
-          password: dto.password, // Usar la contraseña original (antes del hash)
-          phone: dto.phone,
-        }, clinica.mensapiServiceEmail || undefined, clinica.mensapiServicePassword || undefined);
-        
-        if (mensapiResult) {
-          console.log(`✅ Usuario registrado exitosamente en MensAPI: ${dto.email}`);
-        }
-      } catch (error) {
-        console.warn('⚠️ Error registrando usuario en MensAPI:', error.message);
-      }
+      // MensAPI integration removed - not needed for new user system
 
       // Asignar especialidades si se proporcionan
       if (dto.specialties && dto.specialties.length > 0) {
@@ -429,14 +411,7 @@ export class ProfessionalsService {
         emailEnviado: emailResult.success,
         fechaEmailEnviado: emailResult.success ? new Date().toISOString() : null,
         emailError: emailResult.error,
-        mensapi: mensapiResult ? {
-          registered: true,
-          accessToken: mensapiResult.content?.accessToken,
-          refreshToken: mensapiResult.content?.refreshToken,
-        } : {
-          registered: false,
-          error: 'No se pudo registrar en MensAPI',
-        },
+        // MensAPI integration removed
       };
       
     } catch (error) {
