@@ -560,7 +560,7 @@ export class AuthService {
       case 'SECRETARY':
         return ['turnos', 'pacientes', 'notificaciones'];
       case 'OWNER':
-        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'planes', 'facturacion', 'ventas'];
+        return ['turnos', 'usuarios', 'configuracion', 'reportes', 'notificaciones', 'planes', 'facturacion', 'ventas', 'pacientes', 'tratamientos'];
       default:
         return [];
     }
