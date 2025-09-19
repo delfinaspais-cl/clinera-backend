@@ -101,6 +101,8 @@ export class AuthService {
       });
 
       // Enviar email de bienvenida con credenciales (solo si tiene clínica)
+      // TEMPORALMENTE COMENTADO PARA DEBUG
+      /*
       if (user.clinicaId) {
         try {
           const clinica = await this.prisma.clinica.findUnique({
@@ -120,6 +122,7 @@ export class AuthService {
           // No lanzamos error para no interrumpir el registro
         }
       }
+      */
 
       return this.login(user);
     } catch (error) {
