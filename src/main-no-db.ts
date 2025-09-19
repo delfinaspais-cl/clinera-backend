@@ -1,17 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppMinimalModule } from './app-minimal.module';
 
 async function bootstrap() {
   console.log('🚀 Iniciando aplicación sin base de datos...');
   
   try {
-    // Crear aplicación sin módulos complejos
-    const app = await NestFactory.create({
-      controllers: [AppController],
-      providers: [AppService],
-    });
-    
+    const app = await NestFactory.create(AppMinimalModule);
     console.log('✅ Aplicación creada sin módulos complejos');
     
     app.enableCors();
