@@ -25,7 +25,7 @@ export class ClinicaUsuariosController {
   @Post()
   createUser(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Body() createUserDto: any, // Cambiado a any para evitar problemas de validación
+    @Body() createUserDto: CreateUserDto,
   ) {
     console.log(`🔍 CONTROLLER: createUser llamado con clinicaUrl: ${clinicaUrl}`);
     console.log(`🔍 CONTROLLER: DTO recibido:`, JSON.stringify(createUserDto, null, 2));
