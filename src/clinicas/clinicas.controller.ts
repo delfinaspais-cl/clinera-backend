@@ -70,6 +70,66 @@ export class ClinicasController {
     }
   }
 
+  // Endpoint de debug para verificar información del usuario
+  @Get('debug-user')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Debug: Verificar información del usuario autenticado' })
+  async debugUser(@Request() req) {
+    try {
+      console.log('🔍 DEBUG USER - req.user:', req.user);
+      
+      // Obtener información adicional del usuario desde la base de datos
+      const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+      console.log('🔍 DEBUG USER - userClinica from DB:', userClinica);
+      
+      return {
+        tokenUser: req.user,
+        dbUserClinica: userClinica,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('❌ Error en debug user:', error);
+      throw error;
+    }
+  }
+
+  // Endpoint público para crear usuario de prueba (TEMPORAL)
+  @Post('create-test-user')
+  @ApiOperation({ summary: 'Crear usuario de prueba (TEMPORAL)' })
+  async createTestUser(@Body() body: any) {
+    try {
+      console.log('🔍 Creando usuario de prueba:', body);
+      
+      const { clinicaUrl, name, email, password, role = 'ADMIN' } = body;
+      
+      if (!clinicaUrl || !name || !email || !password) {
+        throw new BadRequestException('Faltan campos requeridos: clinicaUrl, name, email, password');
+      }
+      
+      // Buscar la clínica
+      const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+      
+      // Crear el usuario
+      const user = await this.clinicasService.createUsuarioClinica(clinicaUrl, {
+        name,
+        email,
+        password,
+        role,
+        estado: 'activo'
+      });
+      
+      console.log('✅ Usuario de prueba creado:', user);
+      return user;
+      
+    } catch (error) {
+      console.error('❌ Error creando usuario de prueba:', error);
+      throw error;
+    }
+  }
+
   // Endpoint público para crear clínicas (versión simplificada)
   @Post()
   @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
@@ -125,23 +185,33 @@ export class ClinicasController {
         // OWNER puede acceder a cualquier clínica
         console.log('🔍 Usuario es OWNER, accediendo a cualquier clínica');
         return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
-      } else if (req.user.role === 'ADMIN') {
-        // Para ADMIN, verificar que tenga acceso a esta clínica
-        // Obtener la clínica del usuario desde la base de datos
+      } else if (req.user.role === 'ADMIN' || req.user.role === 'SECRETARY' || req.user.role === 'PROFESSIONAL') {
+        // Para ADMIN, SECRETARY y PROFESSIONAL, verificar que tenga acceso a esta clínica
+        // Primero intentar usar la información del token
+        if (req.user.clinicaUrl && req.user.clinicaUrl === clinicaUrl) {
+          console.log(`🔍 Usuario es ${req.user.role} de la clínica correcta (desde token)`);
+          return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+        }
+        
+        // Si no hay clinicaUrl en el token, consultar la base de datos
+        console.log('🔍 No hay clinicaUrl en token, consultando DB...');
         const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
-        console.log('🔍 Clínica del usuario:', userClinica);
+        console.log('🔍 Clínica del usuario desde DB:', userClinica);
         
         if (userClinica && userClinica.url === clinicaUrl) {
-          console.log('🔍 Usuario es ADMIN de la clínica correcta');
+          console.log(`🔍 Usuario es ${req.user.role} de la clínica correcta (desde DB)`);
           return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
         } else {
           console.log('🔍 Acceso denegado - Usuario no tiene acceso a esta clínica');
+          console.log('🔍 userClinica.url:', userClinica?.url);
+          console.log('🔍 clinicaUrl solicitada:', clinicaUrl);
           throw new UnauthorizedException(
             'Acceso denegado. No tienes permisos para acceder a esta clínica.',
           );
         }
       } else {
         console.log('🔍 Acceso denegado - Usuario no tiene permisos');
+        console.log('🔍 Role del usuario:', req.user.role);
         throw new UnauthorizedException(
           'Acceso denegado. No tienes permisos para acceder a esta clínica.',
         );
@@ -160,15 +230,15 @@ export class ClinicasController {
     @Body() dto: CreateUsuarioClinicaDto,
   ) {
     // Verificar que el usuario tenga acceso a esta clínica
-    // Si es ADMIN de la clínica o OWNER, puede crear usuarios
+    // Si es ADMIN, SECRETARY de la clínica o OWNER, puede crear usuarios
     if (req.user.role === 'OWNER') {
       // OWNER puede crear usuarios en cualquier clínica
       return this.clinicasService.createUsuarioClinica(clinicaUrl, dto);
     } else if (
-      req.user.role === 'ADMIN' &&
+      (req.user.role === 'ADMIN' || req.user.role === 'SECRETARY' || req.user.role === 'PROFESSIONAL') &&
       req.user.clinicaUrl === clinicaUrl
     ) {
-      // ADMIN solo puede crear usuarios en su propia clínica
+      // ADMIN, SECRETARY y PROFESSIONAL solo pueden crear usuarios en su propia clínica
       return this.clinicasService.createUsuarioClinica(clinicaUrl, dto);
     } else {
       throw new UnauthorizedException(
@@ -186,15 +256,15 @@ export class ClinicasController {
     @Body() dto: UpdateUsuarioEstadoDto,
   ) {
     // Verificar que el usuario tenga acceso a esta clínica
-    // Si es ADMIN de la clínica o OWNER, puede actualizar usuarios
+    // Si es ADMIN, SECRETARY de la clínica o OWNER, puede actualizar usuarios
     if (req.user.role === 'OWNER') {
       // OWNER puede actualizar usuarios en cualquier clínica
       return this.clinicasService.updateUsuarioEstado(clinicaUrl, userId, dto);
     } else if (
-      req.user.role === 'ADMIN' &&
+      (req.user.role === 'ADMIN' || req.user.role === 'SECRETARY' || req.user.role === 'PROFESSIONAL') &&
       req.user.clinicaUrl === clinicaUrl
     ) {
-      // ADMIN solo puede actualizar usuarios en su propia clínica
+      // ADMIN, SECRETARY y PROFESSIONAL solo pueden actualizar usuarios en su propia clínica
       return this.clinicasService.updateUsuarioEstado(clinicaUrl, userId, dto);
     } else {
       throw new UnauthorizedException(
