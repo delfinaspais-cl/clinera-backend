@@ -47,14 +47,14 @@ export class AuthService {
     });
     
     // Obtener información de la clínica si el usuario tiene una
-    let clinicaUrl = null;
+    let clinicaUrl: string | null = null;
     if (user.clinicaId) {
       console.log('🔍 Usuario tiene clinicaId, buscando clínica...');
       const clinica = await this.prisma.clinica.findUnique({
         where: { id: user.clinicaId },
         select: { url: true }
       });
-      clinicaUrl = clinica?.url;
+      clinicaUrl = clinica?.url || null;
       console.log('🔍 Clínica encontrada:', { clinicaUrl });
     } else {
       console.log('🔍 Usuario no tiene clinicaId');
