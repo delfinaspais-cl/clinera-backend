@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { FichasMedicasService } from './fichas-medicas.service';
+import { FichasMedicasHistorialService } from './fichas-medicas-historial.service';
 import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto } from './dto/ficha-medica.dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -195,6 +196,108 @@ export class FichasMedicasController {
     @Param('imageId') imageId: string,
   ): Promise<{ success: boolean; message: string }> {
     return this.fichasMedicasService.deleteImage(clinicaUrl, pacienteId, imageId);
+  }
+
+  @Post('version/:versionId/upload-file')
+  @ApiOperation({ summary: 'Subir archivo a una versión específica' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Archivo a subir (PDF, DOC, DOCX)',
+        },
+        tipo: {
+          type: 'string',
+          enum: ['archivo', 'imagen'],
+          description: 'Tipo de archivo',
+        },
+        descripcion: {
+          type: 'string',
+          description: 'Descripción del archivo (opcional)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Archivo subido exitosamente', type: ArchivoMedicoDto })
+  @ApiResponse({ status: 400, description: 'Tipo de archivo no permitido' })
+  @ApiResponse({ status: 404, description: 'Versión no encontrada' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          return cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
+  async uploadFileToVersion(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Param('versionId') versionId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+    @Headers('authorization') authHeader: string,
+  ): Promise<ArchivoMedicoDto> {
+    console.log('📁 [UPLOAD_FILE_VERSION] Iniciando subida de archivo a versión específica');
+    console.log('📁 [UPLOAD_FILE_VERSION] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      fileMimeType: file?.mimetype,
+      bodyTipo: body?.tipo,
+      bodyDescripcion: body?.descripcion,
+      hasAuthHeader: !!authHeader
+    });
+    
+    if (!file) {
+      console.error('❌ [UPLOAD_FILE_VERSION] No se proporcionó archivo');
+      throw new BadRequestException('No se proporcionó archivo');
+    }
+
+    const { tipo, descripcion } = body;
+    if (!tipo || !['archivo', 'imagen'].includes(tipo)) {
+      console.error('❌ [UPLOAD_FILE_VERSION] Tipo de archivo inválido:', tipo);
+      throw new BadRequestException('Tipo de archivo debe ser "archivo" o "imagen"');
+    }
+
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    console.log('📁 [UPLOAD_FILE_VERSION] Token extraído:', {
+      hasToken: !!token,
+      tokenLength: token.length
+    });
+
+    console.log('📁 [UPLOAD_FILE_VERSION] Llamando al servicio con parámetros:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      tipo,
+      descripcion,
+      hasToken: !!token
+    });
+
+    // Llamar al servicio de historial para manejar la subida
+    const fichasMedicasHistorialService = this.fichasMedicasService['fichasMedicasHistorialService'];
+    return fichasMedicasHistorialService.subirArchivoVersion(
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      file,
+      tipo,
+      descripcion,
+      token
+    );
   }
 
   @Get('files/:fileId/signed-url')
