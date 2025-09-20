@@ -215,6 +215,113 @@ export class FichasMedicasHistorialController {
     );
   }
 
+  @Post('version/:versionId/upload-image')
+  @ApiOperation({ summary: 'Subir imagen a una versión específica' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen a subir',
+        },
+        tipo: {
+          type: 'string',
+          enum: ['archivo', 'imagen'],
+          description: 'Tipo de archivo',
+        },
+        descripcion: {
+          type: 'string',
+          description: 'Descripción de la imagen (opcional)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Imagen subida exitosamente', type: ArchivoMedicoHistorialDto })
+  @ApiResponse({ status: 400, description: 'El archivo debe ser una imagen' })
+  @ApiResponse({ status: 404, description: 'Versión no encontrada' })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          return cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('El archivo debe ser una imagen'), false);
+        }
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
+  async subirImagenVersion(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Param('versionId') versionId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+    @Headers('authorization') authHeader: string,
+  ): Promise<ArchivoMedicoHistorialDto> {
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Iniciando subida de imagen a versión específica');
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      fileMimeType: file?.mimetype,
+      bodyTipo: body?.tipo,
+      bodyDescripcion: body?.descripcion,
+      hasAuthHeader: !!authHeader
+    });
+    
+    if (!file) {
+      console.error('❌ [UPLOAD_IMAGE_VERSION] No se proporcionó imagen');
+      throw new BadRequestException('No se proporcionó imagen');
+    }
+
+    const { tipo, descripcion } = body;
+    if (!tipo || !['archivo', 'imagen'].includes(tipo)) {
+      console.error('❌ [UPLOAD_IMAGE_VERSION] Tipo de archivo inválido:', tipo);
+      throw new BadRequestException('Tipo de archivo debe ser "archivo" o "imagen"');
+    }
+
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Token extraído:', {
+      hasToken: !!token,
+      tokenLength: token.length
+    });
+
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Llamando al servicio con parámetros:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      tipo,
+      descripcion,
+      hasToken: !!token
+    });
+
+    return this.fichasMedicasHistorialService.subirArchivoVersion(
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      file,
+      tipo,
+      descripcion,
+      token
+    );
+  }
+
   @Get('version/:versionId/archivos')
   @ApiOperation({ summary: 'Obtener archivos de una versión específica' })
   @ApiResponse({ status: 200, description: 'Archivos obtenidos exitosamente', type: [ArchivoMedicoHistorialDto] })
