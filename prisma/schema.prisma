@@ -492,14 +492,15 @@ model FichaMedicaHistorial {
 }
 
 model FichaMedicaArchivo {
-  id               String               @id @default(cuid())
-  fichaHistorialId String
-  tipo             String
-  nombre           String
-  url              String
-  descripcion      String?
-  fechaSubida      DateTime             @default(now())
-  fichaHistorial   FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
+  id                 String               @id @default(cuid())
+  fichaHistorialId   String
+  tipo               String
+  nombre             String
+  url                String
+  descripcion        String?
+  fechaSubida        DateTime             @default(now())
+  microserviceFileId String?
+  fichaHistorial     FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
 
   @@index([fichaHistorialId])
   @@index([tipo])
