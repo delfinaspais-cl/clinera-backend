@@ -38,11 +38,53 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
-    return this.login(user);
+    
+    console.log('🔍 Usuario encontrado en login:', {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      clinicaId: user.clinicaId
+    });
+    
+    // Obtener información de la clínica si el usuario tiene una
+    let clinicaUrl = null;
+    if (user.clinicaId) {
+      console.log('🔍 Usuario tiene clinicaId, buscando clínica...');
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: user.clinicaId },
+        select: { url: true }
+      });
+      clinicaUrl = clinica?.url;
+      console.log('🔍 Clínica encontrada:', { clinicaUrl });
+    } else {
+      console.log('🔍 Usuario no tiene clinicaId');
+    }
+    
+    // Crear objeto de usuario con información de clínica
+    const userWithClinica = {
+      ...user,
+      clinicaUrl
+    };
+    
+    console.log('🔍 Usuario con clínica:', {
+      id: userWithClinica.id,
+      email: userWithClinica.email,
+      role: userWithClinica.role,
+      clinicaId: userWithClinica.clinicaId,
+      clinicaUrl: userWithClinica.clinicaUrl
+    });
+    
+    return this.login(userWithClinica);
   }
 
   async login(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role,
+      clinicaId: user.clinicaId,
+      clinicaUrl: user.clinicaUrl
+    };
     return { access_token: this.jwtService.sign(payload) };
   }
 

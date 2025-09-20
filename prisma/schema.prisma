@@ -32,23 +32,23 @@ model Clinica {
   pendienteAprobacion    Boolean                @default(false)
   mensapiServiceEmail    String?
   mensapiServicePassword String?
-  administradorId        String?                // ID del usuario administrador
+  administradorId        String?
+  administrador          User?                  @relation("ClinicaAdministrador", fields: [administradorId], references: [id])
   conversations          Conversation[]
   especialidades         Especialidad[]
-  tratamientos           Tratamiento[]
+  fichasMedicas          FichaMedica[]
+  fichasMedicasHistorial FichaMedicaHistorial[] @relation("ClinicaFichaHistorial")
   horarios               Horario[]
+  mediosPago             MedioPago[]
   mensajes               Mensaje[]
   notificaciones         Notificacion[]
   sucursales             Sucursal[]
+  tratamientos           Tratamiento[]
   turnos                 Turno[]
-  ventas                 Venta[]
   users                  User[]
+  ventas                 Venta[]
   whatsappMessages       WhatsAppMessage[]
   whatsappTemplates      WhatsAppTemplate[]
-  fichasMedicas          FichaMedica[]
-  fichasMedicasHistorial FichaMedicaHistorial[] @relation("ClinicaFichaHistorial")
-  mediosPago             MedioPago[]
-  administrador           User?                 @relation("ClinicaAdministrador", fields: [administradorId], references: [id])
 }
 
 model Mensaje {
@@ -125,38 +125,36 @@ model Notificacion {
 }
 
 model User {
-  id                   String                  @id @default(cuid())
-  email                String
-  username             String?                 // Nuevo campo para username
-  password             String
-  name                 String?
-  phone                String?
-  location             String?
-  bio                  String?
-  role                 Role
-  clinicaId            String?
-  estado               String?                 @default("activo")
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  avatar_url           String?
-  configuracion        String?
-  facebook             String?
-  instagram            String?
-  website              String?
-  whatsapp             String?
-  chatMessages         ChatMessage[]
-  notificaciones       Notificacion[]          @relation("UserNotifications")
-  patient              Patient?
-  professional         Professional?
-  pushTokens           PushNotificationToken[]
-  clinica              Clinica?                @relation(fields: [clinicaId], references: [id])
-  whatsappMessages     WhatsAppMessage[]
-  fichasMedicasCreadas FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
-  // Relación para clínicas que el usuario puede administrar
-  clinicasAdministradas Clinica[]              @relation("ClinicaAdministrador")
+  id                    String                  @id @default(cuid())
+  email                 String
+  password              String
+  name                  String?
+  phone                 String?
+  location              String?
+  bio                   String?
+  role                  Role
+  clinicaId             String?
+  estado                String?                 @default("activo")
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  avatar_url            String?
+  configuracion         String?
+  facebook              String?
+  instagram             String?
+  website               String?
+  whatsapp              String?
+  username              String?                 @unique
+  chatMessages          ChatMessage[]
+  clinicasAdministradas Clinica[]               @relation("ClinicaAdministrador")
+  fichasMedicasCreadas  FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
+  notificaciones        Notificacion[]          @relation("UserNotifications")
+  patient               Patient?
+  professional          Professional?
+  pushTokens            PushNotificationToken[]
+  clinica               Clinica?                @relation(fields: [clinicaId], references: [id])
+  whatsappMessages      WhatsAppMessage[]
 
   @@unique([email, clinicaId], name: "unique_email_per_clinica")
-  @@unique([username], name: "unique_username") // Username único globalmente
   @@index([email])
   @@index([username])
   @@index([clinicaId])
@@ -175,19 +173,19 @@ model Turno {
   clinicaId      String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  conversationId String?
   duracionMin    Int           @default(30)
   notas          String?
   professionalId String?
   servicio       String?
-  conversationId String?
   ate            String?
   estadoPago     String        @default("pendiente")
   medioPago      String?
   montoTotal     String?
-  montoAbonado   String?
-  montoPendiente String?
   origen         String?
   sucursal       String?
+  montoAbonado   String?
+  montoPendiente String?
   clinica        Clinica       @relation(fields: [clinicaId], references: [id])
   conversation   Conversation? @relation(fields: [conversationId], references: [id])
   professional   Professional? @relation(fields: [professionalId], references: [id])
@@ -201,9 +199,9 @@ model Patient {
   phone                  String?
   notes                  String?
   createdAt              DateTime               @default(now())
-  user                   User                   @relation(fields: [userId], references: [id])
   fichaMedica            FichaMedica?
   fichasMedicasHistorial FichaMedicaHistorial[] @relation("PatientFichaHistorial")
+  user                   User                   @relation(fields: [userId], references: [id])
 }
 
 model Professional {
@@ -216,12 +214,11 @@ model Professional {
   createdAt          DateTime                   @default(now())
   sucursalId         String?
   agendas            Agenda[]
-  user               User                       @relation(fields: [userId], references: [id])
-  turnos             Turno[]
   sucursal           Sucursal?                  @relation(fields: [sucursalId], references: [id])
-  // Relaciones muchos a muchos
+  user               User                       @relation(fields: [userId], references: [id])
   especialidades     ProfessionalEspecialidad[]
   tratamientos       ProfessionalTratamiento[]
+  turnos             Turno[]
 }
 
 model Agenda {
@@ -249,11 +246,9 @@ model Especialidad {
   name          String
   clinicaId     String
   clinica       Clinica                    @relation(fields: [clinicaId], references: [id])
-  // Relación muchos a muchos con profesionales
   profesionales ProfessionalEspecialidad[]
 }
 
-// Nueva tabla para tratamientos
 model Tratamiento {
   id            String                    @id @default(cuid())
   name          String
@@ -264,35 +259,32 @@ model Tratamiento {
   estado        String                    @default("activo")
   createdAt     DateTime                  @default(now())
   updatedAt     DateTime                  @updatedAt
-  clinica       Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  // Relación muchos a muchos con profesionales
   profesionales ProfessionalTratamiento[]
+  clinica       Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
 
   @@index([clinicaId])
   @@index([estado])
 }
 
-// Tabla de relación entre profesionales y especialidades
 model ProfessionalEspecialidad {
   id             String       @id @default(cuid())
   professionalId String
   especialidadId Int
   createdAt      DateTime     @default(now())
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   especialidad   Especialidad @relation(fields: [especialidadId], references: [id], onDelete: Cascade)
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@unique([professionalId, especialidadId])
   @@index([professionalId])
   @@index([especialidadId])
 }
 
-// Tabla de relación entre profesionales y tratamientos
 model ProfessionalTratamiento {
   id             String       @id @default(cuid())
   professionalId String
   tratamientoId  String
-  precio         Float? // Precio específico del profesional para este tratamiento
-  duracionMin    Int? // Duración específica del profesional para este tratamiento
+  precio         Float?
+  duracionMin    Int?
   createdAt      DateTime     @default(now())
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   tratamiento    Tratamiento  @relation(fields: [tratamientoId], references: [id], onDelete: Cascade)
@@ -418,89 +410,79 @@ model Sucursal {
   direccion     String?
   telefono      String?
   email         String?
-  ciudad        String?
-  provincia     String?
-  pais          String?
   estado        String         @default("activa")
   clinicaId     String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  clinica       Clinica        @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  ciudad        String?
+  pais          String?
+  provincia     String?
   professionals Professional[]
+  clinica       Clinica        @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
 
   @@index([clinicaId])
   @@index([estado])
 }
 
 model FichaMedica {
-  id                      String   @id @default(cuid())
-  pacienteId              String   @unique
-  clinicaId               String
-  grupoSanguineo          String?
-  alergias                String?
-  medicamentosActuales    String?
-  antecedentesPatologicos String?
-  antecedentesQuirurgicos String?
-  antecedentesFamiliares  String?
-  habitos                 String?
-  ocupacion               String?
-  motivoConsulta          String?
-  sintomas                String?
-  diagnostico             String?
-  tratamiento             String?
-  evolucion               String?
+  id                           String                 @id @default(cuid())
+  pacienteId                   String                 @unique
+  clinicaId                    String
+  grupoSanguineo               String?
+  alergias                     String?
+  medicamentosActuales         String?
+  antecedentesPatologicos      String?
+  antecedentesQuirurgicos      String?
+  antecedentesFamiliares       String?
+  habitos                      String?
+  ocupacion                    String?
+  motivoConsulta               String?
+  sintomas                     String?
+  diagnostico                  String?
+  tratamiento                  String?
+  evolucion                    String?
+  createdAt                    DateTime               @default(now())
+  updatedAt                    DateTime               @updatedAt
   tratamientosEsteticosPrevios String?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-
-  paciente           Patient                @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  clinica            Clinica                @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  archivosMedicos    ArchivoMedico[]
-  imagenesMedicas    ImagenMedica[]
-  historialVersiones FichaMedicaHistorial[]
+  archivosMedicos              ArchivoMedico[]
+  clinica                      Clinica                @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  paciente                     Patient                @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  fichasMedicasHistorial       FichaMedicaHistorial[] @relation("PatientFichaHistorial")
+  imagenesMedicas              ImagenMedica[]
 
   @@index([pacienteId])
   @@index([clinicaId])
 }
 
-// Nueva tabla para historial de versiones de fichas médicas
 model FichaMedicaHistorial {
-  id            String   @id @default(cuid())
-  pacienteId    String
-  clinicaId     String
-  version       Int
-  fechaCreacion DateTime @default(now())
-  creadoPor     String?
-
-  // Datos básicos
-  grupoSanguineo          String?
-  ocupacion               String?
-  alergias                String?
-  medicamentosActuales    String?
-  antecedentesPatologicos String?
-  antecedentesQuirurgicos String?
-  antecedentesFamiliares  String?
-  habitos                 String?
-
-  // Historia clínica
-  motivoConsulta String?
-  sintomas       String?
-  diagnostico    String?
-  tratamiento    String?
-  evolucion      String?
+  id                           String               @id @default(cuid())
+  pacienteId                   String
+  clinicaId                    String
+  version                      Int
+  fechaCreacion                DateTime             @default(now())
+  creadoPor                    String?
+  grupoSanguineo               String?
+  ocupacion                    String?
+  alergias                     String?
+  medicamentosActuales         String?
+  antecedentesPatologicos      String?
+  antecedentesQuirurgicos      String?
+  antecedentesFamiliares       String?
+  habitos                      String?
+  motivoConsulta               String?
+  sintomas                     String?
+  diagnostico                  String?
+  tratamiento                  String?
+  evolucion                    String?
+  notasCambio                  String?
+  esVersionActual              Boolean              @default(false)
+  createdAt                    DateTime             @default(now())
   tratamientosEsteticosPrevios String?
-
-  // Metadatos
-  notasCambio     String?
-  esVersionActual Boolean  @default(false)
-  createdAt       DateTime @default(now())
-
-  // Relaciones
-  paciente      Patient              @relation("PatientFichaHistorial", fields: [pacienteId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_pacienteId_fkey")
-  clinica       Clinica              @relation("ClinicaFichaHistorial", fields: [clinicaId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_clinicaId_fkey")
-  creadoPorUser User?                @relation("FichaMedicaCreadaPor", fields: [creadoPor], references: [id], map: "FichaMedicaHistorial_creadoPor_fkey")
-  archivos      FichaMedicaArchivo[]
-  fichaMedica   FichaMedica?         @relation(fields: [pacienteId], references: [pacienteId], map: "FichaMedicaHistorial_fichaMedica_fkey")
+  archivos                     FichaMedicaArchivo[]
+  clinica                      Clinica              @relation("ClinicaFichaHistorial", fields: [clinicaId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_clinicaId_fkey")
+  creadoPorUser                User?                @relation("FichaMedicaCreadaPor", fields: [creadoPor], references: [id], map: "FichaMedicaHistorial_creadoPor_fkey")
+  paciente                     FichaMedica          @relation("PatientFichaHistorial", fields: [pacienteId], references: [pacienteId], map: "FichaMedicaHistorial_pacienteId_fkey")
+  paciente                     Patient              @relation("PatientFichaHistorial", fields: [pacienteId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_pacienteId_fkey")
 
   @@index([pacienteId])
   @@index([clinicaId])
@@ -509,54 +491,50 @@ model FichaMedicaHistorial {
   @@index([fechaCreacion])
 }
 
-// Nueva tabla para archivos e imágenes por versión
 model FichaMedicaArchivo {
-  id               String   @id @default(cuid())
+  id               String               @id @default(cuid())
   fichaHistorialId String
-  tipo             String // 'archivo' o 'imagen'
+  tipo             String
   nombre           String
   url              String
   descripcion      String?
-  fechaSubida      DateTime @default(now())
-
-  fichaHistorial FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
+  fechaSubida      DateTime             @default(now())
+  fichaHistorial   FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
 
   @@index([fichaHistorialId])
   @@index([tipo])
 }
 
 model ArchivoMedico {
-  id                   String   @id @default(cuid())
-  fichaMedicaId        String
-  nombre               String
-  nombreArchivo        String
-  tipo                 String // 'pdf', 'doc', 'docx'
-  url                  String
-  tamañoBytes         BigInt?
-  microserviceFileId  String? // ID del archivo en el microservicio
-  fechaSubida          DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  fichaMedica FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  id                 String      @id @default(cuid())
+  fichaMedicaId      String
+  nombre             String
+  nombreArchivo      String
+  tipo               String
+  url                String
+  tamañoBytes       BigInt?
+  fechaSubida        DateTime    @default(now())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  microserviceFileId String?
+  fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
 }
 
 model ImagenMedica {
-  id                   String   @id @default(cuid())
-  fichaMedicaId        String
-  nombre               String
-  nombreArchivo        String
-  url                  String
-  descripcion          String?
-  tamañoBytes         BigInt?
-  microserviceFileId  String? // ID del archivo en el microservicio
-  fechaSubida          DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  fichaMedica FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  id                 String      @id @default(cuid())
+  fichaMedicaId      String
+  nombre             String
+  nombreArchivo      String
+  url                String
+  descripcion        String?
+  tamañoBytes       BigInt?
+  fechaSubida        DateTime    @default(now())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  microserviceFileId String?
+  fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
 }
@@ -572,14 +550,14 @@ model MedioPago {
   clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
   ventas      Venta[]
 
+  @@unique([nombre, clinicaId])
   @@index([clinicaId])
   @@index([activo])
-  @@unique([nombre, clinicaId]) // Evitar duplicados por clínica
 }
 
 model Venta {
   id               String     @id @default(cuid())
-  ventaId          String     @unique // ID personalizado para el frontend
+  ventaId          String     @unique
   comprador        String
   paciente         String
   email            String
@@ -593,8 +571,7 @@ model Venta {
   montoPendiente   String
   estado           String     @default("activa")
   estadoPago       String     @default("pendiente")
-  medioPago        String?    // Mantener para compatibilidad
-  medioPagoId      String?    // Nueva relación con MedioPago
+  medioPago        String?
   origen           String?
   ate              String?
   sesiones         Int        @default(1)
@@ -603,6 +580,7 @@ model Venta {
   fechaVencimiento DateTime?
   notas            String?
   clinicaId        String
+  medioPagoId      String?
   clinica          Clinica    @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
   medioPagoRel     MedioPago? @relation(fields: [medioPagoId], references: [id])
 

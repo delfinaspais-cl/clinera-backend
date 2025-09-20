@@ -57,6 +57,19 @@ export class ClinicasController {
     return { message: 'Endpoint funcionando correctamente', timestamp: new Date().toISOString() };
   }
 
+  // Endpoint de prueba para usuarios (sin autenticación)
+  @Get('test-usuarios/:clinicaUrl')
+  @ApiOperation({ summary: 'Endpoint de prueba para usuarios' })
+  async testUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      console.log('🔍 Test usuarios endpoint - clinicaUrl:', clinicaUrl);
+      return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
+    } catch (error) {
+      console.error('❌ Error en test usuarios:', error);
+      throw error;
+    }
+  }
+
   // Endpoint público para crear clínicas (versión simplificada)
   @Post()
   @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
@@ -99,23 +112,43 @@ export class ClinicasController {
   async getUsuariosByClinicaUrl(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
-    @Query() filters: GetUsuariosFiltersDto,
+    @Query() filters: any = {},
   ) {
-    // Verificar que el usuario tenga acceso a esta clínica
-    // Si es ADMIN de la clínica o OWNER, puede acceder
-    if (req.user.role === 'OWNER') {
-      // OWNER puede acceder a cualquier clínica
-      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
-    } else if (
-      req.user.role === 'ADMIN' &&
-      req.user.clinicaUrl === clinicaUrl
-    ) {
-      // ADMIN solo puede acceder a su propia clínica
-      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
-    } else {
-      throw new Error(
-        'Acceso denegado. No tienes permisos para acceder a esta clínica.',
-      );
+    try {
+      console.log('🔍 getUsuariosByClinicaUrl - Controller iniciando');
+      console.log('🔍 req.user:', req.user);
+      console.log('🔍 clinicaUrl:', clinicaUrl);
+      console.log('🔍 filters:', filters);
+      
+      // Verificar que el usuario tenga acceso a esta clínica
+      if (req.user.role === 'OWNER') {
+        // OWNER puede acceder a cualquier clínica
+        console.log('🔍 Usuario es OWNER, accediendo a cualquier clínica');
+        return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+      } else if (req.user.role === 'ADMIN') {
+        // Para ADMIN, verificar que tenga acceso a esta clínica
+        // Obtener la clínica del usuario desde la base de datos
+        const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+        console.log('🔍 Clínica del usuario:', userClinica);
+        
+        if (userClinica && userClinica.url === clinicaUrl) {
+          console.log('🔍 Usuario es ADMIN de la clínica correcta');
+          return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+        } else {
+          console.log('🔍 Acceso denegado - Usuario no tiene acceso a esta clínica');
+          throw new UnauthorizedException(
+            'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+          );
+        }
+      } else {
+        console.log('🔍 Acceso denegado - Usuario no tiene permisos');
+        throw new UnauthorizedException(
+          'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error en getUsuariosByClinicaUrl controller:', error);
+      throw error;
     }
   }
 

@@ -34,15 +34,41 @@ export class ClinicasService {
     return password;
   }
 
+  async getClinicaByUserId(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true
+            }
+          }
+        }
+      });
+
+      return user?.clinica || null;
+    } catch (error) {
+      console.error('Error al obtener clínica del usuario:', error);
+      return null;
+    }
+  }
+
   async getUsuariosByClinicaUrl(
     clinicaUrl: string,
     filters: GetUsuariosFiltersDto = {},
   ) {
     try {
+      console.log('🔍 getUsuariosByClinicaUrl - Iniciando con:', { clinicaUrl, filters });
+      
       // Buscar la clínica por URL
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
       });
+
+      console.log('🔍 Clínica encontrada:', clinica ? { id: clinica.id, name: clinica.name } : 'No encontrada');
 
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
@@ -81,6 +107,10 @@ export class ClinicasService {
       const limit = filters.limit || 10;
       const skip = (page - 1) * limit;
 
+      console.log('🔍 Construyendo consulta con where:', where);
+      console.log('🔍 OrderBy:', orderBy);
+      console.log('🔍 Paginación:', { page, limit, skip });
+
       // Obtener usuarios con paginación
       const [users, total] = await Promise.all([
         this.prisma.user.findMany({
@@ -88,21 +118,41 @@ export class ClinicasService {
           orderBy,
           skip,
           take: limit,
-          include: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            estado: true,
+            createdAt: true,
+            updatedAt: true,
             professional: {
-              include: {
+              select: {
+                name: true,
                 especialidades: {
-                  include: {
-                    especialidad: true
+                  select: {
+                    especialidad: {
+                      select: {
+                        name: true
+                      }
+                    }
                   }
                 }
               }
             },
-            patient: true,
+            patient: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
           },
         }),
         this.prisma.user.count({ where }),
       ]);
+
+      console.log('🔍 Usuarios encontrados:', users.length);
+      console.log('🔍 Total usuarios:', total);
 
       // Transformar los datos para el formato requerido
       const usuariosFormateados = users.map((user) => {
