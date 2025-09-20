@@ -175,7 +175,7 @@ export class FileMicroserviceService {
       console.log('🌐 [UPLOAD] URL completa:', `${this.microserviceUrl}/files/upload`);
       console.log('🌐 [UPLOAD] Headers finales:', {
         ...headers,
-        Authorization: headers.Authorization ? `Bearer ${headers.Authorization.split(' ')[1].substring(0, 20)}...` : 'NO_AUTH'
+        Authorization: (headers as any).Authorization ? `Bearer ${(headers as any).Authorization.split(' ')[1].substring(0, 20)}...` : 'NO_AUTH'
       });
       
       const response = await axios.post(
@@ -395,7 +395,7 @@ export class FileMicroserviceService {
       console.log('🌐 [SIGNED_URL] URL completa:', `${this.microserviceUrl}/files/${fileId}/url`);
       console.log('🌐 [SIGNED_URL] Headers:', {
         ...headers,
-        Authorization: headers.Authorization ? `Bearer ${headers.Authorization.split(' ')[1].substring(0, 20)}...` : 'NO_AUTH'
+        Authorization: (headers as any).Authorization ? `Bearer ${(headers as any).Authorization.split(' ')[1].substring(0, 20)}...` : 'NO_AUTH'
       });
 
       const response = await axios.get(
