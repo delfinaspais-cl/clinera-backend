@@ -291,16 +291,32 @@ export class FichasMedicasController {
     });
 
     // Llamar al servicio de historial para manejar la subida
-    const fichasMedicasHistorialService = this.fichasMedicasService['fichasMedicasHistorialService'];
-    return fichasMedicasHistorialService.subirArchivoVersion(
-      clinicaUrl,
-      pacienteId,
-      versionId,
-      file,
-      tipo,
-      descripcion,
-      token
-    );
+    console.log('📁 [UPLOAD_FILE_VERSION] Verificando disponibilidad del servicio...');
+    console.log('📁 [UPLOAD_FILE_VERSION] fichasMedicasHistorialService:', !!this.fichasMedicasHistorialService);
+    console.log('📁 [UPLOAD_FILE_VERSION] typeof fichasMedicasHistorialService:', typeof this.fichasMedicasHistorialService);
+    
+    if (!this.fichasMedicasHistorialService) {
+      console.error('❌ [UPLOAD_FILE_VERSION] fichasMedicasHistorialService no está disponible');
+      throw new Error('Servicio de historial no disponible');
+    }
+
+    console.log('📁 [UPLOAD_FILE_VERSION] Llamando al servicio de historial...');
+    try {
+      const result = await this.fichasMedicasHistorialService.subirArchivoVersion(
+        clinicaUrl,
+        pacienteId,
+        versionId,
+        file,
+        tipo,
+        descripcion,
+        token
+      );
+      console.log('✅ [UPLOAD_FILE_VERSION] Subida completada exitosamente:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [UPLOAD_FILE_VERSION] Error en el servicio de historial:', error);
+      throw error;
+    }
   }
 
   @Get('files/:fileId/signed-url')
