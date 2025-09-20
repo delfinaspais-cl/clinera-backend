@@ -481,8 +481,8 @@ model FichaMedicaHistorial {
   archivos                     FichaMedicaArchivo[]
   clinica                      Clinica              @relation("ClinicaFichaHistorial", fields: [clinicaId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_clinicaId_fkey")
   creadoPorUser                User?                @relation("FichaMedicaCreadaPor", fields: [creadoPor], references: [id], map: "FichaMedicaHistorial_creadoPor_fkey")
-  fichaMedica                   FichaMedica          @relation("PatientFichaHistorial", fields: [pacienteId], references: [pacienteId], map: "FichaMedicaHistorial_pacienteId_fkey")
   paciente                     Patient              @relation("PatientFichaHistorial", fields: [pacienteId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_pacienteId_fkey")
+  fichaMedica                  FichaMedica          @relation("PatientFichaHistorial", fields: [pacienteId], references: [pacienteId], onDelete: Cascade, map: "FichaMedicaHistorial_fichaMedica_fkey")
 
   @@index([pacienteId])
   @@index([clinicaId])
