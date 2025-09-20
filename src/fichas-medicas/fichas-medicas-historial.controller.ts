@@ -161,15 +161,47 @@ export class FichasMedicasHistorialController {
     @Param('versionId') versionId: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() body: any,
+    @Headers('authorization') authHeader: string,
   ): Promise<ArchivoMedicoHistorialDto> {
+    console.log('📁 [UPLOAD_VERSION] Iniciando subida de archivo a versión específica');
+    console.log('📁 [UPLOAD_VERSION] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      fileMimeType: file?.mimetype,
+      bodyTipo: body?.tipo,
+      bodyDescripcion: body?.descripcion,
+      hasAuthHeader: !!authHeader
+    });
+    
     if (!file) {
+      console.error('❌ [UPLOAD_VERSION] No se proporcionó archivo');
       throw new BadRequestException('No se proporcionó archivo');
     }
 
     const { tipo, descripcion } = body;
     if (!tipo || !['archivo', 'imagen'].includes(tipo)) {
+      console.error('❌ [UPLOAD_VERSION] Tipo de archivo inválido:', tipo);
       throw new BadRequestException('Tipo de archivo debe ser "archivo" o "imagen"');
     }
+
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    console.log('📁 [UPLOAD_VERSION] Token extraído:', {
+      hasToken: !!token,
+      tokenLength: token.length
+    });
+
+    console.log('📁 [UPLOAD_VERSION] Llamando al servicio con parámetros:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      tipo,
+      descripcion,
+      hasToken: !!token
+    });
 
     return this.fichasMedicasHistorialService.subirArchivoVersion(
       clinicaUrl,
@@ -177,7 +209,8 @@ export class FichasMedicasHistorialController {
       versionId,
       file,
       tipo,
-      descripcion
+      descripcion,
+      token
     );
   }
 

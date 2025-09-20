@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './services/storage.service';
+import { FileMicroserviceService } from './services/file-microservice.service';
 import {
   CrearVersionFichaMedicaDto,
   FichaMedicaHistorialResponseDto,
@@ -17,6 +18,7 @@ export class FichasMedicasHistorialService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly fileMicroserviceService: FileMicroserviceService,
   ) {}
 
   // Obtener ficha médica actual (última versión)
@@ -371,12 +373,31 @@ export class FichasMedicasHistorialService {
     versionId: string,
     file: Express.Multer.File,
     tipo: string,
-    descripcion?: string
+    descripcion?: string,
+    userToken?: string
   ): Promise<ArchivoMedicoHistorialDto> {
+    console.log('📁 [UPLOAD_VERSION_SERVICE] Iniciando subida de archivo a versión específica');
+    console.log('📁 [UPLOAD_VERSION_SERVICE] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      fileMimeType: file?.mimetype,
+      tipo,
+      descripcion,
+      hasUserToken: !!userToken,
+      userTokenLength: userToken?.length || 0
+    });
+
     const clinica = await this.verificarClinica(clinicaUrl);
+    console.log('✅ [UPLOAD_VERSION_SERVICE] Clínica verificada:', { clinicaId: clinica.id, clinicaUrl: clinica.url });
+
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
+    console.log('✅ [UPLOAD_VERSION_SERVICE] Paciente verificado:', { pacienteId: paciente.id });
 
     // Verificar que la versión existe
+    console.log('🔍 [UPLOAD_VERSION_SERVICE] Verificando versión:', versionId);
     const version = await this.prisma.fichaMedicaHistorial.findFirst({
       where: {
         id: versionId,
@@ -386,36 +407,81 @@ export class FichasMedicasHistorialService {
     });
 
     if (!version) {
+      console.error('❌ [UPLOAD_VERSION_SERVICE] Versión no encontrada:', {
+        versionId,
+        pacienteId,
+        clinicaId: clinica.id
+      });
       throw new NotFoundException('Versión no encontrada');
     }
+    console.log('✅ [UPLOAD_VERSION_SERVICE] Versión verificada:', { versionId: version.id });
 
     // Validar tipo de archivo
+    console.log('🔍 [UPLOAD_VERSION_SERVICE] Validando tipo de archivo:', { tipo, mimeType: file.mimetype });
     if (tipo === 'archivo') {
       const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!allowedTypes.includes(file.mimetype)) {
+        console.error('❌ [UPLOAD_VERSION_SERVICE] Tipo de archivo no permitido:', file.mimetype);
         throw new BadRequestException('Tipo de archivo no permitido');
       }
     } else if (tipo === 'imagen') {
       if (!file.mimetype.startsWith('image/')) {
+        console.error('❌ [UPLOAD_VERSION_SERVICE] El archivo debe ser una imagen:', file.mimetype);
         throw new BadRequestException('El archivo debe ser una imagen');
       }
     }
+    console.log('✅ [UPLOAD_VERSION_SERVICE] Tipo de archivo válido');
 
-    // Subir archivo
-    const uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo as 'archivos' | 'imagenes');
+    // Intentar usar microservicio primero, luego almacenamiento local
+    let uploadResult: any;
+    let useLocalStorage = false;
+
+    try {
+      console.log('🌐 [UPLOAD_VERSION_SERVICE] Intentando subir al microservicio...');
+      
+      // Usar el FileMicroserviceService si está disponible
+      const scope = `fichas-medicas-historial/${clinica.id}/${pacienteId}/${versionId}/${tipo}`;
+      const microserviceResult = await this.fileMicroserviceService.uploadFile({
+        file,
+        visibility: 'private',
+        scope,
+        conversationId: versionId,
+        messageId: `archivo-${Date.now()}`
+      }, userToken);
+
+      if ('error' in microserviceResult) {
+        console.log('⚠️ [UPLOAD_VERSION_SERVICE] Microservicio falló, usando almacenamiento local:', microserviceResult.error);
+        throw new Error(microserviceResult.error);
+      }
+
+      uploadResult = microserviceResult;
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo subido exitosamente al microservicio');
+
+    } catch (error) {
+      console.log('⚠️ [UPLOAD_VERSION_SERVICE] Microservicio no disponible, usando almacenamiento local:', error.message);
+      useLocalStorage = true;
+      
+      // Usar almacenamiento local como respaldo
+      uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo as 'archivos' | 'imagenes');
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo subido al almacenamiento local');
+    }
 
     // Guardar en base de datos
+    console.log('💾 [UPLOAD_VERSION_SERVICE] Guardando en base de datos...');
     const archivo = await this.prisma.fichaMedicaArchivo.create({
       data: {
         fichaHistorialId: versionId,
         tipo,
         nombre: file.originalname,
         url: uploadResult.url,
-        descripcion
+        descripcion,
+        microserviceFileId: useLocalStorage ? null : uploadResult.id
       }
     });
 
-    return {
+    console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo guardado en BD:', { archivoId: archivo.id });
+
+    const result = {
       id: archivo.id,
       tipo: archivo.tipo,
       nombre: archivo.nombre,
@@ -423,6 +489,9 @@ export class FichasMedicasHistorialService {
       descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     };
+
+    console.log('🎉 [UPLOAD_VERSION_SERVICE] Subida completada exitosamente:', result);
+    return result;
   }
 
   // Obtener archivos de una versión
