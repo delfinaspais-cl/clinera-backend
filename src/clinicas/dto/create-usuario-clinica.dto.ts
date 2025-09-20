@@ -6,6 +6,7 @@ import {
   MinLength,
   IsEmail,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateUsuarioClinicaDto {
@@ -22,11 +23,20 @@ export class CreateUsuarioClinicaDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'El rol es requerido' })
-  @IsIn(['profesional', 'secretario', 'administrador'], {
+  @ValidateIf((o) => !o.tipo) // Solo validar si no hay tipo
+  @IsNotEmpty({ message: 'El rol es requerido si no se proporciona tipo' })
+  @IsIn(['profesional', 'secretario', 'administrador', 'ADMIN', 'PROFESSIONAL', 'SECRETARY'], {
     message: 'El rol debe ser: profesional, secretario o administrador',
   })
-  rol: string;
+  rol?: string;
+
+  @IsString()
+  @ValidateIf((o) => !o.rol) // Solo validar si no hay rol
+  @IsNotEmpty({ message: 'El tipo es requerido si no se proporciona rol' })
+  @IsIn(['profesional', 'secretario', 'administrador', 'ADMIN', 'PROFESSIONAL', 'SECRETARY'], {
+    message: 'El tipo debe ser: profesional, secretario o administrador',
+  })
+  tipo?: string;
 
   @IsString()
   @IsOptional()

@@ -163,18 +163,24 @@ export class ClinicasService {
 
       // Mapear el rol del DTO al enum de Prisma
       let role: any;
-      switch (dto.rol) {
+      const rolInput = dto.rol || dto.tipo; // Aceptar tanto 'rol' como 'tipo'
+      
+      switch (rolInput?.toLowerCase()) {
         case 'profesional':
+        case 'professional':
           role = 'PROFESSIONAL';
           break;
         case 'secretario':
+        case 'secretary':
           role = 'SECRETARY';
           break;
         case 'administrador':
+        case 'admin':
           role = 'ADMIN';
           break;
         default:
-          throw new BadRequestException('Rol inválido');
+          console.error('Rol inválido recibido:', rolInput);
+          throw new BadRequestException(`Rol inválido: "${rolInput}". Roles válidos: profesional, secretario, administrador`);
       }
 
       // SIEMPRE generar contraseña automáticamente
