@@ -29,7 +29,10 @@ import { v4 as uuidv4 } from 'uuid';
 @ApiTags('Fichas Médicas')
 @Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
 export class FichasMedicasController {
-  constructor(private readonly fichasMedicasService: FichasMedicasService) {}
+  constructor(
+    private readonly fichasMedicasService: FichasMedicasService,
+    private readonly fichasMedicasHistorialService: FichasMedicasHistorialService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Obtener ficha médica de un paciente' })
