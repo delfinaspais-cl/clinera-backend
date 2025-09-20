@@ -49,5 +49,51 @@ export class PasswordGenerator {
     // Usar la contraseña legible para usuarios nuevos
     return this.generateSecurePassword();
   }
+
+  /**
+   * Genera un username único basado en el nombre del usuario
+   * Formato: [PrimerNombre][PrimerApellido][Número]
+   * Ejemplo: "JuanPerez123"
+   */
+  static generateUsername(fullName: string): string {
+    // Limpiar el nombre y dividir en partes
+    const nameParts = fullName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-záéíóúñ\s]/g, '') // Solo letras y espacios
+      .split(/\s+/)
+      .filter(part => part.length > 0);
+
+    if (nameParts.length === 0) {
+      // Si no hay nombre válido, generar uno aleatorio
+      return this.generateRandomUsername();
+    }
+
+    // Tomar el primer nombre y apellido
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : firstName;
+    
+    // Crear base del username
+    const baseUsername = `${firstName}${lastName}`;
+    
+    // Agregar número aleatorio para hacerlo único
+    const randomNumber = Math.floor(Math.random() * 999) + 1;
+    
+    return `${baseUsername}${randomNumber}`;
+  }
+
+  /**
+   * Genera un username completamente aleatorio
+   */
+  static generateRandomUsername(): string {
+    const adjectives = [
+      'usuario', 'admin', 'user', 'staff', 'empleado', 'trabajador'
+    ];
+    
+    const randomNumber = Math.floor(Math.random() * 9999) + 1;
+    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    
+    return `${adjective}${randomNumber}`;
+  }
 }
 

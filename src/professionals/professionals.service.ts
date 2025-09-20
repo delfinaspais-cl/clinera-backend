@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProfessionalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { EmailService } from '../email/email.service';
+import { PasswordGenerator } from '../common/utils/password-generator';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -181,9 +182,14 @@ export class ProfessionalsService {
       const hashedPassword = await bcrypt.hash(dto.password, 10);
       console.log('✅ Contraseña hasheada');
 
+      // Generar username automáticamente
+      const username = PasswordGenerator.generateUsername(dto.name);
+      console.log('✅ Username generado:', username);
+
       console.log('🔍 Creando usuario...');
       console.log('🔍 Datos del usuario:', {
         email: dto.email,
+        username: username,
         role: 'PROFESSIONAL',
         name: dto.name,
         phone: dto.phone,
@@ -193,6 +199,7 @@ export class ProfessionalsService {
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
+          username: username,
           password: hashedPassword,
           role: 'PROFESSIONAL',
           name: dto.name,
@@ -237,7 +244,8 @@ export class ProfessionalsService {
           dto.password, // Usar la contraseña original (antes del hash)
           dto.name,
           'PROFESSIONAL',
-          clinica.name
+          clinica.name,
+          username // Agregar el username generado
         );
 
         if (emailSent) {

@@ -14,6 +14,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailService } from '../email/email.service';
+import { PasswordGenerator } from '../common/utils/password-generator';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -90,9 +91,14 @@ export class AuthService {
       }
 
       const hashed = await bcrypt.hash(dto.password, 10);
+      
+      // Generar username automáticamente
+      const username = PasswordGenerator.generateUsername(dto.name);
+      
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
+          username: username,
           password: hashed,
           name: dto.name,
           role: role as any,

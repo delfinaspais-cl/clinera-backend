@@ -406,9 +406,14 @@ export class EmailService {
           <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1F2937; margin: 0 0 15px 0;">TUS CREDENCIALES DE ACCESO:</h3>
             <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; border-left: 4px solid #3B82F6;">
-              <p style="color: #374151; margin: 5px 0;"><strong>Email:</strong> ${data.email}</p>
-              <p style="color: #374151; margin: 5px 0;"><strong>Contraseña:</strong> ${data.password}</p>
-              <p style="color: #374151; margin: 5px 0;"><strong>Rol:</strong> ${data.role}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>👤 Usuario:</strong> ${data.username || data.email}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>🔑 Contraseña:</strong> ${data.password}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>👥 Rol:</strong> ${data.role}</p>
+            </div>
+            <div style="background-color: #FEF3C7; padding: 10px; border-radius: 6px; margin-top: 10px;">
+              <p style="color: #92400E; margin: 0; font-size: 14px;">
+                <strong>💡 Importante:</strong> Usa tu <strong>USUARIO</strong> (no el email) para iniciar sesión en el sistema.
+              </p>
             </div>
           </div>
           
@@ -497,9 +502,10 @@ export class EmailService {
     userName: string,
     role: string,
     clinicaName?: string,
+    username?: string,
   ): Promise<boolean> {
     console.log(`📧 EmailService: Enviando email de bienvenida a ${email}`);
-    console.log(`📧 EmailService: Datos - userName: ${userName}, role: ${role}, clinicaName: ${clinicaName}`);
+    console.log(`📧 EmailService: Datos - userName: ${userName}, role: ${role}, clinicaName: ${clinicaName}, username: ${username}`);
     
     const result = await this.sendEmail({
       to: email,
@@ -510,7 +516,8 @@ export class EmailService {
         password, 
         userName, 
         role, 
-        clinicaName 
+        clinicaName,
+        username 
       },
     });
     

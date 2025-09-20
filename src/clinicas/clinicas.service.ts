@@ -15,6 +15,7 @@ import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
 import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { CreatePatientDto } from '../patients/dto/create-patient.dto';
 import { EmailService } from '../email/email.service';
+import { PasswordGenerator } from '../common/utils/password-generator';
 
 @Injectable()
 export class ClinicasService {
@@ -189,6 +190,9 @@ export class ClinicasService {
       // SIEMPRE generar contraseña automáticamente
       const password = this.generatePassword();
       
+      // Generar username automáticamente
+      const username = PasswordGenerator.generateUsername(dto.nombre);
+      
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -197,6 +201,7 @@ export class ClinicasService {
         data: {
           name: dto.nombre,
           email: dto.email,
+          username: username,
           password: hashedPassword,
           role: role,
           clinicaId: clinica.id,
@@ -208,6 +213,7 @@ export class ClinicasService {
         console.log(`📧 Intentando enviar email de bienvenida a ${dto.email}...`);
         console.log(`📧 Datos del email:`, {
           email: dto.email,
+          username: username,
           password: password,
           userName: dto.nombre,
           role: dto.rol,
@@ -221,6 +227,7 @@ export class ClinicasService {
           template: 'welcome-credentials',
           data: { 
             email: dto.email, 
+            username: username,
             password: password, 
             userName: dto.nombre, 
             role: dto.rol, 
@@ -229,7 +236,7 @@ export class ClinicasService {
         });
         
         if (emailResult.success) {
-          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email} con contraseña: ${password}`);
+          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email} con username: ${username} y contraseña: ${password}`);
           console.log(`✅ MessageId: ${emailResult.messageId}`);
         } else {
           console.error(`❌ Falló el envío de email a ${dto.email} - error: ${emailResult.error}`);
