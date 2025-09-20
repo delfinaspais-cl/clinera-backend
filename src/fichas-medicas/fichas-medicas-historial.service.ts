@@ -468,16 +468,34 @@ export class FichasMedicasHistorialService {
 
     // Guardar en base de datos
     console.log('💾 [UPLOAD_VERSION_SERVICE] Guardando en base de datos...');
-    const archivo = await this.prisma.fichaMedicaArchivo.create({
-      data: {
-        fichaHistorialId: versionId,
-        tipo,
-        nombre: file.originalname,
-        url: uploadResult.url,
-        descripcion,
-        microserviceFileId: useLocalStorage ? null : uploadResult.id
-      }
+    console.log('💾 [UPLOAD_VERSION_SERVICE] Datos para crear archivo:', {
+      fichaHistorialId: versionId,
+      tipo,
+      nombre: file.originalname,
+      url: uploadResult.url,
+      descripcion,
+      microserviceFileId: useLocalStorage ? null : uploadResult.id,
+      useLocalStorage,
+      uploadResultId: uploadResult.id
     });
+    
+    let archivo;
+    try {
+      archivo = await this.prisma.fichaMedicaArchivo.create({
+        data: {
+          fichaHistorialId: versionId,
+          tipo,
+          nombre: file.originalname,
+          url: uploadResult.url,
+          descripcion,
+          microserviceFileId: useLocalStorage ? null : uploadResult.id
+        }
+      });
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo creado en BD:', archivo);
+    } catch (dbError) {
+      console.error('❌ [UPLOAD_VERSION_SERVICE] Error al crear archivo en BD:', dbError);
+      throw dbError;
+    }
 
     console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo guardado en BD:', { archivoId: archivo.id });
 
