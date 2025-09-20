@@ -110,7 +110,7 @@ export class UsersService {
 
   async login(dto: UserLoginDto) {
     try {
-      // Buscar usuario por username o email
+      // Buscar usuario por username o email con información de la clínica
       const user = await this.prisma.user.findFirst({
         where: { 
           OR: [
@@ -118,6 +118,20 @@ export class UsersService {
             { email: dto.username },
           ],
         },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              estado: true,
+              estadoPago: true,
+              createdAt: true,
+              colorPrimario: true,
+              colorSecundario: true,
+            }
+          }
+        }
       });
       
       if (!user) {
@@ -151,6 +165,7 @@ export class UsersService {
           username: user.username,
           name: user.name,
           role: user.role,
+          clinica: user.clinica, // Incluir información de la clínica
         },
       };
     } catch (error) {
@@ -166,31 +181,45 @@ export class UsersService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-      select: {
-        id: true,
-          email: true,
-          username: true,
-        name: true,
-          phone: true,
-        role: true,
-        estado: true,
-        createdAt: true,
-          avatar_url: true,
-      },
-    });
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              estado: true,
+              estadoPago: true,
+              createdAt: true,
+              colorPrimario: true,
+              colorSecundario: true,
+            }
+          }
+        }
+      });
 
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
-    }
+      }
 
-    return {
+      return {
         success: true,
-        user,
-    };
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          name: user.name,
+          phone: user.phone,
+          role: user.role,
+          estado: user.estado,
+          createdAt: user.createdAt,
+          avatar_url: user.avatar_url,
+          clinica: user.clinica, // Incluir información de la clínica
+        },
+      };
     } catch (error) {
       if (error instanceof NotFoundException) {
-      throw error;
-    }
+        throw error;
+      }
       console.error('Error al obtener perfil:', error);
       throw new BadRequestException('Error interno del servidor');
     }
