@@ -408,7 +408,7 @@ export class EmailService {
             <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; border-left: 4px solid #3B82F6;">
               <p style="color: #374151; margin: 5px 0;"><strong>👤 Usuario:</strong> ${data.username || data.email}</p>
               <p style="color: #374151; margin: 5px 0;"><strong>🔑 Contraseña:</strong> ${data.password}</p>
-              <p style="color: #374151; margin: 5px 0;"><strong>👥 Rol:</strong> ${data.role}</p>
+              <p style="color: #374151; margin: 5px 0;"><strong>👥 Rol:</strong> ${this.getRoleDisplayName(data.role)}</p>
             </div>
             <div style="background-color: #FEF3C7; padding: 10px; border-radius: 6px; margin-top: 10px;">
               <p style="color: #92400E; margin: 0; font-size: 14px;">
@@ -453,6 +453,18 @@ export class EmailService {
         </div>
       </div>
     `;
+  }
+
+  private getRoleDisplayName(role: string): string {
+    const roleMap: { [key: string]: string } = {
+      'ADMIN': 'Administrador',
+      'PROFESSIONAL': 'Profesional',
+      'SECRETARY': 'Secretario',
+      'PATIENT': 'Paciente',
+      'OWNER': 'Propietario'
+    };
+    
+    return roleMap[role] || role || 'No especificado';
   }
 
   private htmlToText(html: string): string {

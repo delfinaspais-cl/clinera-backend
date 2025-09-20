@@ -233,7 +233,7 @@ export class ClinicasService {
           username: username,
           password: password,
           userName: dto.nombre,
-          role: dto.rol,
+          role: role, // Usar el rol mapeado, no el del DTO
           clinicaName: clinica.name
         });
         
@@ -247,7 +247,7 @@ export class ClinicasService {
             username: username,
             password: password, 
             userName: dto.nombre, 
-            role: dto.rol, 
+            role: role, // Usar el rol mapeado, no el del DTO
             clinicaName: clinica.name 
           },
         });
