@@ -100,10 +100,10 @@ export class ClinicasController {
     try {
       console.log('🔍 Creando usuario de prueba:', body);
       
-      const { clinicaUrl, name, email, password, role = 'ADMIN' } = body;
+      const { clinicaUrl, nombre, email, password, rol = 'ADMIN' } = body;
       
-      if (!clinicaUrl || !name || !email || !password) {
-        throw new BadRequestException('Faltan campos requeridos: clinicaUrl, name, email, password');
+      if (!clinicaUrl || !nombre || !email || !password) {
+        throw new BadRequestException('Faltan campos requeridos: clinicaUrl, nombre, email, password');
       }
       
       // Buscar la clínica
@@ -114,11 +114,9 @@ export class ClinicasController {
       
       // Crear el usuario
       const user = await this.clinicasService.createUsuarioClinica(clinicaUrl, {
-        name,
+        nombre,
         email,
-        password,
-        role,
-        estado: 'activo'
+        rol
       });
       
       console.log('✅ Usuario de prueba creado:', user);
