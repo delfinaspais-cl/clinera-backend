@@ -312,7 +312,19 @@ export class FichasMedicasController {
         token
       );
       console.log('✅ [UPLOAD_FILE_VERSION] Subida completada exitosamente:', result);
-      return result;
+      
+      // Convertir ArchivoMedicoHistorialDto a ArchivoMedicoDto
+      const archivoDto: ArchivoMedicoDto = {
+        id: result.id,
+        tipo: result.tipo,
+        nombre: result.nombre,
+        url: result.url,
+        descripcion: result.descripcion,
+        fecha: result.fechaSubida
+      };
+      
+      console.log('✅ [UPLOAD_FILE_VERSION] DTO convertido:', archivoDto);
+      return archivoDto;
     } catch (error) {
       console.error('❌ [UPLOAD_FILE_VERSION] Error en el servicio de historial:', error);
       throw error;
