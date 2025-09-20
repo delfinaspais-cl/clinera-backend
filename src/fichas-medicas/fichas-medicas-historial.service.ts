@@ -505,7 +505,7 @@ export class FichasMedicasHistorialService {
       nombre: archivo.nombre,
       url: this.storageService.getFileUrl(archivo.url),
       descripcion: archivo.descripcion || undefined,
-      fechaSubida: archivo.fechaSubida.toISOString()
+      fecha: archivo.fechaSubida.toISOString()
     };
 
     console.log('🎉 [UPLOAD_VERSION_SERVICE] Subida completada exitosamente:', result);
