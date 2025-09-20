@@ -186,9 +186,24 @@ export class ProfessionalsService {
       const username = PasswordGenerator.generateUsername(dto.name);
       console.log('✅ Username generado:', username);
 
+      // Generar email automáticamente si ya existe
+      let emailToUse = dto.email;
+      const existingUser = await this.prisma.user.findFirst({
+        where: { 
+          email: dto.email,
+          clinicaId: clinica.id
+        },
+      });
+
+      if (existingUser) {
+        // Si el email ya existe, generar uno automático
+        emailToUse = PasswordGenerator.generateEmail(dto.name, clinica.name);
+        console.log(`📧 Email ${dto.email} ya existe, generando automático: ${emailToUse}`);
+      }
+
       console.log('🔍 Creando usuario...');
       console.log('🔍 Datos del usuario:', {
-        email: dto.email,
+        email: emailToUse,
         username: username,
         role: 'PROFESSIONAL',
         name: dto.name,
@@ -198,7 +213,7 @@ export class ProfessionalsService {
       
       const user = await this.prisma.user.create({
         data: {
-          email: dto.email,
+          email: emailToUse,
           username: username,
           password: hashedPassword,
           role: 'PROFESSIONAL',
@@ -237,10 +252,10 @@ export class ProfessionalsService {
       // Enviar email de bienvenida con credenciales
       let emailResult: { success: boolean; error?: string } = { success: false, error: 'No se intentó enviar' };
       try {
-        console.log(`📧 Enviando email de bienvenida a ${dto.email}...`);
+        console.log(`📧 Enviando email de bienvenida a ${emailToUse}...`);
         
         const emailSent = await this.emailService.sendWelcomeCredentialsEmail(
-          dto.email,
+          emailToUse, // Usar el email final (puede ser el original o el generado)
           dto.password, // Usar la contraseña original (antes del hash)
           dto.name,
           'PROFESSIONAL',
@@ -249,14 +264,14 @@ export class ProfessionalsService {
         );
 
         if (emailSent) {
-          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email}`);
+          console.log(`✅ Email de bienvenida enviado exitosamente a ${emailToUse}`);
           emailResult = { success: true };
         } else {
-          console.error(`❌ Error al enviar email de bienvenida a ${dto.email}`);
+          console.error(`❌ Error al enviar email de bienvenida a ${emailToUse}`);
           emailResult = { success: false, error: 'Error al enviar email' };
         }
       } catch (emailError) {
-        console.error(`❌ Error inesperado al enviar email de bienvenida a ${dto.email}:`, emailError);
+        console.error(`❌ Error inesperado al enviar email de bienvenida a ${emailToUse}:`, emailError);
         emailResult = { success: false, error: emailError.message || 'Error inesperado' };
       }
 
@@ -419,6 +434,9 @@ export class ProfessionalsService {
         emailEnviado: emailResult.success,
         fechaEmailEnviado: emailResult.success ? new Date().toISOString() : null,
         emailError: emailResult.error,
+        emailGenerado: emailToUse !== dto.email,
+        emailOriginal: dto.email,
+        emailFinal: emailToUse,
         // MensAPI integration removed
       };
       

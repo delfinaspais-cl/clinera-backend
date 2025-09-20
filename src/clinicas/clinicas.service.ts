@@ -159,17 +159,7 @@ export class ClinicasService {
         throw new BadRequestException('Clínica no encontrada');
       }
 
-      // Verificar si el email ya existe en esta clínica específica
-      const existingUser = await this.prisma.user.findFirst({
-        where: { 
-          email: dto.email,
-          clinicaId: clinica.id
-        },
-      });
-
-      if (existingUser) {
-        throw new BadRequestException('El email ya está registrado en esta clínica');
-      }
+      // La verificación de email duplicado se maneja más abajo en la lógica
 
       // Mapear el rol del DTO al enum de Prisma
       let role: any;
@@ -193,6 +183,27 @@ export class ClinicasService {
       // Generar username automáticamente
       const username = PasswordGenerator.generateUsername(dto.nombre);
       
+      // Generar email automáticamente si no se proporciona o si ya existe
+      let emailToUse = dto.email;
+      if (!dto.email || dto.email.trim() === '') {
+        emailToUse = PasswordGenerator.generateEmail(dto.nombre, clinica.name);
+        console.log(`📧 Email generado automáticamente: ${emailToUse}`);
+      } else {
+        // Verificar si el email ya existe
+        const existingUser = await this.prisma.user.findFirst({
+          where: { 
+            email: dto.email,
+            clinicaId: clinica.id
+          },
+        });
+
+        if (existingUser) {
+          // Si el email ya existe, generar uno automático
+          emailToUse = PasswordGenerator.generateEmail(dto.nombre, clinica.name);
+          console.log(`📧 Email ${dto.email} ya existe, generando automático: ${emailToUse}`);
+        }
+      }
+      
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -200,7 +211,7 @@ export class ClinicasService {
       const usuario = await this.prisma.user.create({
         data: {
           name: dto.nombre,
-          email: dto.email,
+          email: emailToUse,
           username: username,
           password: hashedPassword,
           role: role,
@@ -210,9 +221,9 @@ export class ClinicasService {
 
       // SIEMPRE enviar email de bienvenida con credenciales
       try {
-        console.log(`📧 Intentando enviar email de bienvenida a ${dto.email}...`);
+        console.log(`📧 Intentando enviar email de bienvenida a ${emailToUse}...`);
         console.log(`📧 Datos del email:`, {
-          email: dto.email,
+          email: emailToUse,
           username: username,
           password: password,
           userName: dto.nombre,
@@ -222,11 +233,11 @@ export class ClinicasService {
         
         // Usar la misma lógica que funciona en turnos - llamar directamente a sendEmail
         const emailResult = await this.emailService.sendEmail({
-          to: dto.email,
+          to: emailToUse,
           subject: `Bienvenido/a a ${clinica.name} - Tus credenciales de acceso`,
           template: 'welcome-credentials',
           data: { 
-            email: dto.email, 
+            email: emailToUse, 
             username: username,
             password: password, 
             userName: dto.nombre, 
@@ -236,10 +247,10 @@ export class ClinicasService {
         });
         
         if (emailResult.success) {
-          console.log(`✅ Email de bienvenida enviado exitosamente a ${dto.email} con username: ${username} y contraseña: ${password}`);
+          console.log(`✅ Email de bienvenida enviado exitosamente a ${emailToUse} con username: ${username} y contraseña: ${password}`);
           console.log(`✅ MessageId: ${emailResult.messageId}`);
         } else {
-          console.error(`❌ Falló el envío de email a ${dto.email} - error: ${emailResult.error}`);
+          console.error(`❌ Falló el envío de email a ${emailToUse} - error: ${emailResult.error}`);
         }
       } catch (emailError) {
         console.error('❌ Error al enviar email de bienvenida:', emailError);
@@ -253,6 +264,7 @@ export class ClinicasService {
           id: usuario.id,
           nombre: usuario.name,
           email: usuario.email,
+          username: usuario.username,
           rol: dto.rol,
           especialidad: dto.especialidad || null,
           estado: 'activo',
@@ -261,6 +273,9 @@ export class ClinicasService {
           turnos: 0,
           pacientes: 0,
         },
+        emailGenerado: emailToUse !== dto.email,
+        emailOriginal: dto.email,
+        emailFinal: emailToUse,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
