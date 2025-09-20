@@ -298,6 +298,17 @@ export class FichasMedicasService {
   }
 
   async uploadImage(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ImagenMedicaDto> {
+    console.log('🖼️ [UPLOAD_IMAGE] Iniciando proceso de subida de imagen');
+    console.log('🖼️ [UPLOAD_IMAGE] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      mimeType: file?.mimetype,
+      hasUserToken: !!userToken,
+      userTokenLength: userToken?.length || 0
+    });
+    
     // Verificar que la clínica y paciente existen
     const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl }
@@ -524,5 +535,87 @@ export class FichasMedicasService {
       success: true, 
       message: 'Imagen eliminada correctamente' 
     };
+  }
+
+  async getSignedUrl(clinicaUrl: string, pacienteId: string, fileId: string, userToken?: string): Promise<{ url: string } | { error: string; statusCode: number }> {
+    console.log('🔗 [SIGNED_URL_SERVICE] Iniciando obtención de URL firmada');
+    console.log('🔗 [SIGNED_URL_SERVICE] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      fileId,
+      hasUserToken: !!userToken,
+      userTokenLength: userToken?.length || 0
+    });
+
+    // Verificar que la clínica y paciente existen
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      console.error('❌ [SIGNED_URL_SERVICE] Clínica no encontrada:', clinicaUrl);
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        user: {
+          clinicaId: clinica.id
+        }
+      }
+    });
+
+    if (!paciente) {
+      console.error('❌ [SIGNED_URL_SERVICE] Paciente no encontrado:', { pacienteId, clinicaId: clinica.id });
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Obtener archivo de la base de datos
+    const archivo = await this.prisma.archivoMedico.findFirst({
+      where: { 
+        id: fileId,
+        fichaMedica: {
+          pacienteId
+        }
+      }
+    });
+
+    if (!archivo) {
+      console.error('❌ [SIGNED_URL_SERVICE] Archivo no encontrado en BD:', { fileId, pacienteId });
+      throw new NotFoundException('Archivo no encontrado');
+    }
+
+    console.log('📋 [SIGNED_URL_SERVICE] Archivo encontrado en BD:', {
+      id: archivo.id,
+      nombre: archivo.nombre,
+      microserviceFileId: archivo.microserviceFileId,
+      url: archivo.url
+    });
+
+    // Si el archivo tiene microserviceFileId, obtener URL firmada del microservicio
+    if (archivo.microserviceFileId) {
+      console.log('🌐 [SIGNED_URL_SERVICE] Archivo está en microservicio, obteniendo URL firmada...');
+      
+      try {
+        const result = await this.fileMicroserviceService.getSignedUrl(archivo.microserviceFileId, userToken);
+        
+        if ('error' in result) {
+          console.error('❌ [SIGNED_URL_SERVICE] Error obteniendo URL firmada del microservicio:', result);
+          return result;
+        }
+        
+        console.log('✅ [SIGNED_URL_SERVICE] URL firmada obtenida del microservicio:', result.url);
+        return result;
+        
+      } catch (error) {
+        console.error('❌ [SIGNED_URL_SERVICE] Error inesperado obteniendo URL firmada:', error);
+        return { error: 'Error obteniendo URL firmada del microservicio', statusCode: 500 };
+      }
+    } else {
+      // Si no tiene microserviceFileId, es un archivo local
+      console.log('📁 [SIGNED_URL_SERVICE] Archivo es local, retornando URL directa');
+      return { url: archivo.url };
+    }
   }
 }

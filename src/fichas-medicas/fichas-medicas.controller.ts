@@ -196,4 +196,32 @@ export class FichasMedicasController {
   ): Promise<{ success: boolean; message: string }> {
     return this.fichasMedicasService.deleteImage(clinicaUrl, pacienteId, imageId);
   }
+
+  @Get('files/:fileId/signed-url')
+  @ApiOperation({ summary: 'Obtener URL firmada para acceder a un archivo' })
+  @ApiResponse({ status: 200, description: 'URL firmada obtenida exitosamente' })
+  @ApiResponse({ status: 404, description: 'Archivo no encontrado' })
+  async getSignedUrl(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Param('fileId') fileId: string,
+    @Headers('authorization') authHeader: string,
+  ): Promise<{ url: string } | { error: string; statusCode: number }> {
+    console.log('🔗 [SIGNED_URL_CONTROLLER] Iniciando obtención de URL firmada');
+    console.log('🔗 [SIGNED_URL_CONTROLLER] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      fileId,
+      hasAuthHeader: !!authHeader
+    });
+    
+    // Extraer el token del header Authorization
+    const token = authHeader?.replace('Bearer ', '') || '';
+    console.log('🔗 [SIGNED_URL_CONTROLLER] Token extraído:', {
+      hasToken: !!token,
+      tokenLength: token.length
+    });
+    
+    return this.fichasMedicasService.getSignedUrl(clinicaUrl, pacienteId, fileId, token);
+  }
 }
