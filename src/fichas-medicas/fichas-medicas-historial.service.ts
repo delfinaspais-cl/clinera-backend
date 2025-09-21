@@ -412,6 +412,25 @@ export class FichasMedicasHistorialService {
         pacienteId,
         clinicaId: clinica.id
       });
+      
+      // Buscar todas las versiones del paciente para debug
+      const todasLasVersiones = await this.prisma.fichaMedicaHistorial.findMany({
+        where: {
+          pacienteId,
+          clinicaId: clinica.id
+        },
+        select: {
+          id: true,
+          version: true,
+          fechaCreacion: true
+        },
+        orderBy: {
+          fechaCreacion: 'desc'
+        }
+      });
+      
+      console.log('🔍 [UPLOAD_VERSION_SERVICE] Versiones disponibles para este paciente:', todasLasVersiones);
+      
       throw new NotFoundException('Versión no encontrada');
     }
     console.log('✅ [UPLOAD_VERSION_SERVICE] Versión verificada:', { versionId: version.id });
