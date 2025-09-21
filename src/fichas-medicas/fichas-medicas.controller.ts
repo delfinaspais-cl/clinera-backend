@@ -319,7 +319,6 @@ export class FichasMedicasController {
         tipo: result.tipo,
         nombre: result.nombre,
         url: result.url,
-        descripcion: result.descripcion,
         fecha: result.fechaSubida
       };
       
