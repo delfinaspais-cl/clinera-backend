@@ -330,6 +330,110 @@ export class FichasMedicasController {
     }
   }
 
+  @Post('version/:versionId/upload-image')
+  @ApiOperation({ summary: 'Subir imagen a una versión específica' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen a subir',
+        },
+        descripcion: {
+          type: 'string',
+          description: 'Descripción de la imagen (opcional)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Imagen subida exitosamente', type: ImagenMedicaDto })
+  @ApiResponse({ status: 400, description: 'El archivo debe ser una imagen' })
+  @ApiResponse({ status: 404, description: 'Versión no encontrada' })
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          return cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('El archivo debe ser una imagen'), false);
+        }
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
+    }),
+  )
+  async uploadImageToVersion(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Param('versionId') versionId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+    @Headers('authorization') authHeader: string,
+  ): Promise<ImagenMedicaDto> {
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Iniciando subida de imagen a versión');
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Parámetros recibidos:', {
+      clinicaUrl,
+      pacienteId,
+      versionId,
+      fileName: file?.originalname,
+      fileSize: file?.size,
+      fileMimeType: file?.mimetype,
+      hasAuthHeader: !!authHeader
+    });
+
+    const token = authHeader?.replace('Bearer ', '');
+    const descripcion = body.descripcion;
+
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Verificando disponibilidad del servicio...');
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] fichasMedicasHistorialService:', !!this.fichasMedicasHistorialService);
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] typeof fichasMedicasHistorialService:', typeof this.fichasMedicasHistorialService);
+    
+    if (!this.fichasMedicasHistorialService) {
+      console.error('❌ [UPLOAD_IMAGE_VERSION] fichasMedicasHistorialService no está disponible');
+      throw new Error('Servicio de historial no disponible');
+    }
+
+    console.log('🖼️ [UPLOAD_IMAGE_VERSION] Llamando al servicio de historial...');
+    try {
+      const result = await this.fichasMedicasHistorialService.subirArchivoVersion(
+        clinicaUrl,
+        pacienteId,
+        versionId,
+        file,
+        'imagen', // Tipo fijo para imágenes
+        descripcion,
+        token
+      );
+      console.log('✅ [UPLOAD_IMAGE_VERSION] Subida completada exitosamente:', result);
+      
+      // Convertir ArchivoMedicoHistorialDto a ImagenMedicaDto
+      const imagenDto: ImagenMedicaDto = {
+        id: result.id,
+        nombre: result.nombre,
+        url: result.url,
+        fecha: result.fechaSubida,
+        descripcion: result.descripcion || ''
+      };
+      
+      console.log('✅ [UPLOAD_IMAGE_VERSION] DTO convertido:', imagenDto);
+      return imagenDto;
+    } catch (error) {
+      console.error('❌ [UPLOAD_IMAGE_VERSION] Error en el servicio de historial:', error);
+      throw error;
+    }
+  }
+
   @Get('files/:fileId/signed-url')
   @ApiOperation({ summary: 'Obtener URL firmada para acceder a un archivo' })
   @ApiResponse({ status: 200, description: 'URL firmada obtenida exitosamente' })
