@@ -57,13 +57,20 @@ export class StorageService {
       hasBuffer: !!file.buffer,
       bufferLength: file.buffer?.length,
       fileSize: file.size,
-      originalName: file.originalname
+      originalName: file.originalname,
+      filePath: file.path
     });
     
     if (file.buffer) {
+      // Usar buffer si está disponible
       fs.writeFileSync(filePath, file.buffer);
+      console.log('✅ [STORAGE] Archivo guardado usando buffer');
+    } else if (file.path) {
+      // Si no hay buffer pero hay path, copiar el archivo
+      fs.copyFileSync(file.path, filePath);
+      console.log('✅ [STORAGE] Archivo copiado desde path');
     } else {
-      console.error('❌ [STORAGE] file.buffer es undefined, no se puede guardar el archivo');
+      console.error('❌ [STORAGE] No hay buffer ni path disponible');
       throw new Error('Buffer del archivo no disponible');
     }
     

@@ -60,7 +60,16 @@ export class FileMicroserviceService {
       console.log('📦 [UPLOAD] Preparando FormData...');
       
       // Agregar el archivo
-      formData.append('file', params.file, {
+      // Verificar si tenemos buffer o usar el archivo completo
+      const fileData = params.file.buffer || params.file;
+      console.log('📦 [UPLOAD] Tipo de archivo para FormData:', {
+        hasBuffer: !!params.file.buffer,
+        bufferLength: params.file.buffer?.length,
+        fileSize: params.file.size,
+        usingBuffer: !!params.file.buffer
+      });
+      
+      formData.append('file', fileData, {
         filename: params.file.originalname,
         contentType: params.file.mimetype,
       });
