@@ -499,7 +499,7 @@ model FichaMedicaArchivo {
   url                String
   descripcion        String?
   fechaSubida        DateTime             @default(now())
-  microserviceFileId String?
+  // microserviceFileId String?  // Temporalmente comentado hasta migración
   fichaHistorial     FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
 
   @@index([fichaHistorialId])
@@ -517,7 +517,7 @@ model ArchivoMedico {
   fechaSubida        DateTime    @default(now())
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
-  microserviceFileId String?
+  // microserviceFileId String?  // Temporalmente comentado hasta migración
   fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
@@ -534,7 +534,7 @@ model ImagenMedica {
   fechaSubida        DateTime    @default(now())
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
-  microserviceFileId String?
+  // microserviceFileId String?  // Temporalmente comentado hasta migración
   fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
