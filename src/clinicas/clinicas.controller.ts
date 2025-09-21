@@ -733,6 +733,139 @@ export class ClinicasController {
     }
   }
 
+  // Endpoint de prueba simple sin filtros
+  @Get(':clinicaUrl/turnos-simple')
+  @ApiOperation({ summary: 'DEBUG: Obtener turnos simple sin filtros' })
+  async getTurnosSimple(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('=== DEBUG TURNOS SIMPLE ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('=====================================');
+    
+    try {
+      // Buscar la clínica directamente
+      const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
+      console.log('Clínica encontrada:', clinica ? { id: clinica.id, name: clinica.name } : 'No encontrada');
+      
+      if (!clinica) {
+        return { success: false, message: 'Clínica no encontrada' };
+      }
+      
+      // Obtener turnos sin filtros
+      const turnos = await this.clinicasService.getTurnos(clinicaUrl, {});
+      console.log('Turnos obtenidos:', turnos);
+      
+      return turnos;
+    } catch (error) {
+      console.error('Error en getTurnosSimple:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        stack: error.stack 
+      };
+    }
+  }
+
+  // Endpoint de prueba básico - solo verificar clínica
+  @Get(':clinicaUrl/test-basic')
+  @ApiOperation({ summary: 'DEBUG: Test básico de clínica' })
+  async testBasic(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('=== TEST BASIC ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('===========================');
+    
+    try {
+      // Buscar la clínica directamente
+      const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
+      console.log('Clínica encontrada:', clinica ? { id: clinica.id, name: clinica.name } : 'No encontrada');
+      
+      if (!clinica) {
+        return { success: false, message: 'Clínica no encontrada' };
+      }
+      
+      // Contar turnos básico
+      const turnosCount = await this.clinicasService.getTurnosCount(clinicaUrl);
+      console.log('Total de turnos:', turnosCount);
+      
+      return { 
+        success: true, 
+        clinica: { id: clinica.id, name: clinica.name, url: clinica.url },
+        turnosCount: turnosCount
+      };
+    } catch (error) {
+      console.error('Error en testBasic:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        stack: error.stack 
+      };
+    }
+  }
+
+  // Endpoint de prueba con valores hardcodeados
+  @Get(':clinicaUrl/turnos-hardcoded')
+  @ApiOperation({ summary: 'DEBUG: Test con valores hardcodeados' })
+  async getTurnosHardcoded(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('=== TURNOS HARDCODED ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('==================================');
+    
+    try {
+      // Usar valores hardcodeados para evitar problemas de conversión
+      const filters = {
+        fecha: '2025-09-21',
+        limit: 100,
+        page: 1
+      };
+      
+      console.log('Filtros hardcodeados:', filters);
+      
+      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+    } catch (error) {
+      console.error('Error en getTurnosHardcoded:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        stack: error.stack 
+      };
+    }
+  }
+
+  // Endpoint de prueba sin filtros de fecha
+  @Get(':clinicaUrl/turnos-no-fecha')
+  @ApiOperation({ summary: 'DEBUG: Test sin filtros de fecha' })
+  async getTurnosNoFecha(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('=== TURNOS NO FECHA ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('================================');
+    
+    try {
+      // Sin filtros de fecha, solo paginación
+      const filters = {
+        limit: 100,
+        page: 1
+      };
+      
+      console.log('Filtros sin fecha:', filters);
+      
+      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+    } catch (error) {
+      console.error('Error en getTurnosNoFecha:', error);
+      return { 
+        success: false, 
+        error: error.message,
+        stack: error.stack 
+      };
+    }
+  }
+
   @Get(':clinicaUrl/turnos')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener turnos de la clínica' })
@@ -746,11 +879,20 @@ export class ClinicasController {
     console.log('=== GET TURNOS ENDPOINT ===');
     console.log('req.user:', req.user);
     console.log('clinicaUrl:', clinicaUrl);
-    console.log('filters:', filters);
+    console.log('filters recibidos:', filters);
     console.log('===========================');
     
     try {
-      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+      // Asegurar que los valores numéricos sean números
+      const processedFilters = {
+        ...filters,
+        limit: filters.limit ? parseInt(filters.limit.toString()) : 20,
+        page: filters.page ? parseInt(filters.page.toString()) : 1
+      };
+      
+      console.log('filters procesados:', processedFilters);
+      
+      return await this.clinicasService.getTurnos(clinicaUrl, processedFilters);
     } catch (error) {
       console.error('Error en getTurnos:', error);
       throw error;

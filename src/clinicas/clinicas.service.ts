@@ -2449,9 +2449,16 @@ export class ClinicasService {
 
   async getTurnos(clinicaUrl: string, filters: any) {
     try {
+      console.log('=== GET TURNOS SERVICE ===');
+      console.log('clinicaUrl:', clinicaUrl);
+      console.log('filters:', filters);
+      console.log('==========================');
+      
       const clinica = await this.prisma.clinica.findUnique({
         where: { url: clinicaUrl },
       });
+
+      console.log('Clínica encontrada:', clinica ? { id: clinica.id, name: clinica.name } : 'No encontrada');
 
       if (!clinica) {
         throw new BadRequestException('Clínica no encontrada');
@@ -2480,11 +2487,14 @@ export class ClinicasService {
 
 
       // Paginación
-      const page = filters.page || 1;
-      const limit = filters.limit || 20;
+      const page = parseInt(filters.page) || 1;
+      const limit = parseInt(filters.limit) || 20;
       const skip = (page - 1) * limit;
 
       // Obtener turnos
+      console.log('Ejecutando consulta a la base de datos...');
+      console.log('Where clause:', JSON.stringify(where, null, 2));
+      
       const [turnos, total] = await Promise.all([
         this.prisma.turno.findMany({
           where,
@@ -2494,6 +2504,9 @@ export class ClinicasService {
         }),
         this.prisma.turno.count({ where }),
       ]);
+      
+      console.log('Consulta completada. Turnos encontrados:', turnos.length);
+      console.log('Total de turnos:', total);
 
       // Procesar datos de pago para cada turno
       const turnosProcesados = turnos.map(turno => {
@@ -2555,6 +2568,12 @@ export class ClinicasService {
         },
       };
     } catch (error) {
+      console.error('=== ERROR EN GET TURNOS ===');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('============================');
+      
       if (error instanceof BadRequestException) {
         throw error;
       }
@@ -2593,8 +2612,8 @@ export class ClinicasService {
       }
 
       // Paginación
-      const page = filters.page || 1;
-      const limit = filters.limit || 20;
+      const page = parseInt(filters.page) || 1;
+      const limit = parseInt(filters.limit) || 20;
       const skip = (page - 1) * limit;
 
       // Obtener notificaciones
@@ -2766,8 +2785,8 @@ export class ClinicasService {
 
 
       // Paginación
-      const page = filters.page || 1;
-      const limit = filters.limit || 20;
+      const page = parseInt(filters.page) || 1;
+      const limit = parseInt(filters.limit) || 20;
       const skip = (page - 1) * limit;
 
       // Obtener turnos con información completa
