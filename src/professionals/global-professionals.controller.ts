@@ -552,6 +552,413 @@ export class GlobalProfessionalsController {
     }
   }
 
+  @Get('clinica/:clinicaId/availability')
+  @ApiOperation({ summary: 'Obtener disponibilidad de profesionales (horarios de trabajo y turnos agendados) - PÚBLICO' })
+  @ApiResponse({ status: 200, description: 'Disponibilidad de profesionales obtenida exitosamente' })
+  @ApiQuery({ name: 'fecha', required: false, description: 'Filtrar por fecha específica (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'especialidad', required: false, description: 'Filtrar por especialidad' })
+  async getProfessionalsAvailability(
+    @Param('clinicaId') clinicaId: string,
+    @Query('fecha') fecha?: string,
+    @Query('especialidad') especialidad?: string,
+  ) {
+    try {
+      console.log(`🔍 [${new Date().toISOString()}] Obteniendo disponibilidad para clínica: ${clinicaId}`);
+      console.log(`🔍 Filtros: fecha=${fecha}, especialidad=${especialidad}`);
+
+      // 1. Obtener profesionales de la clínica con sus horarios de trabajo
+      const whereProfessional: any = {
+        user: {
+          clinicaId: clinicaId,
+        },
+      };
+
+      if (especialidad) {
+        whereProfessional.especialidades = {
+          some: {
+            especialidad: {
+              name: {
+                contains: especialidad,
+                mode: 'insensitive'
+              }
+            }
+          }
+        };
+      }
+
+      const profesionales = await this.prisma.professional.findMany({
+        where: whereProfessional,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+            }
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+          especialidades: {
+            include: {
+              especialidad: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  name: true,
+                  precio: true,
+                  duracionMin: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      console.log(`✅ Profesionales encontrados: ${profesionales.length}`);
+
+      // 2. Si se especifica una fecha, obtener turnos agendados para esa fecha
+      let turnosAgendados: any[] = [];
+      if (fecha) {
+        const fechaInicio = new Date(fecha);
+        const fechaFin = new Date(fecha);
+        fechaFin.setDate(fechaFin.getDate() + 1);
+
+        turnosAgendados = await this.prisma.turno.findMany({
+          where: {
+            clinicaId: clinicaId,
+            fecha: {
+              gte: fechaInicio,
+              lt: fechaFin,
+            },
+            estado: {
+              not: 'cancelado'
+            }
+          },
+          select: {
+            id: true,
+            professionalId: true,
+            fecha: true,
+            hora: true,
+            duracionMin: true,
+            estado: true,
+            paciente: true,
+            motivo: true,
+          },
+          orderBy: {
+            hora: 'asc',
+          },
+        });
+
+        console.log(`✅ Turnos agendados para ${fecha}: ${turnosAgendados.length}`);
+      }
+
+      // 3. Procesar datos para cada profesional
+      const profesionalesConDisponibilidad = profesionales.map(profesional => {
+        // Horarios de trabajo del profesional
+        const horariosTrabajo = profesional.agendas.map(agenda => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+          duracionMin: agenda.duracionMin,
+        }));
+
+        // Turnos agendados del profesional (si se especificó fecha)
+        const turnosProfesional = turnosAgendados.filter(turno => 
+          turno.professionalId === profesional.id
+        ).map(turno => ({
+          id: turno.id,
+          fecha: turno.fecha,
+          hora: turno.hora,
+          duracionMin: turno.duracionMin,
+          estado: turno.estado,
+          paciente: turno.paciente,
+          motivo: turno.motivo,
+        }));
+
+        // Especialidades del profesional
+        const especialidades = profesional.especialidades.map(esp => esp.especialidad.name);
+
+        // Tratamientos del profesional
+        const tratamientos = profesional.tratamientos.map(trat => ({
+          name: trat.tratamiento.name,
+          precio: trat.precio || trat.tratamiento.precio,
+          duracionMin: trat.duracionMin || trat.tratamiento.duracionMin,
+        }));
+
+        return {
+          id: profesional.id,
+          name: profesional.name,
+          user: profesional.user,
+          horariosTrabajo: horariosTrabajo,
+          turnosAgendados: turnosProfesional,
+          especialidades: especialidades,
+          tratamientos: tratamientos,
+          defaultDurationMin: profesional.defaultDurationMin,
+          bufferMin: profesional.bufferMin,
+          notes: profesional.notes,
+          sucursal: (profesional as any).sucursalId || null,
+          // Información adicional para el frontend
+          totalTurnosAgendados: turnosProfesional.length,
+          diasTrabajo: horariosTrabajo.map(h => h.dia),
+          horarioCompleto: horariosTrabajo.length > 0,
+        };
+      });
+
+      console.log(`✅ Profesionales procesados: ${profesionalesConDisponibilidad.length}`);
+
+      return {
+        success: true,
+        data: profesionalesConDisponibilidad,
+        message: 'Disponibilidad de profesionales obtenida exitosamente',
+        metadata: {
+          totalProfesionales: profesionalesConDisponibilidad.length,
+          fechaConsultada: fecha || null,
+          especialidadFiltrada: especialidad || null,
+          profesionalesConHorarios: profesionalesConDisponibilidad.filter(p => p.horariosTrabajo.length > 0).length,
+          profesionalesConTurnos: profesionalesConDisponibilidad.filter(p => p.turnosAgendados.length > 0).length,
+        }
+      };
+    } catch (error) {
+      console.error('Error obteniendo disponibilidad de profesionales:', error);
+      throw new BadRequestException('Error al obtener la disponibilidad de profesionales');
+    }
+  }
+
+  @Get('clinica-url/:clinicaUrl/availability')
+  @ApiOperation({ summary: 'Obtener disponibilidad de profesionales por URL de clínica (horarios de trabajo y turnos agendados) - PÚBLICO' })
+  @ApiResponse({ status: 200, description: 'Disponibilidad de profesionales obtenida exitosamente' })
+  @ApiQuery({ name: 'fecha', required: false, description: 'Filtrar por fecha específica (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'especialidad', required: false, description: 'Filtrar por especialidad' })
+  async getProfessionalsAvailabilityByUrl(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query('fecha') fecha?: string,
+    @Query('especialidad') especialidad?: string,
+  ) {
+    try {
+      console.log(`🔍 [${new Date().toISOString()}] Obteniendo disponibilidad para clínica URL: ${clinicaUrl}`);
+      console.log(`🔍 Filtros: fecha=${fecha}, especialidad=${especialidad}`);
+
+      // 1. Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        select: { id: true, name: true, url: true }
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      console.log(`✅ Clínica encontrada: ${clinica.name} (${clinica.id})`);
+
+      // 2. Obtener profesionales de la clínica con sus horarios de trabajo
+      const whereProfessional: any = {
+        user: {
+          clinicaId: clinica.id,
+        },
+      };
+
+      if (especialidad) {
+        whereProfessional.especialidades = {
+          some: {
+            especialidad: {
+              name: {
+                contains: especialidad,
+                mode: 'insensitive'
+              }
+            }
+          }
+        };
+      }
+
+      const profesionales = await this.prisma.professional.findMany({
+        where: whereProfessional,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              estado: true,
+            }
+          },
+          agendas: {
+            select: {
+              id: true,
+              dia: true,
+              horaInicio: true,
+              horaFin: true,
+              duracionMin: true,
+            },
+            orderBy: {
+              dia: 'asc',
+            },
+          },
+          especialidades: {
+            include: {
+              especialidad: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  name: true,
+                  precio: true,
+                  duracionMin: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
+      console.log(`✅ Profesionales encontrados: ${profesionales.length}`);
+
+      // 3. Si se especifica una fecha, obtener turnos agendados para esa fecha
+      let turnosAgendados: any[] = [];
+      if (fecha) {
+        const fechaInicio = new Date(fecha);
+        const fechaFin = new Date(fecha);
+        fechaFin.setDate(fechaFin.getDate() + 1);
+
+        turnosAgendados = await this.prisma.turno.findMany({
+          where: {
+            clinicaId: clinica.id,
+            fecha: {
+              gte: fechaInicio,
+              lt: fechaFin,
+            },
+            estado: {
+              not: 'cancelado'
+            }
+          },
+          select: {
+            id: true,
+            professionalId: true,
+            fecha: true,
+            hora: true,
+            duracionMin: true,
+            estado: true,
+            paciente: true,
+            motivo: true,
+          },
+          orderBy: {
+            hora: 'asc',
+          },
+        });
+
+        console.log(`✅ Turnos agendados para ${fecha}: ${turnosAgendados.length}`);
+      }
+
+      // 4. Procesar datos para cada profesional
+      const profesionalesConDisponibilidad = profesionales.map(profesional => {
+        // Horarios de trabajo del profesional
+        const horariosTrabajo = profesional.agendas.map(agenda => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+          duracionMin: agenda.duracionMin,
+        }));
+
+        // Turnos agendados del profesional (si se especificó fecha)
+        const turnosProfesional = turnosAgendados.filter(turno => 
+          turno.professionalId === profesional.id
+        ).map(turno => ({
+          id: turno.id,
+          fecha: turno.fecha,
+          hora: turno.hora,
+          duracionMin: turno.duracionMin,
+          estado: turno.estado,
+          paciente: turno.paciente,
+          motivo: turno.motivo,
+        }));
+
+        // Especialidades del profesional
+        const especialidades = profesional.especialidades.map(esp => esp.especialidad.name);
+
+        // Tratamientos del profesional
+        const tratamientos = profesional.tratamientos.map(trat => ({
+          name: trat.tratamiento.name,
+          precio: trat.precio || trat.tratamiento.precio,
+          duracionMin: trat.duracionMin || trat.tratamiento.duracionMin,
+        }));
+
+        return {
+          id: profesional.id,
+          name: profesional.name,
+          user: profesional.user,
+          horariosTrabajo: horariosTrabajo,
+          turnosAgendados: turnosProfesional,
+          especialidades: especialidades,
+          tratamientos: tratamientos,
+          defaultDurationMin: profesional.defaultDurationMin,
+          bufferMin: profesional.bufferMin,
+          notes: profesional.notes,
+          sucursal: (profesional as any).sucursalId || null,
+          // Información adicional para el frontend
+          totalTurnosAgendados: turnosProfesional.length,
+          diasTrabajo: horariosTrabajo.map(h => h.dia),
+          horarioCompleto: horariosTrabajo.length > 0,
+        };
+      });
+
+      console.log(`✅ Profesionales procesados: ${profesionalesConDisponibilidad.length}`);
+
+      return {
+        success: true,
+        data: profesionalesConDisponibilidad,
+        message: 'Disponibilidad de profesionales obtenida exitosamente',
+        clinica: {
+          id: clinica.id,
+          name: clinica.name,
+          url: clinica.url,
+        },
+        metadata: {
+          totalProfesionales: profesionalesConDisponibilidad.length,
+          fechaConsultada: fecha || null,
+          especialidadFiltrada: especialidad || null,
+          profesionalesConHorarios: profesionalesConDisponibilidad.filter(p => p.horariosTrabajo.length > 0).length,
+          profesionalesConTurnos: profesionalesConDisponibilidad.filter(p => p.turnosAgendados.length > 0).length,
+        }
+      };
+    } catch (error) {
+      console.error('Error obteniendo disponibilidad de profesionales por URL:', error);
+      throw new BadRequestException('Error al obtener la disponibilidad de profesionales');
+    }
+  }
+
   @Get('clinica/:clinicaId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
