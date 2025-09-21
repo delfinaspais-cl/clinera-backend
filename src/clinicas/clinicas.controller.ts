@@ -683,16 +683,78 @@ export class ClinicasController {
     }
   }
 
+  // Endpoint temporal de debug sin autenticación
+  @Get(':clinicaUrl/turnos-debug')
+  @ApiOperation({ summary: 'DEBUG: Obtener turnos sin autenticación' })
+  async getTurnosDebug(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: any,
+  ) {
+    console.log('=== DEBUG TURNOS ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('filters:', filters);
+    console.log('=============================');
+    
+    try {
+      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+    } catch (error) {
+      console.error('Error en getTurnosDebug:', error);
+      throw error;
+    }
+  }
+
+  // Endpoint temporal con token de prueba
+  @Get(':clinicaUrl/turnos-test')
+  @ApiOperation({ summary: 'DEBUG: Obtener turnos con token de prueba' })
+  async getTurnosTest(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() filters: any,
+  ) {
+    console.log('=== DEBUG TURNOS TEST ENDPOINT ===');
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('filters:', filters);
+    console.log('===================================');
+    
+    try {
+      // Simular usuario autenticado
+      const mockUser = {
+        id: 'test_user_id',
+        email: 'test@example.com',
+        role: 'OWNER',
+        clinicaUrl: clinicaUrl
+      };
+      
+      console.log('Usuario simulado:', mockUser);
+      
+      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+    } catch (error) {
+      console.error('Error en getTurnosTest:', error);
+      throw error;
+    }
+  }
+
   @Get(':clinicaUrl/turnos')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Obtener turnos de la clínica' })
   @ApiResponse({ status: 200, description: 'Turnos obtenidos exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async getTurnos(
+    @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() filters: GetTurnosFiltersDto,
   ) {
-    return this.clinicasService.getTurnos(clinicaUrl, filters);
+    console.log('=== GET TURNOS ENDPOINT ===');
+    console.log('req.user:', req.user);
+    console.log('clinicaUrl:', clinicaUrl);
+    console.log('filters:', filters);
+    console.log('===========================');
+    
+    try {
+      return await this.clinicasService.getTurnos(clinicaUrl, filters);
+    } catch (error) {
+      console.error('Error en getTurnos:', error);
+      throw error;
+    }
   }
 
   @Post(':clinicaUrl/turnos')
