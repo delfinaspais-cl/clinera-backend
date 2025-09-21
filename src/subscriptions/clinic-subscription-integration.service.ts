@@ -137,6 +137,10 @@ export class ClinicSubscriptionIntegrationService {
         },
       });
 
+      if (!clinicaCompleta) {
+        throw new BadRequestException('Error al obtener la clínica creada');
+      }
+
       return {
         success: true,
         message: 'Clínica creada exitosamente con período de prueba',
@@ -287,7 +291,13 @@ export class ClinicSubscriptionIntegrationService {
         },
       });
 
-      const results = [];
+      const results: Array<{
+        clinicaId: string;
+        clinicaNombre: string;
+        planNombre: string;
+        fechaTrialFin: Date | null;
+        adminNotificado: boolean;
+      }> = [];
 
       for (const suscripcion of expiredTrials) {
         // Actualizar estado de la suscripción

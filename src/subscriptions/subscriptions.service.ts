@@ -47,8 +47,8 @@ export class SubscriptionsService {
           trialDias: 7,
           autoRenovar: true,
           metadata: {
-            limiteProfesionales: plan.limitaciones?.profesionales || 3,
-            limiteUam: plan.limitaciones?.uam || 1000,
+            limiteProfesionales: (plan.limitaciones as any)?.profesionales || 3,
+            limiteUam: (plan.limitaciones as any)?.uam || 1000,
             profesionalesUsados: 0,
             uamUsadas: 0,
           },
@@ -138,10 +138,10 @@ export class SubscriptionsService {
           proximoPago: fechaFin,
           metodoPago: metodoPago || 'manual',
           metadata: {
-            limiteProfesionales: newPlan.limitaciones?.profesionales || 3,
-            limiteUam: newPlan.limitaciones?.uam || 1000,
-            profesionalesUsados: clinica.suscripcion.metadata?.profesionalesUsados || 0,
-            uamUsadas: clinica.suscripcion.metadata?.uamUsadas || 0,
+            limiteProfesionales: (newPlan.limitaciones as any)?.profesionales || 3,
+            limiteUam: (newPlan.limitaciones as any)?.uam || 1000,
+            profesionalesUsados: (clinica.suscripcion.metadata as any)?.profesionalesUsados || 0,
+            uamUsadas: (clinica.suscripcion.metadata as any)?.uamUsadas || 0,
           },
         },
         include: {
@@ -337,7 +337,12 @@ export class SubscriptionsService {
         },
       });
 
-      const results = [];
+      const results: Array<{
+        clinicaId: string;
+        clinicaNombre: string;
+        planNombre: string;
+        fechaTrialFin: Date | null;
+      }> = [];
 
       for (const suscripcion of expiredTrials) {
         // Actualizar estado a expired
@@ -399,7 +404,7 @@ export class SubscriptionsService {
 
       // Actualizar metadata con uso actual
       const updatedMetadata = {
-        ...suscripcion.metadata,
+        ...(suscripcion.metadata as any),
         profesionalesUsados,
         uamUsadas,
       };

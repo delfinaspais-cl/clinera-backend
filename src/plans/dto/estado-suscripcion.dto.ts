@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PlanResponseDto } from './plan-response.dto';
 
 export class EstadoSuscripcionDto {
