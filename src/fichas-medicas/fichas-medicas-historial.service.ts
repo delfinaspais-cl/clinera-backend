@@ -515,7 +515,7 @@ export class FichasMedicasHistorialService {
       nombre: file.originalname,
       url: uploadResult.url,
       descripcion,
-      microserviceFileId: useLocalStorage ? null : uploadResult.id,
+      // microserviceFileId: useLocalStorage ? null : uploadResult.id,  // Temporalmente comentado
       useLocalStorage,
       uploadResultId: uploadResult.id
     });
