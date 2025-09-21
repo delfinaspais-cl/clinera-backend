@@ -52,7 +52,20 @@ export class StorageService {
     const filePath = path.join(fullPath, nombreArchivo);
     
     // Guardar archivo
-    fs.writeFileSync(filePath, file.buffer);
+    console.log('💾 [STORAGE] Guardando archivo:', {
+      filePath,
+      hasBuffer: !!file.buffer,
+      bufferLength: file.buffer?.length,
+      fileSize: file.size,
+      originalName: file.originalname
+    });
+    
+    if (file.buffer) {
+      fs.writeFileSync(filePath, file.buffer);
+    } else {
+      console.error('❌ [STORAGE] file.buffer es undefined, no se puede guardar el archivo');
+      throw new Error('Buffer del archivo no disponible');
+    }
     
     // Retornar URL relativa
     const url = `/${relativePath}/${nombreArchivo}`;

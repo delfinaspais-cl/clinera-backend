@@ -60,7 +60,7 @@ export class FileMicroserviceService {
       console.log('📦 [UPLOAD] Preparando FormData...');
       
       // Agregar el archivo
-      formData.append('file', params.file.buffer, {
+      formData.append('file', params.file, {
         filename: params.file.originalname,
         contentType: params.file.mimetype,
       });
@@ -68,7 +68,8 @@ export class FileMicroserviceService {
       console.log('📦 [UPLOAD] Archivo agregado al FormData:', {
         filename: params.file.originalname,
         contentType: params.file.mimetype,
-        bufferSize: params.file.buffer.length
+        bufferSize: params.file.buffer?.length || 'undefined',
+        hasBuffer: !!params.file.buffer
       });
       
       // Agregar los parámetros requeridos
