@@ -19,6 +19,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
 import { PlansModule } from './plans/plans.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
 import { VentasModule } from './ventas/ventas.module';
 import { MediosPagoModule } from './medios-pago/medios-pago.module';
@@ -64,6 +65,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     ContactosModule,
     EmailModule,
     PlansModule,
+    SubscriptionsModule,
     FichasMedicasModule,
     VentasModule,
     MediosPagoModule,

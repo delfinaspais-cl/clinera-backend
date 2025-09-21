@@ -17,7 +17,7 @@ model Clinica {
   colorPrimario          String?                @default("#3B82F6")
   colorSecundario        String?                @default("#1E40AF")
   estado                 String?                @default("activo")
-  estadoPago             String?                @default("pagado")
+  estadoPago             String?                @default("trial")
   fechaCreacion          DateTime               @default(now())
   ultimoPago             DateTime?
   proximoPago            DateTime?
@@ -49,6 +49,7 @@ model Clinica {
   ventas                 Venta[]
   whatsappMessages       WhatsAppMessage[]
   whatsappTemplates      WhatsAppTemplate[]
+  suscripcion            Suscripcion?
 }
 
 model Mensaje {
@@ -590,6 +591,83 @@ model Venta {
   @@index([estadoPago])
   @@index([fechaCreacion])
   @@index([medioPagoId])
+}
+
+model Plan {
+  id                String        @id @default(cuid())
+  nombre            String        @unique
+  tagline           String?       // "Agenda + Ventas", "Agenda + Ventas + Mensajería", etc.
+  descripcion       String
+  precio            Float
+  moneda            String        @default("USD")
+  intervalo         String        @default("monthly") // monthly, yearly
+  activo            Boolean       @default(true)
+  popular           Boolean       @default(false) // Para marcar el plan popular
+  caracteristicas   String[]      @default([])
+  limitaciones      Json?         // { profesionales: 3, uam: 1000, extraProfesional: 10, extraUam: 0.25 }
+  orden             Int           @default(0)
+  icono             String?       // Para iconos como el robot de NEXUS
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  suscripciones     Suscripcion[]
+  historialPagos    HistorialPago[]
+
+  @@index([activo])
+  @@index([orden])
+  @@index([popular])
+}
+
+model Suscripcion {
+  id                String        @id @default(cuid())
+  clinicaId         String        @unique
+  planId            String
+  estado            String        @default("trial") // trial, active, suspended, cancelled, expired
+  fechaInicio       DateTime      @default(now())
+  fechaFin          DateTime?
+  fechaTrialFin     DateTime?     // Fecha de fin del período de prueba (7 días después de fechaInicio)
+  ultimoPago        DateTime?
+  proximoPago       DateTime?
+  metodoPago        String?       // stripe, paypal, etc.
+  idPagoExterno     String?       // ID del pago en el sistema externo
+  trialDias         Int           @default(7) // Días de prueba (por defecto 7)
+  autoRenovar       Boolean       @default(true) // Si se renueva automáticamente
+  canceladoEn       DateTime?     // Fecha de cancelación
+  motivoCancelacion String?       // Razón de cancelación
+  notas             String?
+  metadata          Json?         // Datos adicionales como límites usados
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  clinica           Clinica       @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  plan              Plan          @relation(fields: [planId], references: [id])
+  historialPagos    HistorialPago[]
+
+  @@index([estado])
+  @@index([fechaFin])
+  @@index([fechaTrialFin])
+  @@index([autoRenovar])
+}
+
+model HistorialPago {
+  id                String        @id @default(cuid())
+  suscripcionId      String
+  planId             String
+  monto              Float
+  moneda             String        @default("USD")
+  estado             String        @default("pending") // pending, completed, failed, refunded
+  metodoPago         String?       // stripe, paypal, etc.
+  idPagoExterno      String?       // ID del pago en el sistema externo
+  fechaPago          DateTime?
+  fechaVencimiento   DateTime?
+  notas              String?
+  metadata           Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  suscripcion        Suscripcion   @relation(fields: [suscripcionId], references: [id], onDelete: Cascade)
+  plan               Plan          @relation(fields: [planId], references: [id])
+
+  @@index([estado])
+  @@index([fechaPago])
+  @@index([suscripcionId])
 }
 
 enum Role {
