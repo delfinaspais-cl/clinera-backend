@@ -284,7 +284,7 @@ export class FichasMedicasService {
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
         url: uploadResult.url,
         tamañoBytes: BigInt(uploadResult.size),
-        microserviceFileId: useLocalStorage ? null : uploadResult.id // Solo guardar ID del microservicio si se usó
+        // microserviceFileId: useLocalStorage ? null : uploadResult.id // Temporalmente comentado hasta migración
       }
     });
 
@@ -402,7 +402,7 @@ export class FichasMedicasService {
         nombreArchivo: uploadResult.nombre,
         url: uploadResult.url,
         tamañoBytes: BigInt(uploadResult.size),
-        microserviceFileId: useLocalStorage ? null : uploadResult.id // Solo guardar ID del microservicio si se usó
+        // microserviceFileId: useLocalStorage ? null : uploadResult.id // Temporalmente comentado hasta migración
       }
     });
 
@@ -453,9 +453,10 @@ export class FichasMedicasService {
     }
 
     // Eliminar del microservicio si tiene microserviceFileId
-    if (archivo.microserviceFileId) {
+    // if (archivo.microserviceFileId) {  // Temporalmente comentado hasta migración
+    if (false) {
       try {
-        await this.fileMicroserviceService.deleteFile(archivo.microserviceFileId);
+        // await this.fileMicroserviceService.deleteFile(archivo.microserviceFileId);  // Temporalmente comentado
       } catch (error) {
         console.warn('Error eliminando archivo del microservicio:', error);
         // Continuar con la eliminación de la base de datos aunque falle el microservicio
@@ -514,9 +515,10 @@ export class FichasMedicasService {
     }
 
     // Eliminar del microservicio si tiene microserviceFileId
-    if (imagen.microserviceFileId) {
+    // if (imagen.microserviceFileId) {  // Temporalmente comentado hasta migración
+    if (false) {
       try {
-        await this.fileMicroserviceService.deleteFile(imagen.microserviceFileId);
+        // await this.fileMicroserviceService.deleteFile(imagen.microserviceFileId);  // Temporalmente comentado
       } catch (error) {
         console.warn('Error eliminando imagen del microservicio:', error);
         // Continuar con la eliminación de la base de datos aunque falle el microservicio
@@ -589,16 +591,17 @@ export class FichasMedicasService {
     console.log('📋 [SIGNED_URL_SERVICE] Archivo encontrado en BD:', {
       id: archivo.id,
       nombre: archivo.nombre,
-      microserviceFileId: archivo.microserviceFileId,
+      // microserviceFileId: archivo.microserviceFileId,  // Temporalmente comentado hasta migración
       url: archivo.url
     });
 
     // Si el archivo tiene microserviceFileId, obtener URL firmada del microservicio
-    if (archivo.microserviceFileId) {
+    // if (archivo.microserviceFileId) {  // Temporalmente comentado hasta migración
+    if (false) {
       console.log('🌐 [SIGNED_URL_SERVICE] Archivo está en microservicio, obteniendo URL firmada...');
       
       try {
-        const result = await this.fileMicroserviceService.getSignedUrl(archivo.microserviceFileId, userToken);
+        // const result = await this.fileMicroserviceService.getSignedUrl(archivo.microserviceFileId, userToken);  // Temporalmente comentado
         
         if ('error' in result) {
           console.error('❌ [SIGNED_URL_SERVICE] Error obteniendo URL firmada del microservicio:', result);
@@ -613,7 +616,7 @@ export class FichasMedicasService {
         return { error: 'Error obteniendo URL firmada del microservicio', statusCode: 500 };
       }
     } else {
-      // Si no tiene microserviceFileId, es un archivo local
+      // Si no tiene microserviceFileId, es un archivo local (siempre será local por ahora)
       console.log('📁 [SIGNED_URL_SERVICE] Archivo es local, retornando URL directa');
       return { url: archivo.url };
     }
