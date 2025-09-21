@@ -445,8 +445,6 @@ export class FichasMedicasHistorialService {
           version: siguienteVersion,
           pacienteId,
           clinicaId: clinica.id,
-          datosBasicos: {},
-          historiaClinica: {},
           notasCambio: 'Versión inicial creada automáticamente al subir archivos'
         }
       });
