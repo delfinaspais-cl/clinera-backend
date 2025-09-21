@@ -53,12 +53,12 @@ export class StorageService {
     
     // Guardar archivo
     console.log('💾 [STORAGE] Guardando archivo:', {
-      filePath,
+      targetPath: filePath,
       hasBuffer: !!file.buffer,
       bufferLength: file.buffer?.length,
       fileSize: file.size,
       originalName: file.originalname,
-      filePath: file.path
+      sourcePath: file.path
     });
     
     if (file.buffer) {
