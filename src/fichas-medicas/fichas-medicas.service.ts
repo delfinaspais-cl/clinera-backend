@@ -602,14 +602,15 @@ export class FichasMedicasService {
       
       try {
         // const result = await this.fileMicroserviceService.getSignedUrl(archivo.microserviceFileId, userToken);  // Temporalmente comentado
+        // TODO: Descomentar cuando se agregue microserviceFileId a la BD
         
-        if ('error' in result) {
-          console.error('❌ [SIGNED_URL_SERVICE] Error obteniendo URL firmada del microservicio:', result);
-          return result;
-        }
+        // if ('error' in result) {
+        //   console.error('❌ [SIGNED_URL_SERVICE] Error obteniendo URL firmada del microservicio:', result);
+        //   return result;
+        // }
         
-        console.log('✅ [SIGNED_URL_SERVICE] URL firmada obtenida del microservicio:', result.url);
-        return result;
+        // console.log('✅ [SIGNED_URL_SERVICE] URL firmada obtenida del microservicio:', result.url);
+        // return result;
         
       } catch (error) {
         console.error('❌ [SIGNED_URL_SERVICE] Error inesperado obteniendo URL firmada:', error);
