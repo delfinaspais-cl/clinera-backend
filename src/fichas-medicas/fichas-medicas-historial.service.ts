@@ -396,9 +396,9 @@ export class FichasMedicasHistorialService {
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
     console.log('✅ [UPLOAD_VERSION_SERVICE] Paciente verificado:', { pacienteId: paciente.id });
 
-    // Verificar que la versión existe
+    // Verificar que la versión existe, si no existe, crearla
     console.log('🔍 [UPLOAD_VERSION_SERVICE] Verificando versión:', versionId);
-    const version = await this.prisma.fichaMedicaHistorial.findFirst({
+    let version = await this.prisma.fichaMedicaHistorial.findFirst({
       where: {
         id: versionId,
         pacienteId,
@@ -407,13 +407,9 @@ export class FichasMedicasHistorialService {
     });
 
     if (!version) {
-      console.error('❌ [UPLOAD_VERSION_SERVICE] Versión no encontrada:', {
-        versionId,
-        pacienteId,
-        clinicaId: clinica.id
-      });
+      console.log('📝 [UPLOAD_VERSION_SERVICE] Versión no existe, creando nueva versión...');
       
-      // Buscar todas las versiones del paciente para debug
+      // Buscar todas las versiones del paciente para determinar el número de versión
       const todasLasVersiones = await this.prisma.fichaMedicaHistorial.findMany({
         where: {
           pacienteId,
@@ -429,11 +425,39 @@ export class FichasMedicasHistorialService {
         }
       });
       
-      console.log('🔍 [UPLOAD_VERSION_SERVICE] Versiones disponibles para este paciente:', todasLasVersiones);
+      console.log('🔍 [UPLOAD_VERSION_SERVICE] Versiones existentes para este paciente:', todasLasVersiones);
       
-      throw new NotFoundException('Versión no encontrada');
+      const siguienteVersion = todasLasVersiones.length > 0 
+        ? Math.max(...todasLasVersiones.map(v => v.version)) + 1 
+        : 1;
+      
+      console.log('📝 [UPLOAD_VERSION_SERVICE] Creando versión:', { 
+        versionId, 
+        version: siguienteVersion,
+        pacienteId,
+        clinicaId: clinica.id
+      });
+      
+      // Crear nueva versión
+      version = await this.prisma.fichaMedicaHistorial.create({
+        data: {
+          id: versionId,
+          version: siguienteVersion,
+          pacienteId,
+          clinicaId: clinica.id,
+          datosBasicos: {},
+          historiaClinica: {},
+          notasCambio: 'Versión inicial creada automáticamente al subir archivos'
+        }
+      });
+      
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Nueva versión creada:', { 
+        versionId: version.id, 
+        version: version.version 
+      });
+    } else {
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Versión verificada:', { versionId: version.id });
     }
-    console.log('✅ [UPLOAD_VERSION_SERVICE] Versión verificada:', { versionId: version.id });
 
     // Validar tipo de archivo
     console.log('🔍 [UPLOAD_VERSION_SERVICE] Validando tipo de archivo:', { tipo, mimeType: file.mimetype });
