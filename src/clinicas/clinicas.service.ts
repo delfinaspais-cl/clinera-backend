@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
 import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
@@ -473,6 +474,92 @@ export class ClinicasService {
         throw error;
       }
       console.error('Error al actualizar estado de usuario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async updateUsuario(
+    clinicaUrl: string,
+    userId: string,
+    dto: UpdateUsuarioDto,
+  ) {
+    try {
+      console.log('🔍 updateUsuario - Service iniciando');
+      console.log('🔍 clinicaUrl:', clinicaUrl);
+      console.log('🔍 userId:', userId);
+      console.log('🔍 dto:', dto);
+
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Verificar que el usuario existe y pertenece a la clínica
+      const usuario = await this.prisma.user.findFirst({
+        where: {
+          id: userId,
+          clinicaId: clinica.id,
+        },
+      });
+
+      if (!usuario) {
+        throw new BadRequestException('Usuario no encontrado en esta clínica');
+      }
+
+      // Solo actualizar permisos
+      const updateData: any = {};
+
+      if (dto.permisos) {
+        // Los permisos se almacenan en el campo configuracion como JSON
+        updateData.configuracion = JSON.stringify({ permisos: dto.permisos });
+      } else {
+        throw new BadRequestException('Los permisos son requeridos para la actualización');
+      }
+
+      console.log('🔍 Datos a actualizar:', updateData);
+
+      // Actualizar el usuario
+      const usuarioActualizado = await this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      console.log('🔍 Usuario actualizado:', usuarioActualizado);
+
+      // Parsear permisos desde configuracion si existe
+      let permisos = null;
+      if (usuarioActualizado.configuracion) {
+        try {
+          const config = JSON.parse(usuarioActualizado.configuracion);
+          permisos = config.permisos;
+        } catch (error) {
+          console.log('Error parseando configuracion:', error);
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Permisos actualizados exitosamente',
+        permisos: permisos,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar usuario:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }

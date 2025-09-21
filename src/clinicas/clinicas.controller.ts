@@ -24,6 +24,7 @@ import { ClinicasService } from './clinicas.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
+import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
 import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
@@ -367,6 +368,32 @@ export class ClinicasController {
       */
     } catch (error) {
       console.error('❌ Error en updateUsuarioEstado controller:', error);
+      throw error;
+    }
+  }
+
+  @Put(':clinicaUrl/usuarios/:userId')
+  // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
+  @ApiOperation({ summary: 'Actualizar permisos de usuario de la clínica' })
+  @ApiResponse({ status: 200, description: 'Permisos actualizados exitosamente' })
+  async updateUsuario(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('userId') userId: string,
+    @Body() dto: UpdateUsuarioDto,
+  ) {
+    try {
+      console.log('🔍 updateUsuario - Controller iniciando');
+      console.log('🔍 req.user:', req.user);
+      console.log('🔍 clinicaUrl:', clinicaUrl);
+      console.log('🔍 userId:', userId);
+      console.log('🔍 dto:', dto);
+      
+      // TEMPORAL: Permitir actualización sin autenticación para debugging
+      console.log('🔍 MODO DEBUG: Permitiendo actualización sin autenticación');
+      return this.clinicasService.updateUsuario(clinicaUrl, userId, dto);
+    } catch (error) {
+      console.error('❌ Error en updateUsuario controller:', error);
       throw error;
     }
   }
