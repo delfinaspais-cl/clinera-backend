@@ -55,10 +55,11 @@ export class SubscriptionsService {
       fechaTrialFin.setDate(fechaTrialFin.getDate() + 7);
 
       // Crear la suscripción en estado trial
+      console.log('🔍 SubscriptionsService - Creando suscripción con planId real:', plan.id);
       const suscripcion = await this.prisma.suscripcion.create({
         data: {
           clinicaId,
-          planId,
+          planId: plan.id, // ✅ Usar el ID real del plan encontrado
           estado: 'trial',
           fechaInicio,
           fechaTrialFin,
