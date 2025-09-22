@@ -82,6 +82,11 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   async createClinica(@Request() req, @Body() dto: CreateClinicaDto) {
+    console.log('🏥 USERS CONTROLLER - createClinica llamado');
+    console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+    console.log('🔍 PlanId en DTO:', dto.planId);
+    console.log('🔍 User ID:', req.user.id);
+    
     return this.usersService.createClinica(req.user.id, dto);
   }
 

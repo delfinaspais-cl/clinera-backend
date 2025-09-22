@@ -263,6 +263,12 @@ export class UsersService {
   }
 
   async createClinica(userId: string, dto: CreateClinicaDto) {
+    console.log('🏥 USERS SERVICE - createClinica iniciado');
+    console.log('🔍 User ID:', userId);
+    console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+    console.log('🔍 PlanId en DTO:', dto.planId);
+    console.log('🔍 PlanId tipo:', typeof dto.planId);
+    
     try {
       // Verificar que el usuario existe
       const user = await this.prisma.user.findUnique({
@@ -326,7 +332,36 @@ export class UsersService {
         // No lanzamos error para no interrumpir la creación
       }
 
-      return {
+      // Crear suscripción automática si se proporciona planId
+      console.log('🔍 VERIFICANDO SUSCRIPCIÓN AUTOMÁTICA EN USERS SERVICE');
+      console.log('🔍 dto.planId existe:', !!dto.planId);
+      console.log('🔍 dto.planId valor:', dto.planId);
+      console.log('🔍 dto.planId tipo:', typeof dto.planId);
+      
+      let subscription: any = null;
+      if (dto.planId) {
+        console.log('✅ PlanId detectado en Users Service, creando suscripción automática');
+        try {
+          // Importar el servicio de suscripciones dinámicamente
+          const { SubscriptionsService } = await import('../subscriptions/subscriptions.service');
+          const subscriptionsService = new SubscriptionsService(this.prisma);
+          
+          console.log(`🏥 Creando suscripción automática para clínica ${clinica.id} con plan ${dto.planId}`);
+          const subscriptionResult = await subscriptionsService.createTrialSubscription(
+            clinica.id,
+            dto.planId
+          );
+          console.log(`✅ Suscripción creada exitosamente:`, subscriptionResult);
+          subscription = subscriptionResult.suscripcion;
+        } catch (subscriptionError) {
+          console.error('❌ Error al crear suscripción automática:', subscriptionError);
+          // No lanzamos error para no interrumpir la creación de la clínica
+        }
+      } else {
+        console.log('❌ No hay planId en Users Service, saltando suscripción automática');
+      }
+
+      const response = {
         success: true,
         message: 'Clínica creada exitosamente',
         clinica: {
@@ -340,7 +375,21 @@ export class UsersService {
           password: adminPassword,
           note: 'Guarda estas credenciales para acceder a la clínica',
         },
+        subscription: subscription ? {
+          id: subscription.id,
+          estado: subscription.estado,
+          fechaInicio: subscription.fechaInicio,
+          fechaTrialFin: subscription.fechaTrialFin,
+          trialDias: subscription.trialDias,
+          plan: subscription.plan
+        } : null,
       };
+
+      console.log('🔍 RESPUESTA FINAL USERS SERVICE:');
+      console.log('🔍 subscription en response:', response.subscription);
+      console.log('🔍 subscription existe:', !!response.subscription);
+
+      return response;
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ConflictException) {
         throw error;

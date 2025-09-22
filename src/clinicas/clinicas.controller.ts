@@ -192,6 +192,9 @@ export class ClinicasController {
   @ApiOperation({ summary: 'Crear una nueva clínica (público)' })
   @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
   async createClinica(@Body() body: any) {
+    console.log('🏥 CLINICAS CONTROLLER - createClinica llamado');
+    console.log('🔍 Body recibido:', JSON.stringify(body, null, 2));
+    console.log('🔍 PlanId en body:', body.planId);
     try {
       console.log('🏥 Creando clínica con datos:', body);
       console.log('🔍 PlanId recibido:', body.planId);
