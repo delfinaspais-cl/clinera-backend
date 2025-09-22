@@ -670,6 +670,36 @@ model HistorialPago {
   @@index([suscripcionId])
 }
 
+model EmailVerification {
+  id          String   @id @default(cuid())
+  email       String
+  code        String
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  verified    Boolean  @default(false)
+  verifiedAt  DateTime?
+  attempts    Int      @default(0)
+  ipAddress   String?
+  userAgent   String?
+
+  @@index([email])
+  @@index([code])
+  @@index([expiresAt])
+}
+
+model EmailVerificationLimit {
+  id           String   @id @default(cuid())
+  email        String
+  ipAddress    String
+  attempts     Int      @default(1)
+  lastAttempt  DateTime @default(now())
+  blockedUntil DateTime?
+
+  @@unique([email, ipAddress], name: "email_ipAddress")
+  @@index([email])
+  @@index([ipAddress])
+}
+
 enum Role {
   PATIENT
   PROFESSIONAL

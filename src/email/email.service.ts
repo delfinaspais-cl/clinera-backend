@@ -102,6 +102,8 @@ export class EmailService {
         return this.getUserWelcomeTemplate(data);
       case 'admin-credentials':
         return this.getAdminCredentialsTemplate(data);
+      case 'email-verification':
+        return this.getEmailVerificationTemplate(data);
       default:
         throw new Error(`Template '${template}' no encontrado`);
     }
@@ -717,5 +719,59 @@ export class EmailService {
         </div>
       </div>
     `;
+  }
+
+  private getEmailVerificationTemplate(data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #7c3aed; font-size: 24px; font-weight: bold; margin: 0;">Clinera</h1>
+          </div>
+          
+          <h2>Verificación de Email</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hola,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Para completar tu registro en Clinera, por favor ingresa el siguiente código de verificación:
+          </p>
+          
+          <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+            <h1 style="color: #7c3aed; font-size: 32px; margin: 0; letter-spacing: 4px; font-weight: bold;">${data.code}</h1>
+          </div>
+          
+          <p style="color: #dc2626; font-weight: bold;">
+            Este código expira en 10 minutos.
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Si no solicitaste este código, puedes ignorar este email.
+          </p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+          
+          <p style="color: #6b7280; font-size: 14px; text-align: center; margin: 0;">
+            Este email fue enviado automáticamente. Por favor no respondas.<br>
+            © 2024 Clinera. Todos los derechos reservados.
+          </p>
+        </div>
+      </div>
+    `;
+  }
+
+  async sendVerificationEmail(
+    email: string,
+    code: string,
+  ): Promise<boolean> {
+    const result = await this.sendEmail({
+      to: email,
+      subject: 'Verificación de Email - Clinera',
+      template: 'email-verification',
+      data: { code },
+    });
+    return result.success;
   }
 }

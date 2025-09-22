@@ -20,6 +20,8 @@ import { ClinicaLoginDto } from './dto/clinica-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { SendVerificationDto } from './dto/send-verification.dto';
+import { VerifyCodeDto } from './dto/verify-code.dto';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -204,5 +206,50 @@ export class AuthController {
   @Get('validate/email/:email')
   validateEmail(@Param('email') email: string, @Headers('x-clinica-id') clinicaId?: string) {
     return this.authService.validateEmail(email, clinicaId);
+  }
+
+  @ApiOperation({ summary: 'Enviar código de verificación por email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Código de verificación enviado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Código de verificación enviado exitosamente' },
+        email: { type: 'string', example: 'usuario@ejemplo.com' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Email inválido o demasiados intentos' })
+  @Post('send-verification')
+  async sendVerification(
+    @Body() dto: SendVerificationDto,
+    @Headers('x-forwarded-for') ipAddress?: string,
+    @Headers('user-agent') userAgent?: string
+  ) {
+    return this.authService.sendVerificationCode(
+      dto.email,
+      ipAddress || 'unknown',
+      userAgent || 'unknown'
+    );
+  }
+
+  @ApiOperation({ summary: 'Verificar código de verificación de email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verificado exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Email verificado exitosamente' },
+        verified: { type: 'boolean', example: true },
+        email: { type: 'string', example: 'usuario@ejemplo.com' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Código incorrecto, expirado o no encontrado' })
+  @Post('verify-code')
+  async verifyCode(@Body() dto: VerifyCodeDto) {
+    return this.authService.verifyCode(dto.email, dto.code);
   }
 }

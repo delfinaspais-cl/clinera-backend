@@ -613,4 +613,178 @@ export class AuthService {
         return [];
     }
   }
+
+  // Métodos de verificación de email
+  async sendVerificationCode(email: string, ipAddress?: string, userAgent?: string) {
+    try {
+      console.log(`📧 AuthService: Iniciando envío de código de verificación a ${email}`);
+
+      // Validar email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new BadRequestException('Formato de email inválido');
+      }
+
+      // Verificar límites de envío (máximo 3 por hora por email/IP)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      
+      const recentAttempts = await this.prisma.emailVerificationLimit.findMany({
+        where: {
+          OR: [
+            { email: email },
+            { ipAddress: ipAddress || 'unknown' }
+          ],
+          lastAttempt: {
+            gt: oneHourAgo
+          }
+        }
+      });
+
+      const totalAttempts = recentAttempts.reduce((sum, attempt) => sum + attempt.attempts, 0);
+      
+      if (totalAttempts >= 3) {
+        throw new BadRequestException('Demasiados intentos. Intenta nuevamente en 1 hora');
+      }
+
+      // Generar código de 6 dígitos
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log(`📧 AuthService: Código generado: ${code}`);
+
+      // Guardar en base de datos
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+      
+      await this.prisma.emailVerification.create({
+        data: {
+          email,
+          code,
+          expiresAt,
+          ipAddress: ipAddress || 'unknown',
+          userAgent: userAgent || 'unknown'
+        }
+      });
+
+      // Enviar email
+      const emailSent = await this.emailService.sendVerificationEmail(email, code);
+      
+      if (!emailSent) {
+        throw new BadRequestException('Error al enviar el email de verificación');
+      }
+
+      // Registrar intento
+      await this.prisma.emailVerificationLimit.upsert({
+        where: {
+          email_ipAddress: {
+            email: email,
+            ipAddress: ipAddress || 'unknown'
+          }
+        },
+        update: {
+          attempts: { increment: 1 },
+          lastAttempt: new Date()
+        },
+        create: {
+          email,
+          ipAddress: ipAddress || 'unknown',
+          attempts: 1,
+          lastAttempt: new Date()
+        }
+      });
+
+      console.log(`✅ AuthService: Código de verificación enviado exitosamente a ${email}`);
+      
+      return {
+        success: true,
+        message: 'Código de verificación enviado exitosamente',
+        email: email
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('❌ AuthService: Error en sendVerificationCode:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async verifyCode(email: string, code: string) {
+    try {
+      console.log(`🔍 AuthService: Verificando código para ${email}`);
+
+      // Buscar código en BD
+      const verification = await this.prisma.emailVerification.findFirst({
+        where: {
+          email: email,
+          code: code,
+          verified: false
+        }
+      });
+
+      if (!verification) {
+        throw new BadRequestException('Código de verificación incorrecto');
+      }
+
+      // Verificar expiración
+      if (new Date() > verification.expiresAt) {
+        // Eliminar código expirado
+        await this.prisma.emailVerification.delete({
+          where: { id: verification.id }
+        });
+        throw new BadRequestException('El código de verificación ha expirado');
+      }
+
+      // Marcar como verificado
+      await this.prisma.emailVerification.update({
+        where: { id: verification.id },
+        data: {
+          verified: true,
+          verifiedAt: new Date()
+        }
+      });
+
+      // Limpiar códigos expirados del mismo email
+      await this.prisma.emailVerification.deleteMany({
+        where: {
+          email: email,
+          verified: false,
+          expiresAt: {
+            lt: new Date()
+          }
+        }
+      });
+
+      console.log(`✅ AuthService: Email ${email} verificado exitosamente`);
+      
+      return {
+        success: true,
+        message: 'Email verificado exitosamente',
+        verified: true,
+        email: email
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('❌ AuthService: Error en verifyCode:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async isEmailVerified(email: string): Promise<boolean> {
+    try {
+      const verification = await this.prisma.emailVerification.findFirst({
+        where: {
+          email: email,
+          verified: true
+        },
+        orderBy: {
+          verifiedAt: 'desc'
+        }
+      });
+
+      return !!verification;
+    } catch (error) {
+      console.error('❌ AuthService: Error verificando estado de email:', error);
+      return false;
+    }
+  }
 }
