@@ -189,15 +189,16 @@ export class OwnersService {
     }
 
     // Crear suscripción automática si se proporciona planId
-    let subscription = null;
+    let subscription: any = null;
     if (dto.planId) {
       try {
         console.log(`🏥 Creando suscripción automática para clínica ${clinicaConRelaciones.id} con plan ${dto.planId}`);
-        subscription = await this.subscriptionsService.createTrialSubscription(
+        const subscriptionResult = await this.subscriptionsService.createTrialSubscription(
           clinicaConRelaciones.id,
           dto.planId
         );
-        console.log(`✅ Suscripción creada exitosamente:`, subscription);
+        console.log(`✅ Suscripción creada exitosamente:`, subscriptionResult);
+        subscription = subscriptionResult.suscripcion;
       } catch (subscriptionError) {
         console.error('❌ Error al crear suscripción automática:', subscriptionError);
         // No lanzamos error para no interrumpir la creación de la clínica
@@ -226,9 +227,11 @@ export class OwnersService {
       },
       subscription: subscription ? {
         id: subscription.id,
-        planId: subscription.planId,
         estado: subscription.estado,
-        tipo: subscription.tipo
+        fechaInicio: subscription.fechaInicio,
+        fechaTrialFin: subscription.fechaTrialFin,
+        trialDias: subscription.trialDias,
+        plan: subscription.plan
       } : null,
     };
   }
