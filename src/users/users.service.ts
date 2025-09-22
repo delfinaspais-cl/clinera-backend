@@ -342,8 +342,8 @@ export class UsersService {
       if (dto.planId) {
         console.log('✅ PlanId detectado en Users Service, creando suscripción automática');
         try {
-          // Importar el servicio de suscripciones dinámicamente
-          const { SubscriptionsService } = await import('../subscriptions/subscriptions.service');
+          // Crear el servicio de suscripciones directamente
+          const { SubscriptionsService } = require('../subscriptions/subscriptions.service');
           const subscriptionsService = new SubscriptionsService(this.prisma);
           
           console.log(`🏥 Creando suscripción automática para clínica ${clinica.id} con plan ${dto.planId}`);
