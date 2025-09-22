@@ -23,11 +23,29 @@ export class SubscriptionsService {
       }
 
       // Verificar que el plan existe
-      const plan = await this.prisma.plan.findUnique({
+      console.log('🔍 SubscriptionsService - Buscando plan con ID:', planId);
+      
+      // Buscar por ID primero
+      let plan = await this.prisma.plan.findUnique({
         where: { id: planId },
       });
 
+      // Si no se encuentra por ID, buscar por nombre (para compatibilidad con frontend)
+      if (!plan) {
+        console.log('🔍 SubscriptionsService - No encontrado por ID, buscando por nombre:', planId);
+        plan = await this.prisma.plan.findFirst({
+          where: { 
+            nombre: planId.toUpperCase(), // Convertir a mayúsculas para coincidir con la BD
+            activo: true 
+          },
+        });
+      }
+
+      console.log('🔍 SubscriptionsService - Plan encontrado:', plan);
+      console.log('🔍 SubscriptionsService - Plan activo:', plan?.activo);
+
       if (!plan || !plan.activo) {
+        console.log('❌ SubscriptionsService - Plan no encontrado o inactivo');
         throw new NotFoundException('Plan no encontrado o inactivo');
       }
 
