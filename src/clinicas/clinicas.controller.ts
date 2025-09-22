@@ -194,6 +194,7 @@ export class ClinicasController {
   async createClinica(@Body() body: any) {
     try {
       console.log('🏥 Creando clínica con datos:', body);
+      console.log('🔍 PlanId recibido:', body.planId);
       
       // Validación manual básica
       if (!body.nombre || !body.url || !body.email || !body.password) {
@@ -211,7 +212,8 @@ export class ClinicasController {
         descripcion: body.descripcion || '',
         colorPrimario: body.colorPrimario || '#3B82F6',
         colorSecundario: body.colorSecundario || '#1E40AF',
-        estado: body.estado || 'activa'
+        estado: body.estado || 'activa',
+        planId: body.planId || null  // ✅ AGREGADO: Mapear planId
       };
 
       // Llamar al servicio de owners en lugar del de clínicas
