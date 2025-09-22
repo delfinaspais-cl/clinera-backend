@@ -17,6 +17,18 @@ export class SubscriptionsController {
     );
   }
 
+  // Endpoint público para crear suscripciones de prueba (sin autenticación)
+  @Post('trial-public')
+  async createTrialSubscriptionPublic(
+    @Body() body: { clinicaId: string; planId: string }
+  ) {
+    console.log('🔓 Endpoint público de suscripción trial llamado:', body);
+    return await this.subscriptionsService.createTrialSubscription(
+      body.clinicaId,
+      body.planId
+    );
+  }
+
   @Put('upgrade')
   @UseGuards(JwtAuthGuard)
   async upgradeSubscription(
