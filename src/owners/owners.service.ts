@@ -65,6 +65,11 @@ export class OwnersService {
   }
 
   async createClinica(dto: CreateClinicaDto) {
+    console.log('🏥 OwnersService - createClinica iniciado');
+    console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
+    console.log('🔍 PlanId en DTO:', dto.planId);
+    console.log('🔍 PlanId tipo:', typeof dto.planId);
+    
     // Convertir URL a minúsculas para consistencia
     const urlNormalizada = dto.url.toLowerCase();
     
@@ -189,8 +194,15 @@ export class OwnersService {
     }
 
     // Crear suscripción automática si se proporciona planId
+    console.log('🔍 VERIFICANDO SUSCRIPCIÓN AUTOMÁTICA');
+    console.log('🔍 dto.planId existe:', !!dto.planId);
+    console.log('🔍 dto.planId valor:', dto.planId);
+    console.log('🔍 dto.planId tipo:', typeof dto.planId);
+    console.log('🔍 dto.planId truthy:', !!dto.planId);
+    
     let subscription: any = null;
     if (dto.planId) {
+      console.log('✅ PlanId detectado, creando suscripción automática');
       try {
         console.log(`🏥 Creando suscripción automática para clínica ${clinicaConRelaciones.id} con plan ${dto.planId}`);
         const subscriptionResult = await this.subscriptionsService.createTrialSubscription(
@@ -203,9 +215,11 @@ export class OwnersService {
         console.error('❌ Error al crear suscripción automática:', subscriptionError);
         // No lanzamos error para no interrumpir la creación de la clínica
       }
+    } else {
+      console.log('❌ No hay planId, saltando suscripción automática');
     }
 
-    return {
+    const response = {
       success: true,
       message: 'Clínica creada exitosamente',
       clinica: {
@@ -234,6 +248,13 @@ export class OwnersService {
         plan: subscription.plan
       } : null,
     };
+
+    console.log('🔍 RESPUESTA FINAL:');
+    console.log('🔍 subscription en response:', response.subscription);
+    console.log('🔍 subscription existe:', !!response.subscription);
+    console.log('🔍 subscription valor:', JSON.stringify(response.subscription));
+
+    return response;
   }
 
   async updateClinica(clinicaId: string, dto: UpdateClinicaDto) {

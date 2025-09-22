@@ -195,6 +195,8 @@ export class ClinicasController {
     try {
       console.log('🏥 Creando clínica con datos:', body);
       console.log('🔍 PlanId recibido:', body.planId);
+      console.log('🔍 PlanId tipo:', typeof body.planId);
+      console.log('🔍 PlanId valor exacto:', JSON.stringify(body.planId));
       
       // Validación manual básica
       if (!body.nombre || !body.url || !body.email || !body.password) {
