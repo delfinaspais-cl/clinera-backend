@@ -78,6 +78,10 @@ export class CreateClinicaDto {
   @IsOptional()
   plan?: 'basic' | 'professional' | 'enterprise' = 'basic';
 
+  @IsString()
+  @IsOptional()
+  planId?: string;
+
   @IsOptional()
   horarios?: HorarioDto[] | string;
 

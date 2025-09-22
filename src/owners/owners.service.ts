@@ -4,6 +4,7 @@ import { CreateClinicaDto } from './dto/create-clinica.dto';
 import { UpdateClinicaDto } from './dto/update-clinica.dto';
 import { SendMensajeDto } from './dto/send-mensaje.dto';
 import { EmailService } from '../email/email.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class OwnersService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private subscriptionsService: SubscriptionsService,
   ) {}
 
   async getAllClinicas() {
@@ -186,6 +188,22 @@ export class OwnersService {
       throw new BadRequestException('Error al crear la clínica');
     }
 
+    // Crear suscripción automática si se proporciona planId
+    let subscription = null;
+    if (dto.planId) {
+      try {
+        console.log(`🏥 Creando suscripción automática para clínica ${clinicaConRelaciones.id} con plan ${dto.planId}`);
+        subscription = await this.subscriptionsService.createTrialSubscription(
+          clinicaConRelaciones.id,
+          dto.planId
+        );
+        console.log(`✅ Suscripción creada exitosamente:`, subscription);
+      } catch (subscriptionError) {
+        console.error('❌ Error al crear suscripción automática:', subscriptionError);
+        // No lanzamos error para no interrumpir la creación de la clínica
+      }
+    }
+
     return {
       success: true,
       message: 'Clínica creada exitosamente',
@@ -206,6 +224,12 @@ export class OwnersService {
         createdAt: clinicaConRelaciones.createdAt,
         updatedAt: clinicaConRelaciones.updatedAt,
       },
+      subscription: subscription ? {
+        id: subscription.id,
+        planId: subscription.planId,
+        estado: subscription.estado,
+        tipo: subscription.tipo
+      } : null,
     };
   }
 
