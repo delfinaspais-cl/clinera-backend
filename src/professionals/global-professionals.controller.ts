@@ -660,6 +660,7 @@ export class GlobalProfessionalsController {
           select: {
             id: true,
             professionalId: true,
+            doctor: true,
             fecha: true,
             hora: true,
             duracionMin: true,
@@ -893,6 +894,7 @@ export class GlobalProfessionalsController {
           select: {
             id: true,
             professionalId: true,
+            doctor: true,
             fecha: true,
             hora: true,
             duracionMin: true,
