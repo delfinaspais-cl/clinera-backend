@@ -110,6 +110,20 @@ export class GlobalProfessionalsController {
     }
   }
 
+  @Get('availability/:clinicaUrl')
+  @ApiOperation({ summary: 'Obtener disponibilidad de profesionales por URL de clínica - ENDPOINT SIMPLE' })
+  @ApiResponse({ status: 200, description: 'Disponibilidad de profesionales obtenida exitosamente' })
+  @ApiQuery({ name: 'fecha', required: false, description: 'Filtrar por fecha específica (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'especialidad', required: false, description: 'Filtrar por especialidad' })
+  async getProfessionalsAvailabilitySimple(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query('fecha') fecha?: string,
+    @Query('especialidad') especialidad?: string,
+  ) {
+    // Reutilizar la lógica del endpoint existente
+    return this.getProfessionalsAvailabilityByUrl(clinicaUrl, fecha, especialidad);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -1012,6 +1026,7 @@ export class GlobalProfessionalsController {
       throw new BadRequestException('Error al obtener la disponibilidad de profesionales');
     }
   }
+
 
   @Get('clinica/:clinicaId')
   @UseGuards(JwtAuthGuard)
