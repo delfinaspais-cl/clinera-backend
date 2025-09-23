@@ -672,6 +672,15 @@ export class GlobalProfessionalsController {
           },
         });
 
+        console.log(`🔍 Turnos encontrados en DB para ${fecha}:`, turnosAgendados.length);
+        console.log(`🔍 Detalles de turnos:`, turnosAgendados.map(t => ({
+          id: t.id,
+          professionalId: t.professionalId,
+          fecha: t.fecha,
+          hora: t.hora,
+          estado: t.estado
+        })));
+
         console.log(`✅ Turnos agendados para ${fecha}: ${turnosAgendados.length}`);
       }
 
@@ -686,8 +695,10 @@ export class GlobalProfessionalsController {
         }));
 
         // Turnos agendados del profesional (si se especificó fecha)
+        // Buscar por professionalId o por nombre del doctor
         const turnosProfesional = turnosAgendados.filter(turno => 
-          turno.professionalId === profesional.id
+          turno.professionalId === profesional.id || 
+          turno.doctor === profesional.name
         ).map(turno => ({
           id: turno.id,
           fecha: turno.fecha,
@@ -697,6 +708,21 @@ export class GlobalProfessionalsController {
           paciente: turno.paciente,
           motivo: turno.motivo,
         }));
+
+        console.log(`🔍 Profesional ${profesional.name} (${profesional.id}):`);
+        console.log(`🔍 - Turnos totales encontrados: ${turnosAgendados.length}`);
+        console.log(`🔍 - Turnos filtrados para este profesional: ${turnosProfesional.length}`);
+        console.log(`🔍 - Comparando nombres: profesional.name="${profesional.name}" vs turnos.doctor:`);
+        turnosAgendados.forEach(turno => {
+          console.log(`🔍   - Turno ${turno.id}: doctor="${turno.doctor}", professionalId="${turno.professionalId}"`);
+        });
+        if (turnosProfesional.length > 0) {
+          console.log(`🔍 - Turnos del profesional:`, turnosProfesional.map(t => ({
+            id: t.id,
+            hora: t.hora,
+            paciente: t.paciente
+          })));
+        }
 
         // Especialidades del profesional
         const especialidades = profesional.especialidades.map(esp => esp.especialidad.name);
@@ -879,6 +905,15 @@ export class GlobalProfessionalsController {
           },
         });
 
+        console.log(`🔍 Turnos encontrados en DB para ${fecha} (URL):`, turnosAgendados.length);
+        console.log(`🔍 Detalles de turnos (URL):`, turnosAgendados.map(t => ({
+          id: t.id,
+          professionalId: t.professionalId,
+          fecha: t.fecha,
+          hora: t.hora,
+          estado: t.estado
+        })));
+
         console.log(`✅ Turnos agendados para ${fecha}: ${turnosAgendados.length}`);
       }
 
@@ -893,8 +928,10 @@ export class GlobalProfessionalsController {
         }));
 
         // Turnos agendados del profesional (si se especificó fecha)
+        // Buscar por professionalId o por nombre del doctor
         const turnosProfesional = turnosAgendados.filter(turno => 
-          turno.professionalId === profesional.id
+          turno.professionalId === profesional.id || 
+          turno.doctor === profesional.name
         ).map(turno => ({
           id: turno.id,
           fecha: turno.fecha,
@@ -904,6 +941,21 @@ export class GlobalProfessionalsController {
           paciente: turno.paciente,
           motivo: turno.motivo,
         }));
+
+        console.log(`🔍 Profesional ${profesional.name} (${profesional.id}):`);
+        console.log(`🔍 - Turnos totales encontrados: ${turnosAgendados.length}`);
+        console.log(`🔍 - Turnos filtrados para este profesional: ${turnosProfesional.length}`);
+        console.log(`🔍 - Comparando nombres: profesional.name="${profesional.name}" vs turnos.doctor:`);
+        turnosAgendados.forEach(turno => {
+          console.log(`🔍   - Turno ${turno.id}: doctor="${turno.doctor}", professionalId="${turno.professionalId}"`);
+        });
+        if (turnosProfesional.length > 0) {
+          console.log(`🔍 - Turnos del profesional:`, turnosProfesional.map(t => ({
+            id: t.id,
+            hora: t.hora,
+            paciente: t.paciente
+          })));
+        }
 
         // Especialidades del profesional
         const especialidades = profesional.especialidades.map(esp => esp.especialidad.name);
