@@ -12,6 +12,7 @@ import { UserRegisterDto } from '../auth/dto/user-register.dto';
 import { UserLoginDto } from '../auth/dto/user-login.dto';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 import { EmailService } from '../email/email.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +20,7 @@ export class UsersService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private subscriptionsService: SubscriptionsService,
   ) {}
 
   async register(dto: UserRegisterDto) {
@@ -342,12 +344,8 @@ export class UsersService {
       if (dto.planId) {
         console.log('✅ PlanId detectado en Users Service, creando suscripción automática');
         try {
-          // Crear el servicio de suscripciones directamente
-          const { SubscriptionsService } = require('../subscriptions/subscriptions.service');
-          const subscriptionsService = new SubscriptionsService(this.prisma);
-          
           console.log(`🏥 Creando suscripción automática para clínica ${clinica.id} con plan ${dto.planId}`);
-          const subscriptionResult = await subscriptionsService.createTrialSubscription(
+          const subscriptionResult = await this.subscriptionsService.createTrialSubscription(
             clinica.id,
             dto.planId
           );

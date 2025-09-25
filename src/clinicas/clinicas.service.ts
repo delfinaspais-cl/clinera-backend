@@ -3268,23 +3268,76 @@ export class ClinicasService {
       }
     }
 
-    const clinica = await this.prisma.clinica.create({
-      data: {
-        name: dto.nombre,
-        url: urlNormalizada,
-        address: dto.direccion || '',
-        phone: dto.telefono || '',
-        email: dto.email,
-        colorPrimario: dto.colorPrimario || dto.color_primario || '#3B82F6',
-        colorSecundario: dto.colorSecundario || dto.color_secundario || '#1E40AF',
-        descripcion: dto.descripcion || '',
-        estado: dto.estado || 'activa',
-        estadoPago: 'pendiente',
-        fechaCreacion: new Date(),
-        ultimoPago: null,
-        proximoPago: null,
-      },
+    // Verificar que el plan existe si se proporciona
+    let planId: string | null = null;
+    if (dto.planId) {
+      const plan = await this.prisma.plan.findUnique({
+        where: { id: dto.planId },
+      });
+      
+      if (!plan || !plan.activo) {
+        throw new BadRequestException('Plan no encontrado o inactivo');
+      }
+      planId = plan.id;
+    }
+
+    // Usar transacción para crear clínica y suscripción atómicamente
+    const result = await this.prisma.$transaction(async (prisma) => {
+      // Crear la clínica
+      const clinica = await prisma.clinica.create({
+        data: {
+          name: dto.nombre,
+          url: urlNormalizada,
+          address: dto.direccion || '',
+          phone: dto.telefono || '',
+          email: dto.email,
+          colorPrimario: dto.colorPrimario || dto.color_primario || '#3B82F6',
+          colorSecundario: dto.colorSecundario || dto.color_secundario || '#1E40AF',
+          descripcion: dto.descripcion || '',
+          estado: dto.estado || 'activa',
+          estadoPago: 'pendiente',
+          fechaCreacion: new Date(),
+          ultimoPago: null,
+          proximoPago: null,
+        },
+      });
+
+      // Crear suscripción automáticamente si se proporciona planId
+      let suscripcion: any = null;
+      if (planId) {
+        const fechaInicio = new Date();
+        const fechaTrialFin = new Date();
+        fechaTrialFin.setDate(fechaTrialFin.getDate() + 7); // 7 días de trial
+
+        suscripcion = await prisma.suscripcion.create({
+          data: {
+            clinicaId: clinica.id,
+            planId: planId,
+            estado: 'trial',
+            fechaInicio,
+            fechaTrialFin,
+            trialDias: 7,
+            autoRenovar: true,
+            metadata: {
+              limiteProfesionales: 3,
+              limiteUam: 1000,
+              profesionalesUsados: 0,
+              uamUsadas: 0,
+            },
+          },
+        });
+
+        // Actualizar estado de pago de la clínica
+        await prisma.clinica.update({
+          where: { id: clinica.id },
+          data: { estadoPago: 'trial' },
+        });
+      }
+
+      return { clinica, suscripcion };
     });
+
+    const { clinica, suscripcion } = result;
 
     // Crear usuario ADMIN automáticamente para la clínica
     let adminUser: any = null;
@@ -3361,7 +3414,15 @@ export class ClinicasService {
 
     const clinicaConRelaciones = await this.prisma.clinica.findUnique({
       where: { id: clinica.id },
-      include: { especialidades: true, horarios: true },
+      include: { 
+        especialidades: true, 
+        horarios: true,
+        suscripcion: {
+          include: {
+            plan: true
+          }
+        }
+      },
     });
 
     if (!clinicaConRelaciones) {
@@ -3387,6 +3448,18 @@ export class ClinicasService {
         fechaCreacion: clinicaConRelaciones.fechaCreacion,
         createdAt: clinicaConRelaciones.createdAt,
         updatedAt: clinicaConRelaciones.updatedAt,
+        suscripcion: suscripcion ? {
+          id: suscripcion.id,
+          estado: suscripcion.estado,
+          fechaInicio: suscripcion.fechaInicio,
+          fechaTrialFin: suscripcion.fechaTrialFin,
+          trialDias: suscripcion.trialDias,
+          plan: {
+            id: suscripcion.planId,
+            nombre: 'Plan Trial',
+            precio: 0,
+          }
+        } : null,
       },
     };
   }
