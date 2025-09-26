@@ -1426,7 +1426,7 @@ export class ClinicasService {
           fecha: fechaTurno,
           hora: dto.hora,
           estado: 'confirmado', // Los turnos desde landing se crean confirmados
-          motivo: dto.motivo,
+          motivo: dto.motivo || 'Consulta',
           clinicaId: clinica.id,
         },
       });

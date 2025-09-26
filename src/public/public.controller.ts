@@ -150,6 +150,17 @@ export class PublicController {
     }
   }
 
+  // ✅ NUEVO ENDPOINT SIMPLIFICADO (URL más corta)
+  @Post(':clinicaUrl/turnos')
+  async createTurno(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: CreateTurnoLandingDto,
+  ) {
+    // Este endpoint es público, no requiere autenticación
+    return this.clinicasService.createTurnoFromLanding(clinicaUrl, dto);
+  }
+
+  // 🔄 ENDPOINT ORIGINAL (mantenido para compatibilidad)
   @Post('clinica/:clinicaUrl/landing/turnos')
   async createTurnoFromLanding(
     @Param('clinicaUrl') clinicaUrl: string,

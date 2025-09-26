@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEmail, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateTurnoLandingDto {
   @IsString()
@@ -26,6 +26,6 @@ export class CreateTurnoLandingDto {
   doctor: string;
 
   @IsString()
-  @IsNotEmpty()
-  motivo: string;
+  @IsOptional()
+  motivo?: string;
 }
