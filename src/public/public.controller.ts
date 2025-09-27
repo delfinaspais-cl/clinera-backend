@@ -533,6 +533,60 @@ export class PublicController {
 
   // ===== ENDPOINTS PÚBLICOS PARA PACIENTES =====
   
+  @Get('clinica/:clinicaUrl/pacientes')
+  async getPatientsPublic(@Param('clinicaUrl') clinicaUrl: string) {
+    try {
+      // Verificar que la clínica existe y está activa
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      if (clinica.estado !== 'activa') {
+        throw new BadRequestException('La clínica no está activa');
+      }
+
+      // Obtener todos los pacientes de la clínica
+      const patients = await this.prisma.patient.findMany({
+        where: {
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Pacientes obtenidos exitosamente',
+        data: patients,
+        total: patients.length,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo pacientes públicos:', error);
+      throw new BadRequestException('Error al obtener los pacientes');
+    }
+  }
+
+  
   @Post('clinica/:clinicaUrl/pacientes')
   async createPatientPublic(
     @Param('clinicaUrl') clinicaUrl: string,
