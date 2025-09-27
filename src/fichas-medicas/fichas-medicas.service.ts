@@ -239,40 +239,31 @@ export class FichasMedicasService {
     }
 
     let uploadResult: any;
-    let useLocalStorage = false;
+    let useLocalStorage = true; // Forzar uso de almacenamiento local
 
+    // Usar almacenamiento local directamente para evitar problemas con microservicio
+    console.log('📁 [UPLOAD] Usando almacenamiento local para archivo médico');
+    
     try {
-      // Intentar subir archivo al microservicio primero
-      const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
-      const microserviceResult = await this.fileMicroserviceService.uploadFile({
-        file,
-        visibility: 'private', // Los archivos médicos son privados
-        scope,
-        conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
-        messageId: `archivo-${Date.now()}` // Generar un message_id único
-      }, userToken);
-      
-      // Verificar si el resultado es un error
-      if ('error' in microserviceResult) {
-        throw new Error(microserviceResult.error);
-      }
-      
-      uploadResult = microserviceResult;
-      console.log('✅ Archivo subido exitosamente al microservicio');
-    } catch (error) {
-      console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
-      useLocalStorage = true;
-      
-      // Usar almacenamiento local como respaldo
       const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'archivos');
       
       uploadResult = {
         id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: this.storageService.getFileUrl(localUploadResult.url),
+        url: localUploadResult.url, // Usar la URL relativa directamente
         nombre: file.originalname,
         size: file.size,
         mimeType: file.mimetype
       };
+      
+      console.log('✅ [UPLOAD] Archivo guardado localmente:', {
+        id: uploadResult.id,
+        url: uploadResult.url,
+        nombre: uploadResult.nombre,
+        size: uploadResult.size
+      });
+    } catch (error) {
+      console.error('❌ [UPLOAD] Error guardando archivo localmente:', error);
+      throw new Error('Error al guardar el archivo');
     }
 
     // Guardar en base de datos
@@ -282,9 +273,9 @@ export class FichasMedicasService {
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
-        url: uploadResult.url,
+        url: uploadResult.url, // URL relativa que será procesada por getFileUrl
         tamañoBytes: BigInt(uploadResult.size),
-        // microserviceFileId: useLocalStorage ? null : uploadResult.id // Temporalmente comentado hasta migración
+        // microserviceFileId: null // Usando almacenamiento local
       }
     });
 
@@ -358,40 +349,31 @@ export class FichasMedicasService {
     }
 
     let uploadResult: any;
-    let useLocalStorage = false;
+    let useLocalStorage = true; // Forzar uso de almacenamiento local
 
+    // Usar almacenamiento local directamente para evitar problemas con microservicio
+    console.log('🖼️ [UPLOAD_IMAGE] Usando almacenamiento local para imagen médica');
+    
     try {
-      // Intentar subir imagen al microservicio primero
-      const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
-      const microserviceResult = await this.fileMicroserviceService.uploadFile({
-        file,
-        visibility: 'private', // Las imágenes médicas son privadas
-        scope,
-        conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
-        messageId: `imagen-${Date.now()}` // Generar un message_id único
-      }, userToken);
-      
-      // Verificar si el resultado es un error
-      if ('error' in microserviceResult) {
-        throw new Error(microserviceResult.error);
-      }
-      
-      uploadResult = microserviceResult;
-      console.log('✅ Imagen subida exitosamente al microservicio');
-    } catch (error) {
-      console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
-      useLocalStorage = true;
-      
-      // Usar almacenamiento local como respaldo
       const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'imagenes');
       
       uploadResult = {
         id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: this.storageService.getFileUrl(localUploadResult.url),
+        url: localUploadResult.url, // Usar la URL relativa directamente
         nombre: file.originalname,
         size: file.size,
         mimeType: file.mimetype
       };
+      
+      console.log('✅ [UPLOAD_IMAGE] Imagen guardada localmente:', {
+        id: uploadResult.id,
+        url: uploadResult.url,
+        nombre: uploadResult.nombre,
+        size: uploadResult.size
+      });
+    } catch (error) {
+      console.error('❌ [UPLOAD_IMAGE] Error guardando imagen localmente:', error);
+      throw new Error('Error al guardar la imagen');
     }
 
     // Guardar en base de datos
@@ -400,9 +382,9 @@ export class FichasMedicasService {
         fichaMedicaId: fichaMedica.id,
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
-        url: uploadResult.url,
+        url: uploadResult.url, // URL relativa que será procesada por getFileUrl
         tamañoBytes: BigInt(uploadResult.size),
-        // microserviceFileId: useLocalStorage ? null : uploadResult.id // Temporalmente comentado hasta migración
+        // microserviceFileId: null // Usando almacenamiento local
       }
     });
 

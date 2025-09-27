@@ -1212,19 +1212,33 @@ export class PublicController {
   @Get('files/*')
   async serveFile(@Param('0') filePath: string, @Res() res: Response) {
     try {
+      console.log('🔍 [PUBLIC_FILES] Intentando servir archivo:', filePath);
+      
       // Construir la ruta completa del archivo
       const fullPath = path.join(process.cwd(), 'uploads', filePath);
       
+      console.log('📁 [PUBLIC_FILES] Ruta completa del archivo:', fullPath);
+      console.log('📁 [PUBLIC_FILES] Directorio de trabajo:', process.cwd());
+      
       // Verificar que el archivo existe
       if (!fs.existsSync(fullPath)) {
+        console.error('❌ [PUBLIC_FILES] Archivo no encontrado:', fullPath);
+        console.error('❌ [PUBLIC_FILES] Verificando directorio padre:', path.dirname(fullPath));
+        console.error('❌ [PUBLIC_FILES] ¿Existe directorio padre?', fs.existsSync(path.dirname(fullPath)));
         throw new NotFoundException('Archivo no encontrado');
       }
       
       // Verificar que es un archivo (no un directorio)
       const stats = fs.statSync(fullPath);
       if (!stats.isFile()) {
+        console.error('❌ [PUBLIC_FILES] No es un archivo válido:', fullPath);
         throw new NotFoundException('Archivo no encontrado');
       }
+      
+      console.log('✅ [PUBLIC_FILES] Archivo encontrado, sirviendo...', {
+        size: stats.size,
+        isFile: stats.isFile()
+      });
       
       // Determinar el tipo de contenido basado en la extensión
       const ext = path.extname(fullPath).toLowerCase();
@@ -1260,15 +1274,23 @@ export class PublicController {
       res.setHeader('Content-Length', stats.size);
       res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache por 1 hora
       
+      console.log('📄 [PUBLIC_FILES] Content-Type determinado:', contentType);
+      console.log('📤 [PUBLIC_FILES] Enviando archivo...');
+      
       // Enviar el archivo
       const fileStream = fs.createReadStream(fullPath);
       fileStream.pipe(res);
       
     } catch (error) {
+      console.error('❌ [PUBLIC_FILES] Error sirviendo archivo:', {
+        error: error.message,
+        filePath,
+        stack: error.stack
+      });
+      
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error sirviendo archivo:', error);
       throw new NotFoundException('Error al servir el archivo');
     }
   }
