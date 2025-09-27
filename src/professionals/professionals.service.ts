@@ -111,14 +111,25 @@ export class ProfessionalsService {
 
       // 5. Formatear datos de manera eficiente
       const profesionalesTransformados = professionals.map(prof => {
-        // Filtrar y mapear agendas
-        const horariosDetallados = agendas
-          .filter(agenda => agenda.professionalId === prof.id)
-          .map(agenda => ({
-            dia: agenda.dia,
+        // Filtrar y mapear agendas - formato agrupado por día
+        const agendasDelProfesional = agendas.filter(agenda => agenda.professionalId === prof.id);
+        const horariosAgrupados: any = {};
+        
+        agendasDelProfesional.forEach(agenda => {
+          if (!horariosAgrupados[agenda.dia]) {
+            horariosAgrupados[agenda.dia] = [];
+          }
+          horariosAgrupados[agenda.dia].push({
             horaInicio: agenda.horaInicio,
             horaFin: agenda.horaFin,
-          }));
+          });
+        });
+
+        // Convertir a formato esperado por el frontend
+        const horariosDetallados = Object.keys(horariosAgrupados).map(dia => ({
+          dia: dia,
+          rangos: horariosAgrupados[dia]
+        }));
 
         // Filtrar y mapear especialidades
         const specialties = especialidades
@@ -425,12 +436,25 @@ export class ProfessionalsService {
         },
       });
 
-      // Transformar los horarios al formato esperado por el frontend
-      const horariosDetallados = (profesionalCompleto as any).agendas?.map((agenda: any) => ({
-        dia: agenda.dia,
-        horaInicio: agenda.horaInicio,
-        horaFin: agenda.horaFin,
-      })) || [];
+      // Transformar los horarios al formato agrupado por día
+      const agendas = (profesionalCompleto as any).agendas || [];
+      const horariosAgrupados: any = {};
+      
+      agendas.forEach((agenda: any) => {
+        if (!horariosAgrupados[agenda.dia]) {
+          horariosAgrupados[agenda.dia] = [];
+        }
+        horariosAgrupados[agenda.dia].push({
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        });
+      });
+
+      // Convertir a formato esperado por el frontend
+      const horariosDetallados = Object.keys(horariosAgrupados).map(dia => ({
+        dia: dia,
+        rangos: horariosAgrupados[dia]
+      }));
 
       // Transformar especialidades al formato esperado
       const specialties = (profesionalCompleto as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
@@ -493,12 +517,25 @@ export class ProfessionalsService {
 
     if (!prof) throw new NotFoundException('Profesional no encontrado');
 
-    // Transformar los horarios al formato esperado por el frontend
-    const horariosDetallados = (prof as any).agendas?.map((agenda: any) => ({
-      dia: agenda.dia,
-      horaInicio: agenda.horaInicio,
-      horaFin: agenda.horaFin,
-    })) || [];
+    // Transformar los horarios al formato agrupado por día
+    const agendas = (prof as any).agendas || [];
+    const horariosAgrupados: any = {};
+    
+    agendas.forEach((agenda: any) => {
+      if (!horariosAgrupados[agenda.dia]) {
+        horariosAgrupados[agenda.dia] = [];
+      }
+      horariosAgrupados[agenda.dia].push({
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin,
+      });
+    });
+
+    // Convertir a formato esperado por el frontend
+    const horariosDetallados = Object.keys(horariosAgrupados).map(dia => ({
+      dia: dia,
+      rangos: horariosAgrupados[dia]
+    }));
 
     // Transformar especialidades al formato esperado
     const specialties = (prof as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
@@ -803,12 +840,25 @@ export class ProfessionalsService {
           },
         });
 
-        // Transformar los horarios al formato esperado por el frontend
-        const horariosDetallados = (finalProfessional as any).agendas?.map((agenda: any) => ({
-          dia: agenda.dia,
-          horaInicio: agenda.horaInicio,
-          horaFin: agenda.horaFin,
-        })) || [];
+        // Transformar los horarios al formato agrupado por día
+        const agendas = (finalProfessional as any).agendas || [];
+        const horariosAgrupados: any = {};
+        
+        agendas.forEach((agenda: any) => {
+          if (!horariosAgrupados[agenda.dia]) {
+            horariosAgrupados[agenda.dia] = [];
+          }
+          horariosAgrupados[agenda.dia].push({
+            horaInicio: agenda.horaInicio,
+            horaFin: agenda.horaFin,
+          });
+        });
+
+        // Convertir a formato esperado por el frontend
+        const horariosDetallados = Object.keys(horariosAgrupados).map(dia => ({
+          dia: dia,
+          rangos: horariosAgrupados[dia]
+        }));
 
         // Transformar especialidades al formato esperado
         const specialties = (finalProfessional as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
@@ -855,12 +905,25 @@ export class ProfessionalsService {
         },
       });
 
-      // Transformar los horarios al formato esperado por el frontend
-      const horariosDetallados = (finalProfessional as any).agendas?.map((agenda: any) => ({
-        dia: agenda.dia,
-        horaInicio: agenda.horaInicio,
-        horaFin: agenda.horaFin,
-      })) || [];
+      // Transformar los horarios al formato agrupado por día
+      const agendas = (finalProfessional as any).agendas || [];
+      const horariosAgrupados: any = {};
+      
+      agendas.forEach((agenda: any) => {
+        if (!horariosAgrupados[agenda.dia]) {
+          horariosAgrupados[agenda.dia] = [];
+        }
+        horariosAgrupados[agenda.dia].push({
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin,
+        });
+      });
+
+      // Convertir a formato esperado por el frontend
+      const horariosDetallados = Object.keys(horariosAgrupados).map(dia => ({
+        dia: dia,
+        rangos: horariosAgrupados[dia]
+      }));
 
       // Transformar especialidades al formato esperado
       const specialties = (finalProfessional as any).especialidades?.map((esp: any) => esp.especialidad.name) || [];
