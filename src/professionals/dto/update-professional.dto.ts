@@ -13,6 +13,27 @@ class HorarioDiaDto {
   horaFin: string; // "17:00"
 }
 
+class HorarioRangoDto {
+  @IsString()
+  dia: string; // "LUNES", "MARTES", etc.
+
+  @IsString()
+  horaInicio: string; // "09:00"
+
+  @IsString()
+  horaFin: string; // "12:00"
+}
+
+class HorarioMultiRangoDto {
+  @IsString()
+  dia: string; // "LUNES", "MARTES", etc.
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioRangoDto)
+  rangos: HorarioRangoDto[]; // Array de rangos horarios para el mismo día
+}
+
 export class UpdateProfessionalDto {
   @IsOptional()
   @IsString()
@@ -67,4 +88,11 @@ export class UpdateProfessionalDto {
   @ValidateNested({ each: true })
   @Type(() => HorarioDiaDto)
   horariosDetallados?: HorarioDiaDto[];
+
+  // Horarios de atención - Formato multi-rango (múltiples rangos por día)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioMultiRangoDto)
+  horariosMultiRango?: HorarioMultiRangoDto[];
 }

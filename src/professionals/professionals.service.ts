@@ -349,7 +349,28 @@ export class ProfessionalsService {
       }
 
       // Crear horarios de atención si se proporcionan
-      if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
+      if (dto.horariosMultiRango && dto.horariosMultiRango.length > 0) {
+        // Formato multi-rango: múltiples rangos por día
+        console.log('🔍 Creando horarios multi-rango...');
+        const horariosData: any[] = [];
+        
+        dto.horariosMultiRango.forEach(horarioDia => {
+          horarioDia.rangos.forEach(rango => {
+            horariosData.push({
+              professionalId: professional.id,
+              dia: horarioDia.dia.toUpperCase(),
+              horaInicio: rango.horaInicio,
+              horaFin: rango.horaFin,
+              duracionMin: dto.defaultDurationMin ?? 30,
+            });
+          });
+        });
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+        console.log('✅ Horarios multi-rango creados');
+      } else if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
         // Formato avanzado: horarios específicos por día
         console.log('🔍 Creando horarios detallados...');
         const horariosData = dto.horariosDetallados.map(horario => ({
@@ -684,7 +705,35 @@ export class ProfessionalsService {
       }
 
       // Actualizar horarios si se proporcionan
-      if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
+      if (dto.horariosMultiRango && dto.horariosMultiRango.length > 0) {
+        // Formato multi-rango: múltiples rangos por día
+        console.log('🔍 Actualizando horarios multi-rango...');
+        
+        // Eliminar horarios existentes
+        await this.prisma.agenda.deleteMany({
+          where: { professionalId: id },
+        });
+
+        // Crear nuevos horarios multi-rango
+        const horariosData: any[] = [];
+        
+        dto.horariosMultiRango.forEach(horarioDia => {
+          horarioDia.rangos.forEach(rango => {
+            horariosData.push({
+              professionalId: id,
+              dia: horarioDia.dia.toUpperCase(),
+              horaInicio: rango.horaInicio,
+              horaFin: rango.horaFin,
+              duracionMin: dto.defaultDurationMin ?? 30,
+            });
+          });
+        });
+
+        await this.prisma.agenda.createMany({
+          data: horariosData,
+        });
+        console.log('✅ Horarios multi-rango actualizados');
+      } else if (dto.horariosDetallados && dto.horariosDetallados.length > 0) {
         // Formato avanzado: horarios específicos por día
         // Eliminar horarios existentes
         await this.prisma.agenda.deleteMany({
