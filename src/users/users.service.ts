@@ -479,10 +479,17 @@ export class UsersService {
       try {
         // PASO 1: Hacer login en Fluentia para obtener el token
         console.log('🔑 PASO 1: Obteniendo token de Fluentia...');
+        console.log('🔍 Usuario logueado:', JSON.stringify({ id: user.id, email: user.email }, null, 2));
+        console.log('🔍 DTO recibido para login:', JSON.stringify({ userPassword: dto.userPassword ? '***' : 'UNDEFINED' }, null, 2));
+        
+        if (!dto.userPassword) {
+          throw new Error('Contraseña del usuario requerida para login en Fluentia');
+        }
+        
         const loginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
         const loginData = {
-          email: user.email, // Email del usuario que crea la clínica
-          password: dto.password, // Contraseña del usuario (viene en el DTO)
+          email: user.email, // Email del usuario logueado (no del admin de la clínica)
+          password: dto.userPassword, // Contraseña del usuario logueado
         };
         
         console.log('📤 Datos de login a Fluentia:', JSON.stringify(loginData, null, 2));

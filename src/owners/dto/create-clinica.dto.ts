@@ -41,6 +41,12 @@ export class CreateClinicaDto {
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   password: string;
 
+  // Campo adicional para la contraseña del usuario logueado (para login en Fluentia)
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6, { message: 'La contraseña del usuario debe tener al menos 6 caracteres' })
+  userPassword?: string;
+
   @IsString()
   @IsOptional()
   @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'El color primario debe ser un color hex válido (#RRGGBB)' })
