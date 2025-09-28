@@ -27,7 +27,7 @@ export class FileMicroserviceService {
   private readonly microserviceJwtSecret: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-staging.up.railway.app');
+    this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-develop-latest.up.railway.app');
     this.authToken = ''; // No se usa, el microservicio acepta el JWT del usuario
     this.microserviceJwtSecret = this.configService.get<string>('FILE_MICROSERVICE_JWT_SECRET', '@leaf$MVC*JWT#AUTH.Secret'); // JWT_SECRET del microservicio
     
