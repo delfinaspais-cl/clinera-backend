@@ -155,8 +155,8 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Usar el token del usuario directamente
-          console.log('🔑 [UPLOAD] Usando token de usuario directamente');
+          // Usar el token del usuario del frontend
+          console.log('🔑 [UPLOAD] Usando token del usuario del frontend');
           
           headers['Authorization'] = `Bearer ${userToken}`;
           
@@ -427,8 +427,8 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Usar el token del usuario directamente
-          console.log('🔑 [SIGNED_URL] Usando token de usuario directamente');
+          // Usar el token del usuario del frontend
+          console.log('🔑 [SIGNED_URL] Usando token del usuario del frontend');
           
           headers['Authorization'] = `Bearer ${userToken}`;
           

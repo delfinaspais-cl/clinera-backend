@@ -252,6 +252,51 @@ export class FichasMedicasService {
       console.log('🌐 [UPLOAD] UserToken disponible:', !!userToken);
       console.log('🌐 [UPLOAD] UserToken length:', userToken?.length);
       
+      // Registrar usuario en el microservicio si es necesario
+      console.log('👤 [UPLOAD] Verificando registro de usuario en microservicio...');
+      
+      // Decodificar el token del usuario para obtener su email
+      let userEmail = 'temp-user@example.com';
+      if (userToken) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.decode(userToken);
+          if (decoded && decoded.email) {
+            userEmail = decoded.email;
+            console.log('👤 [UPLOAD] Email del usuario obtenido:', userEmail);
+          }
+        } catch (error) {
+          console.log('⚠️ [UPLOAD] Error decodificando token:', error.message);
+        }
+      }
+      
+      // Intentar registrar el usuario en el microservicio
+      const userData = {
+        name: userEmail.split('@')[0] || 'user',
+        email: userEmail,
+        password: 'default-password-123'
+      };
+      
+      console.log('👤 [UPLOAD] Registrando usuario en microservicio:', userData.email);
+      const registerResult = await this.fileMicroserviceService.registerUser(userData);
+      let microserviceToken = userToken; // Usar el token del frontend por defecto
+      
+      if ('error' in registerResult) {
+        if (registerResult.statusCode === 409) {
+          console.log('✅ [UPLOAD] Usuario ya existe en microservicio');
+        } else {
+          console.log('⚠️ [UPLOAD] Error registrando usuario:', registerResult.error);
+        }
+      } else {
+        console.log('✅ [UPLOAD] Usuario registrado exitosamente en microservicio');
+        // Si el usuario se registró exitosamente, usar el token del microservicio
+        if (registerResult.userId) {
+          console.log('🔑 [UPLOAD] Usando token del microservicio para el usuario registrado');
+          // Por ahora, seguimos usando el token del frontend
+          // En el futuro, podríamos almacenar el token del microservicio
+        }
+      }
+      
       const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
       console.log('🌐 [UPLOAD] Scope generado:', scope);
       const microserviceResult = await this.fileMicroserviceService.uploadFile({
@@ -260,7 +305,7 @@ export class FichasMedicasService {
         scope,
         conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
         messageId: `archivo-${Date.now()}` // Generar un message_id único
-      }, userToken);
+      }, microserviceToken);
       
       console.log('🌐 [UPLOAD] Resultado del microservicio:', microserviceResult);
       
