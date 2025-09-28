@@ -216,7 +216,7 @@ export class FileMicroserviceService {
         data: response.data
       });
 
-      if (response.status !== 200) {
+      if (response.status !== 200 && response.status !== 201) {
         console.error('❌ [UPLOAD] Estado de respuesta no exitoso:', response.status);
         throw new BadRequestException('Error al subir archivo al microservicio');
       }
