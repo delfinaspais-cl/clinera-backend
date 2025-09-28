@@ -59,6 +59,17 @@ export class FichasMedicasController {
     return this.fichasMedicasService.saveFichaMedica(clinicaUrl, pacienteId, fichaData);
   }
 
+  @Post('register-microservice-user')
+  @ApiOperation({ summary: 'Registrar usuario en microservicio de archivos' })
+  @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente' })
+  @ApiResponse({ status: 409, description: 'El usuario ya existe' })
+  @ApiResponse({ status: 400, description: 'Error en el registro' })
+  async registerMicroserviceUser(
+    @Body() userData: { name: string; email: string; password: string }
+  ): Promise<{ success: boolean; userId?: string } | { error: string; statusCode: number }> {
+    return this.fichasMedicasService.registerMicroserviceUser(userData);
+  }
+
   @Post('upload-file')
   @ApiOperation({ summary: 'Subir archivo médico' })
   @ApiConsumes('multipart/form-data')

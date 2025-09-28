@@ -12,6 +12,11 @@ export class FichasMedicasService {
     private readonly fileMicroserviceService: FileMicroserviceService,
   ) {}
 
+  async registerMicroserviceUser(userData: { name: string; email: string; password: string }): Promise<{ success: boolean; userId?: string } | { error: string; statusCode: number }> {
+    console.log('👤 [REGISTER] Registrando usuario en microservicio:', userData.email);
+    return this.fileMicroserviceService.registerUser(userData);
+  }
+
   async getFichaMedica(clinicaUrl: string, pacienteId: string, userToken?: string): Promise<FichaMedicaResponseDto> {
     // Verificar que la clínica existe
     const clinica = await this.prisma.clinica.findFirst({
@@ -243,7 +248,12 @@ export class FichasMedicasService {
 
     try {
       // Intentar subir archivo al microservicio primero
+      console.log('🌐 [UPLOAD] Intentando subir al microservicio...');
+      console.log('🌐 [UPLOAD] UserToken disponible:', !!userToken);
+      console.log('🌐 [UPLOAD] UserToken length:', userToken?.length);
+      
       const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
+      console.log('🌐 [UPLOAD] Scope generado:', scope);
       const microserviceResult = await this.fileMicroserviceService.uploadFile({
         file,
         visibility: 'private', // Los archivos médicos son privados
@@ -252,8 +262,11 @@ export class FichasMedicasService {
         messageId: `archivo-${Date.now()}` // Generar un message_id único
       }, userToken);
       
+      console.log('🌐 [UPLOAD] Resultado del microservicio:', microserviceResult);
+      
       // Verificar si el resultado es un error
       if ('error' in microserviceResult) {
+        console.error('❌ [UPLOAD] Error del microservicio:', microserviceResult.error);
         throw new Error(microserviceResult.error);
       }
       
@@ -261,6 +274,7 @@ export class FichasMedicasService {
       console.log('✅ Archivo subido exitosamente al microservicio');
     } catch (error) {
       console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
+      console.error('❌ [UPLOAD] Error completo:', error);
       useLocalStorage = true;
       
       // Usar almacenamiento local como respaldo

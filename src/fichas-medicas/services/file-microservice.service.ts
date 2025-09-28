@@ -297,6 +297,74 @@ export class FileMicroserviceService {
   }
 
   /**
+   * Registra un usuario en el microservicio de archivos
+   */
+  async registerUser(userData: { name: string; email: string; password: string }): Promise<{ success: boolean; userId?: string } | { error: string; statusCode: number }> {
+    console.log('👤 [REGISTER] Iniciando registro de usuario en microservicio');
+    console.log('👤 [REGISTER] Datos del usuario:', {
+      name: userData.name,
+      email: userData.email,
+      hasPassword: !!userData.password
+    });
+    
+    try {
+      const response = await axios.post(
+        `${this.microserviceUrl}/auth/register`,
+        {
+          name: userData.name,
+          email: userData.email,
+          password: userData.password
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000,
+        }
+      );
+      
+      console.log('📥 [REGISTER] Respuesta recibida del microservicio:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      });
+
+      if (response.status !== 200 && response.status !== 201) {
+        console.error('❌ [REGISTER] Estado de respuesta no exitoso:', response.status);
+        throw new BadRequestException('Error al registrar usuario en el microservicio');
+      }
+
+      console.log('✅ [REGISTER] Usuario registrado exitosamente en el microservicio');
+      
+      return {
+        success: true,
+        userId: response.data.userId || response.data.id
+      };
+      
+    } catch (error) {
+      console.error('❌ [REGISTER] Error en FileMicroserviceService.registerUser:', {
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        stack: error.stack
+      });
+      
+      if (error.response?.status === 409) {
+        return {
+          error: 'El usuario ya existe en el microservicio',
+          statusCode: 409
+        };
+      }
+      
+      return {
+        error: error.message || 'Error al registrar usuario en el microservicio',
+        statusCode: error.response?.status || 500
+      };
+    }
+  }
+
+  /**
    * Elimina un archivo del microservicio
    */
   async deleteFile(fileId: string): Promise<void> {
