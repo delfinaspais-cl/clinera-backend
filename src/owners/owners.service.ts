@@ -6,6 +6,7 @@ import { SendMensajeDto } from './dto/send-mensaje.dto';
 import { EmailService } from '../email/email.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import * as bcrypt from 'bcrypt';
+import axios from 'axios';
 
 @Injectable()
 export class OwnersService {
@@ -217,6 +218,117 @@ export class OwnersService {
       }
     } else {
       console.log('❌ No hay planId, saltando suscripción automática');
+    }
+
+    // Hacer POST a la API externa de Fluentia para registrar la clínica
+    console.log('🌐 ===== INICIANDO REGISTRO DE CLÍNICA EN API EXTERNA (OWNERS) =====');
+    const startTime = Date.now();
+    try {
+      // PASO 1: Hacer login en Fluentia para obtener el token
+      console.log('🔑 PASO 1: Obteniendo token de Fluentia...');
+      const loginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
+      const loginData = {
+        email: dto.email, // Email del usuario que crea la clínica
+        password: dto.password, // Contraseña del usuario
+      };
+      
+      console.log('📤 Datos de login a Fluentia:', JSON.stringify(loginData, null, 2));
+      
+      const loginResponse = await axios.post(loginUrl, loginData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      });
+      
+      const fluentiaToken = loginResponse.data.access_token || loginResponse.data.token;
+      const fluentiaUserId = loginResponse.data.user?.id || loginResponse.data.user_id;
+      
+      console.log('✅ Token obtenido de Fluentia:', fluentiaToken ? 'Sí' : 'No');
+      console.log('✅ User ID obtenido de Fluentia:', fluentiaUserId || 'No encontrado');
+      
+      if (!fluentiaToken) {
+        throw new Error('No se pudo obtener el token de Fluentia');
+      }
+      
+      // PASO 2: Crear business en Fluentia con el token
+      console.log('🏥 PASO 2: Creando business en Fluentia...');
+      const businessUrl = 'https://fluentia-api-develop-latest.up.railway.app/businesses';
+      const businessData = {
+        name: dto.nombre, // Nombre de la clínica
+        email: dto.email, // Email de la clínica
+        phone: dto.telefono || '', // Teléfono de la clínica
+        business_id: clinicaConRelaciones.id, // ID de la clínica como business_id
+      };
+      
+      console.log('📤 Datos que se enviarán a la API externa (BUSINESS - OWNERS):', JSON.stringify(businessData, null, 2));
+      console.log('🔗 URL de la API externa:', businessUrl);
+      
+      const businessResponse = await axios.post(businessUrl, businessData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${fluentiaToken}`,
+        },
+        timeout: 10000,
+      });
+      
+      console.log('✅ Business creado exitosamente en Fluentia');
+      console.log('📊 Status Code:', businessResponse.status);
+      console.log('📄 Datos de respuesta:', JSON.stringify(businessResponse.data, null, 2));
+      
+      // PASO 3: Asociar usuario con business usando PATCH
+      if (fluentiaUserId) {
+        console.log('🔗 PASO 3: Asociando usuario con business...');
+        const patchUrl = `https://fluentia-api-develop-latest.up.railway.app/users/${fluentiaUserId}`;
+        
+        console.log('📤 PATCH URL:', patchUrl);
+        console.log('📤 Business ID:', clinicaConRelaciones.id);
+        
+        const patchResponse = await axios.patch(patchUrl, {}, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${fluentiaToken}`,
+            'X-Business-id': clinicaConRelaciones.id,
+          },
+          timeout: 10000,
+        });
+        
+        console.log('✅ Usuario asociado con business exitosamente');
+        console.log('📊 Status Code:', patchResponse.status);
+        console.log('📄 Datos de respuesta:', JSON.stringify(patchResponse.data, null, 2));
+      } else {
+        console.log('⚠️ No se pudo obtener USER_ID de Fluentia, saltando PATCH');
+      }
+      
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log('✅ ===== REGISTRO DE CLÍNICA EN API EXTERNA EXITOSO (OWNERS) =====');
+      console.log('⏱️ Duración total:', `${duration}ms`);
+      console.log('✅ Clínica registrada exitosamente en Fluentia API (OWNERS)');
+      
+    } catch (externalApiError) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log('❌ ===== ERROR EN REGISTRO DE CLÍNICA EN API EXTERNA (OWNERS) =====');
+      console.log('⏱️ Duración antes del error:', `${duration}ms`);
+      console.log('🚨 Tipo de error:', externalApiError.name || 'Unknown');
+      console.log('📝 Mensaje de error:', externalApiError.message);
+      
+      if (externalApiError.response) {
+        console.log('📊 Status Code de error:', externalApiError.response.status);
+        console.log('📋 Headers de error:', JSON.stringify(externalApiError.response.headers, null, 2));
+        console.log('📄 Datos de error:', JSON.stringify(externalApiError.response.data, null, 2));
+      } else if (externalApiError.request) {
+        console.log('🔌 Error de conexión - No se recibió respuesta');
+        console.log('📋 Request config:', JSON.stringify(externalApiError.config, null, 2));
+      } else {
+        console.log('⚙️ Error de configuración:', externalApiError.message);
+      }
+      
+      console.log('⚠️ IMPORTANTE: La creación de clínica local continúa normalmente');
+      console.log('⚠️ La clínica se crea en el sistema local aunque falle la API externa');
     }
 
     const response = {
