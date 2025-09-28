@@ -54,6 +54,7 @@ export class FileMicroserviceService {
       userTokenLength: userToken?.length || 0
     });
     
+    
     try {
       const formData = new FormData();
       
@@ -209,7 +210,7 @@ export class FileMicroserviceService {
         formData,
         {
           headers,
-          timeout: 30000, // 30 segundos timeout
+          timeout: 60000, // 60 segundos timeout
         }
       );
       
