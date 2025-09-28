@@ -1207,7 +1207,38 @@ export class PublicController {
     return days[date.getDay()];
   }
 
-  // ===== ENDPOINT PARA SERVIR ARCHIVOS ESTÁTICOS =====
+  // ===== ENDPOINT PARA ARCHIVOS DEL MICROSERVICIO (S3) =====
+  
+  @Get('microservice-files/*')
+  async serveMicroserviceFile(@Param('0') filePath: string, @Res() res: Response) {
+    try {
+      console.log('🌐 [MICROSERVICE_FILES] Intentando servir archivo del microservicio:', filePath);
+      
+      // Si el filePath ya es una URL completa de S3, redirigir directamente
+      if (filePath.startsWith('https://')) {
+        console.log('🔗 [MICROSERVICE_FILES] Redirigiendo a URL de S3:', filePath);
+        return res.redirect(302, filePath);
+      }
+      
+      // Si es una ruta relativa, construir la URL de S3
+      // Asumimos que el microservicio devuelve URLs completas de S3
+      throw new NotFoundException('Archivo del microservicio no encontrado');
+      
+    } catch (error) {
+      console.error('❌ [MICROSERVICE_FILES] Error sirviendo archivo del microservicio:', {
+        error: error.message,
+        filePath,
+        stack: error.stack
+      });
+      
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new NotFoundException('Error al servir el archivo del microservicio');
+    }
+  }
+
+  // ===== ENDPOINT PARA SERVIR ARCHIVOS ESTÁTICOS LOCALES =====
   
   @Get('files/*')
   async serveFile(@Param('0') filePath: string, @Res() res: Response) {

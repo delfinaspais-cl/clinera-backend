@@ -95,11 +95,19 @@ export class StorageService {
   }
 
   getFileUrl(url: string): string {
-    // En producción, esto debería retornar una URL completa del CDN o servicio de almacenamiento
-    const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    // Si la URL ya es una URL completa (S3), devolverla tal como está
+    if (url.startsWith('https://') || url.startsWith('http://')) {
+      console.log('🌐 [STORAGE] URL completa detectada (S3):', url);
+      return url;
+    }
+    
+    // Si es una URL relativa, generar URL del servidor deployado
+    const baseUrl = process.env.API_BASE_URL || 'https://clinera-backend-production.up.railway.app';
     // Remover el / del inicio de la URL si existe
     const cleanUrl = url.startsWith('/') ? url.substring(1) : url;
-    return `${baseUrl}/api/public/files/${cleanUrl}`;
+    const deployedUrl = `${baseUrl}/api/public/files/${cleanUrl}`;
+    console.log('🌐 [STORAGE] URL del servidor deployado generada:', deployedUrl);
+    return deployedUrl;
   }
 }
 
