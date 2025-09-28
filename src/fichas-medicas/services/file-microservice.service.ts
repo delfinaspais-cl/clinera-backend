@@ -155,14 +155,16 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Usar el token del usuario del frontend
-          console.log('🔑 [UPLOAD] Usando token del usuario del frontend');
+          // Usar token del microservicio (usuario registrado)
+          const microserviceToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjozLCJpYXQiOjE3NTkwNzc4MjMsImV4cCI6MTc5MDYxMzgyMywiaXNzIjoiZmx1ZW50aWEtZmlsZXMtZGV2ZWxvcC1sYXRlc3QudXAucmFpbHdheS5hcHAifQ.OJk72zsGYANo23GH7iFRulMJvzgL7AuRtx6FWV6lLfs';
           
-          headers['Authorization'] = `Bearer ${userToken}`;
+          console.log('🔑 [UPLOAD] Usando token del microservicio');
+          
+          headers['Authorization'] = `Bearer ${microserviceToken}`;
           
           console.log('🔑 [UPLOAD] Token configurado:', {
-            tokenLength: userToken.length,
-            authHeader: `Bearer ${userToken.substring(0, 50)}...`
+            tokenLength: microserviceToken.length,
+            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`
           });
           
         } catch (error) {
@@ -427,14 +429,16 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Usar el token del usuario del frontend
-          console.log('🔑 [SIGNED_URL] Usando token del usuario del frontend');
+          // Usar token del microservicio (usuario registrado)
+          const microserviceToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjozLCJpYXQiOjE3NTkwNzc4MjMsImV4cCI6MTc5MDYxMzgyMywiaXNzIjoiZmx1ZW50aWEtZmlsZXMtZGV2ZWxvcC1sYXRlc3QudXAucmFpbHdheS5hcHAifQ.OJk72zsGYANo23GH7iFRulMJvzgL7AuRtx6FWV6lLfs';
           
-          headers['Authorization'] = `Bearer ${userToken}`;
+          console.log('🔑 [SIGNED_URL] Usando token del microservicio');
+          
+          headers['Authorization'] = `Bearer ${microserviceToken}`;
           
           console.log('🔑 [SIGNED_URL] Token configurado:', {
-            tokenLength: userToken.length,
-            authHeader: `Bearer ${userToken.substring(0, 50)}...`
+            tokenLength: microserviceToken.length,
+            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`
           });
           
         } catch (error) {

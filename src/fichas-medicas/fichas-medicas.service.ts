@@ -274,7 +274,7 @@ export class FichasMedicasService {
       const userData = {
         name: userEmail.split('@')[0] || 'user',
         email: userEmail,
-        password: 'default-password-123'
+        password: 'default-password-123456' // Mínimo 8 caracteres
       };
       
       console.log('👤 [UPLOAD] Registrando usuario en microservicio:', userData.email);
