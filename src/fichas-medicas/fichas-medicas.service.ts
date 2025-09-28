@@ -268,7 +268,7 @@ export class FichasMedicasService {
       
       uploadResult = {
         id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: this.storageService.getFileUrl(localUploadResult.url),
+        url: await this.storageService.getFileUrl(localUploadResult.url, userToken),
         nombre: file.originalname,
         size: file.size,
         mimeType: file.mimetype

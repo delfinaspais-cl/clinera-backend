@@ -51,8 +51,10 @@ export class FichasMedicasHistorialController {
   async getFichaMedicaActual(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    return this.fichasMedicasHistorialService.getFichaMedicaActual(clinicaUrl, pacienteId);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.getFichaMedicaActual(clinicaUrl, pacienteId, userToken);
   }
 
   @Get('historial')

@@ -22,7 +22,7 @@ export class FichasMedicasHistorialService {
   ) {}
 
   // Obtener ficha médica actual (última versión)
-  async getFichaMedicaActual(clinicaUrl: string, pacienteId: string): Promise<FichaMedicaHistorialResponseDto> {
+  async getFichaMedicaActual(clinicaUrl: string, pacienteId: string, userToken?: string): Promise<FichaMedicaHistorialResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
 
@@ -544,7 +544,7 @@ export class FichasMedicasHistorialService {
       id: archivo.id,
       tipo: archivo.tipo,
       nombre: archivo.nombre,
-      url: this.storageService.getFileUrl(archivo.url),
+      url: await this.storageService.getFileUrl(archivo.url, userToken),
       descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     };
@@ -554,7 +554,7 @@ export class FichasMedicasHistorialService {
   }
 
   // Obtener archivos de una versión
-  async getArchivosVersion(clinicaUrl: string, pacienteId: string, versionId: string): Promise<ArchivoMedicoHistorialDto[]> {
+  async getArchivosVersion(clinicaUrl: string, pacienteId: string, versionId: string, userToken?: string): Promise<ArchivoMedicoHistorialDto[]> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
 
@@ -569,14 +569,14 @@ export class FichasMedicasHistorialService {
       orderBy: { fechaSubida: 'desc' }
     });
 
-    return archivos.map(archivo => ({
+    return Promise.all(archivos.map(async archivo => ({
       id: archivo.id,
       tipo: archivo.tipo,
       nombre: archivo.nombre,
-      url: this.storageService.getFileUrl(archivo.url),
+      url: await this.storageService.getFileUrl(archivo.url, userToken),
       descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
-    }));
+    })));
   }
 
   // Eliminar archivo de una versión
@@ -855,22 +855,22 @@ export class FichasMedicasHistorialService {
         tratamiento: version.tratamiento,
         evolucion: version.evolucion
       },
-      archivos: archivos.map((archivo: any) => ({
+      archivos: await Promise.all(archivos.map(async (archivo: any) => ({
         id: archivo.id,
         tipo: archivo.tipo,
         nombre: archivo.nombre,
-        url: this.storageService.getFileUrl(archivo.url),
+        url: await this.storageService.getFileUrl(archivo.url, userToken),
         descripcion: archivo.descripcion,
         fechaSubida: archivo.fechaSubida.toISOString()
-      })),
-      imagenes: imagenes.map((imagen: any) => ({
+      }))),
+      imagenes: await Promise.all(imagenes.map(async (imagen: any) => ({
         id: imagen.id,
         tipo: imagen.tipo,
         nombre: imagen.nombre,
-        url: this.storageService.getFileUrl(imagen.url),
+        url: await this.storageService.getFileUrl(imagen.url, userToken),
         descripcion: imagen.descripcion,
         fechaSubida: imagen.fechaSubida.toISOString()
-      })),
+      }))),
       notasCambio: version.notasCambio,
       esVersionActual: version.esVersionActual
     };
