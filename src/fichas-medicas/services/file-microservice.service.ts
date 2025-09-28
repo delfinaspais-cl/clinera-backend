@@ -161,8 +161,8 @@ export class FileMicroserviceService {
             email: decoded.email,
             role: decoded.role,
             name: decoded.name,
-            clinicaId: decoded.clinicaId,
-            clinicaUrl: decoded.clinicaUrl,
+            clinicaId: decoded.clinicaId || 'default-clinic',
+            clinicaUrl: decoded.clinicaUrl || 'default-clinic',
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
           };
@@ -384,8 +384,8 @@ export class FileMicroserviceService {
             email: decoded.email,
             role: decoded.role,
             name: decoded.name,
-            clinicaId: decoded.clinicaId,
-            clinicaUrl: decoded.clinicaUrl,
+            clinicaId: decoded.clinicaId || 'default-clinic',
+            clinicaUrl: decoded.clinicaUrl || 'default-clinic',
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
           };
