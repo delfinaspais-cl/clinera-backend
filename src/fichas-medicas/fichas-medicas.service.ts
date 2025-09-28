@@ -102,13 +102,13 @@ export class FichasMedicasService {
         id: archivo.id,
         nombre: archivo.nombre,
         tipo: archivo.tipo,
-        url: await this.storageService.getFileUrl(archivo.url, userToken),
+        url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId),
         fecha: archivo.fechaSubida.toISOString().split('T')[0]
       }))),
       imagenes: await Promise.all(fichaMedica.imagenesMedicas.map(async imagen => ({
         id: imagen.id,
         nombre: imagen.nombre,
-        url: await this.storageService.getFileUrl(imagen.url, userToken),
+        url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId),
         fecha: imagen.fechaSubida.toISOString().split('T')[0],
         descripcion: imagen.descripcion || undefined
       })))
@@ -282,9 +282,9 @@ export class FichasMedicasService {
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
-        url: uploadResult.url, // URL relativa que será procesada por getFileUrl
+        url: uploadResult.url, // URL de S3 o ruta local
         tamañoBytes: BigInt(uploadResult.size),
-        // microserviceFileId: null // Usando almacenamiento local
+        microserviceFileId: uploadResult.id // ID del archivo en el microservicio
       }
     });
 

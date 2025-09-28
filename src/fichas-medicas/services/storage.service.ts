@@ -95,10 +95,25 @@ export class StorageService {
     }
   }
 
-  async getFileUrl(url: string, userToken?: string): Promise<string> {
-    // Si la URL ya es una URL completa (S3), obtener URL firmada
+  async getFileUrl(url: string, userToken?: string, microserviceFileId?: string): Promise<string> {
+    // Si tenemos el ID del microservicio, usarlo para obtener URL firmada
+    if (microserviceFileId && userToken) {
+      console.log('🌐 [STORAGE] Usando ID del microservicio para obtener URL firmada:', microserviceFileId);
+      
+      try {
+        const signedUrlResult = await this.fileMicroserviceService.getSignedUrl(microserviceFileId, userToken);
+        if ('url' in signedUrlResult) {
+          console.log('✅ [STORAGE] URL firmada obtenida:', signedUrlResult.url);
+          return signedUrlResult.url;
+        }
+      } catch (error) {
+        console.error('❌ [STORAGE] Error obteniendo URL firmada con ID del microservicio:', error.message);
+      }
+    }
+    
+    // Si la URL ya es una URL completa (S3), intentar extraer ID de la URL
     if (url.startsWith('https://') || url.startsWith('http://')) {
-      console.log('🌐 [STORAGE] URL completa detectada (S3), obteniendo URL firmada:', url);
+      console.log('🌐 [STORAGE] URL completa detectada (S3), intentando extraer ID:', url);
       
       try {
         // Extraer el ID del archivo de la URL de S3
@@ -107,7 +122,7 @@ export class StorageService {
         const fileName = urlParts[urlParts.length - 1];
         const fileId = fileName.split('-')[0]; // Asumimos que el ID está al inicio del nombre
         
-        console.log('🔍 [STORAGE] Extrayendo ID del archivo:', { fileName, fileId });
+        console.log('🔍 [STORAGE] Extrayendo ID del archivo de URL:', { fileName, fileId });
         
         if (userToken) {
           const signedUrlResult = await this.fileMicroserviceService.getSignedUrl(fileId, userToken);
