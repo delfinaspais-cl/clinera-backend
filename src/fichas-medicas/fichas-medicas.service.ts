@@ -102,13 +102,13 @@ export class FichasMedicasService {
         id: archivo.id,
         nombre: archivo.nombre,
         tipo: archivo.tipo,
-        url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId),
+        url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId || undefined),
         fecha: archivo.fechaSubida.toISOString().split('T')[0]
       }))),
       imagenes: await Promise.all(fichaMedica.imagenesMedicas.map(async imagen => ({
         id: imagen.id,
         nombre: imagen.nombre,
-        url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId),
+        url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId || undefined),
         fecha: imagen.fechaSubida.toISOString().split('T')[0],
         descripcion: imagen.descripcion || undefined
       })))

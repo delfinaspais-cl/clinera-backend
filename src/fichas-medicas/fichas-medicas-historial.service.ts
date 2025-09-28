@@ -547,7 +547,7 @@ export class FichasMedicasHistorialService {
       id: archivo.id,
       tipo: archivo.tipo,
       nombre: archivo.nombre,
-      url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId),
+      url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId || undefined),
       descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     };
@@ -576,7 +576,7 @@ export class FichasMedicasHistorialService {
       id: archivo.id,
       tipo: archivo.tipo,
       nombre: archivo.nombre,
-      url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId),
+      url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId || undefined),
       descripcion: archivo.descripcion || undefined,
       fechaSubida: archivo.fechaSubida.toISOString()
     })));
@@ -863,7 +863,7 @@ export class FichasMedicasHistorialService {
         id: archivo.id,
         tipo: archivo.tipo,
         nombre: archivo.nombre,
-        url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId),
+        url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId || undefined),
         descripcion: archivo.descripcion,
         fechaSubida: archivo.fechaSubida.toISOString()
       }))),
@@ -871,7 +871,7 @@ export class FichasMedicasHistorialService {
         id: imagen.id,
         tipo: imagen.tipo,
         nombre: imagen.nombre,
-        url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId),
+        url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId || undefined),
         descripcion: imagen.descripcion,
         fechaSubida: imagen.fechaSubida.toISOString()
       }))),
