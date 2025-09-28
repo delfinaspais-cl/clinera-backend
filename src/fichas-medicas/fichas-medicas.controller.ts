@@ -41,8 +41,10 @@ export class FichasMedicasController {
   async getFichaMedica(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaResponseDto> {
-    return this.fichasMedicasService.getFichaMedica(clinicaUrl, pacienteId);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasService.getFichaMedica(clinicaUrl, pacienteId, userToken);
   }
 
   @Post()

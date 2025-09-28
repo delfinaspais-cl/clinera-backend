@@ -2,13 +2,14 @@ import { Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { FileMicroserviceService } from './file-microservice.service';
 
 @Injectable()
 export class StorageService {
   private readonly uploadDir = 'uploads';
   private readonly fichasMedicasDir = 'fichas-medicas';
 
-  constructor() {
+  constructor(private readonly fileMicroserviceService: FileMicroserviceService) {
     this.ensureDirectories();
   }
 
@@ -94,11 +95,35 @@ export class StorageService {
     }
   }
 
-  getFileUrl(url: string): string {
-    // Si la URL ya es una URL completa (S3), devolverla tal como está
+  async getFileUrl(url: string, userToken?: string): Promise<string> {
+    // Si la URL ya es una URL completa (S3), obtener URL firmada
     if (url.startsWith('https://') || url.startsWith('http://')) {
-      console.log('🌐 [STORAGE] URL completa detectada (S3):', url);
-      return url;
+      console.log('🌐 [STORAGE] URL completa detectada (S3), obteniendo URL firmada:', url);
+      
+      try {
+        // Extraer el ID del archivo de la URL de S3
+        // Formato: https://fluentia-files.s3.amazonaws.com/misc/ef820eb311b1cb413cb29d93f169d849-DETALLES_PROYECTO.pdf
+        const urlParts = url.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const fileId = fileName.split('-')[0]; // Asumimos que el ID está al inicio del nombre
+        
+        console.log('🔍 [STORAGE] Extrayendo ID del archivo:', { fileName, fileId });
+        
+        if (userToken) {
+          const signedUrlResult = await this.fileMicroserviceService.getSignedUrl(fileId, userToken);
+          if ('url' in signedUrlResult) {
+            console.log('✅ [STORAGE] URL firmada obtenida:', signedUrlResult.url);
+            return signedUrlResult.url;
+          }
+        }
+        
+        // Si no se puede obtener URL firmada, devolver la URL original
+        console.log('⚠️ [STORAGE] No se pudo obtener URL firmada, usando URL original');
+        return url;
+      } catch (error) {
+        console.error('❌ [STORAGE] Error obteniendo URL firmada:', error.message);
+        return url; // Fallback a la URL original
+      }
     }
     
     // Si es una URL relativa, generar URL del servidor deployado

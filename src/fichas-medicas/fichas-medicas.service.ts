@@ -12,7 +12,7 @@ export class FichasMedicasService {
     private readonly fileMicroserviceService: FileMicroserviceService,
   ) {}
 
-  async getFichaMedica(clinicaUrl: string, pacienteId: string): Promise<FichaMedicaResponseDto> {
+  async getFichaMedica(clinicaUrl: string, pacienteId: string, userToken?: string): Promise<FichaMedicaResponseDto> {
     // Verificar que la clínica existe
     const clinica = await this.prisma.clinica.findFirst({
       where: { url: clinicaUrl }
@@ -98,20 +98,20 @@ export class FichasMedicasService {
       diagnostico: fichaMedica.diagnostico || undefined,
       tratamiento: fichaMedica.tratamiento || undefined,
       evolucion: fichaMedica.evolucion || undefined,
-      archivos: fichaMedica.archivosMedicos.map(archivo => ({
+      archivos: await Promise.all(fichaMedica.archivosMedicos.map(async archivo => ({
         id: archivo.id,
         nombre: archivo.nombre,
         tipo: archivo.tipo,
-        url: this.storageService.getFileUrl(archivo.url),
+        url: await this.storageService.getFileUrl(archivo.url, userToken),
         fecha: archivo.fechaSubida.toISOString().split('T')[0]
-      })),
-      imagenes: fichaMedica.imagenesMedicas.map(imagen => ({
+      }))),
+      imagenes: await Promise.all(fichaMedica.imagenesMedicas.map(async imagen => ({
         id: imagen.id,
         nombre: imagen.nombre,
-        url: this.storageService.getFileUrl(imagen.url),
+        url: await this.storageService.getFileUrl(imagen.url, userToken),
         fecha: imagen.fechaSubida.toISOString().split('T')[0],
         descripcion: imagen.descripcion || undefined
-      }))
+      })))
     };
 
     return response;
