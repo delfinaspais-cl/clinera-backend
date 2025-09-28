@@ -180,6 +180,7 @@ export class AuthService {
 
       // Hacer POST a la API externa de Fluentia
       console.log('🌐 ===== INICIANDO LLAMADA A API EXTERNA =====');
+      const startTime = Date.now();
       try {
         const externalApiUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/register';
         const externalApiData = {
@@ -191,8 +192,6 @@ export class AuthService {
         console.log('📤 Datos que se enviarán a la API externa:', JSON.stringify(externalApiData, null, 2));
         console.log('🔗 URL de la API externa:', externalApiUrl);
         console.log('⏱️ Iniciando petición HTTP...');
-        
-        const startTime = Date.now();
         const externalApiResponse = await axios.post(externalApiUrl, externalApiData, {
           headers: {
             'Content-Type': 'application/json',
