@@ -30,10 +30,10 @@ export class UserRegisterDto {
   @ApiProperty({
     description: 'Contraseña del usuario',
     example: 'miContraseña123',
-    minLength: 6,
+    minLength: 8,
   })
   @IsString({ message: 'La contraseña debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'La contraseña es requerida' })
-  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   password: string;
 }

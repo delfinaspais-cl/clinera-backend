@@ -11,7 +11,7 @@ export class RegisterAuthDto {
   @IsEmail()
   email: string;
 
-  @MinLength(6)
+  @MinLength(8)
   password: string;
 
   @IsString()
