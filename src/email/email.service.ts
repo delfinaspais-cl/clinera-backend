@@ -131,7 +131,7 @@ export class EmailService {
           <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1F2937; margin: 0 0 15px 0;">Detalles de tu consulta:</h3>
             <p style="color: #374151; margin: 5px 0;"><strong>Tipo:</strong> ${data.tipoConsulta}</p>
-            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${new Date(data.fecha).toLocaleDateString('es-ES')}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${this.formatDateForEmail(data.fecha)}</p>
           </div>
           
           <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
@@ -180,7 +180,7 @@ export class EmailService {
             <p style="color: #374151; margin: 5px 0;"><strong>Empresa:</strong> ${data.empresa || 'No especificado'}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Tipo de Consulta:</strong> ${data.tipoConsultaLabel}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Plan de Interés:</strong> ${data.planLabel}</p>
-            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${new Date(data.fecha).toLocaleDateString('es-ES')}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${this.formatDateForEmail(data.fecha)}</p>
           </div>
           
           <h3 style="color: #1F2937; margin-bottom: 15px;">Mensaje:</h3>
@@ -308,7 +308,37 @@ export class EmailService {
     }
   }
 
+  // Función helper para formatear fechas de manera consistente
+  public formatDateForEmail(fecha: any): string {
+    if (!fecha) return 'No especificado';
+    
+    try {
+      // Si la fecha viene como string, crear un objeto Date
+      const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
+      
+      // Verificar que la fecha es válida
+      if (isNaN(fechaObj.getTime())) {
+        console.warn('Fecha inválida recibida:', fecha);
+        return fecha.toString();
+      }
+      
+      // Formatear la fecha en español sin conversión de zona horaria
+      return fechaObj.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC' // Usar UTC para evitar conversiones de zona horaria
+      });
+    } catch (error) {
+      console.error('Error formateando fecha en email:', error);
+      return fecha.toString(); // Fallback a la fecha original
+    }
+  }
+
   private getTurnoConfirmationTemplate(data: any): string {
+    // Formatear la fecha correctamente para evitar problemas de zona horaria
+    const fechaFormateada = this.formatDateForEmail(data.fecha);
+
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -329,7 +359,7 @@ export class EmailService {
           
           <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1F2937; margin: 0 0 15px 0;">DETALLES DE LA CITA:</h3>
-            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${data.fecha || 'No especificado'}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${fechaFormateada}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Hora:</strong> ${data.hora || 'No especificado'}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Profesional:</strong> ${data.profesional || 'No especificado'}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Tratamiento:</strong> ${data.tratamiento || 'No especificado'}</p>
@@ -351,7 +381,7 @@ export class EmailService {
           <div style="background-color: #EFF6FF; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #1F2937; margin: 0 0 15px 0;">INFORMACIÓN ADICIONAL:</h3>
             <p style="color: #374151; margin: 5px 0;"><strong>ID del Turno:</strong> ${data.turnoId}</p>
-            <p style="color: #374151; margin: 5px 0;"><strong>Fecha de Creación:</strong> ${data.fechaCreacion || new Date().toLocaleDateString('es-ES')}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha de Creación:</strong> ${this.formatDateForEmail(data.fechaCreacion || new Date())}</p>
           </div>
           ` : ''}
           
