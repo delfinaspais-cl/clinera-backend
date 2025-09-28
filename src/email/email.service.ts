@@ -42,6 +42,7 @@ export class EmailService {
         console.log(`📧 EmailService: Usando HTML directo`);
       } else if (emailData.template) {
         console.log(`📧 EmailService: Generando template ${emailData.template}`);
+        console.log(`📧 EmailService: Variables/Data del template:`, emailData.variables || emailData.data);
         html = this.getTemplate(emailData.template, emailData.variables || emailData.data);
         console.log(`📧 EmailService: Template generado exitosamente`);
       } else {
@@ -310,32 +311,66 @@ export class EmailService {
 
   // Función helper para formatear fechas de manera consistente
   public formatDateForEmail(fecha: any): string {
-    if (!fecha) return 'No especificado';
+    console.log('🔍 [EMAIL-DEBUG] formatDateForEmail - Fecha recibida:', {
+      fecha: fecha,
+      tipo: typeof fecha,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!fecha) {
+      console.log('🔍 [EMAIL-DEBUG] Fecha vacía, retornando "No especificado"');
+      return 'No especificado';
+    }
     
     try {
       // Si la fecha viene como string, crear un objeto Date
       const fechaObj = typeof fecha === 'string' ? new Date(fecha) : fecha;
       
+      console.log('🔍 [EMAIL-DEBUG] Fecha procesada:', {
+        fechaOriginal: fecha,
+        fechaObj: fechaObj,
+        fechaObjISO: fechaObj.toISOString(),
+        fechaObjUTC: fechaObj.toUTCString(),
+        fechaObjLocal: fechaObj.toString(),
+        esValida: !isNaN(fechaObj.getTime())
+      });
+      
       // Verificar que la fecha es válida
       if (isNaN(fechaObj.getTime())) {
-        console.warn('Fecha inválida recibida:', fecha);
+        console.warn('⚠️ [EMAIL-DEBUG] Fecha inválida recibida:', fecha);
         return fecha.toString();
       }
       
       // Formatear la fecha en español sin conversión de zona horaria
-      return fechaObj.toLocaleDateString('es-ES', {
+      const fechaFormateada = fechaObj.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         timeZone: 'UTC' // Usar UTC para evitar conversiones de zona horaria
       });
+
+      console.log('🔍 [EMAIL-DEBUG] Fecha formateada:', {
+        fechaFormateada: fechaFormateada,
+        fechaOriginal: fecha,
+        fechaObjISO: fechaObj.toISOString()
+      });
+
+      return fechaFormateada;
     } catch (error) {
-      console.error('Error formateando fecha en email:', error);
+      console.error('❌ [EMAIL-DEBUG] Error formateando fecha en email:', error);
+      console.error('❌ [EMAIL-DEBUG] Fecha que causó el error:', fecha);
       return fecha.toString(); // Fallback a la fecha original
     }
   }
 
   private getTurnoConfirmationTemplate(data: any): string {
+    console.log('🔍 [EMAIL-DEBUG] getTurnoConfirmationTemplate - Datos recibidos:', {
+      data: data,
+      fecha: data.fecha,
+      tipoFecha: typeof data.fecha,
+      timestamp: new Date().toISOString()
+    });
+
     // Formatear la fecha correctamente para evitar problemas de zona horaria
     const fechaFormateada = this.formatDateForEmail(data.fecha);
 
