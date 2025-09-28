@@ -64,8 +64,10 @@ export class FichasMedicasHistorialController {
   async getHistorialFichaMedica(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<HistorialFichaMedicaResponseDto> {
-    return this.fichasMedicasHistorialService.getHistorialFichaMedica(clinicaUrl, pacienteId);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.getHistorialFichaMedica(clinicaUrl, pacienteId, userToken);
   }
 
   @Get('version/:versionId')
@@ -76,8 +78,10 @@ export class FichasMedicasHistorialController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Param('versionId') versionId: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    return this.fichasMedicasHistorialService.getVersionEspecifica(clinicaUrl, pacienteId, versionId);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.getVersionEspecifica(clinicaUrl, pacienteId, versionId, userToken);
   }
 
   @Put()
@@ -88,8 +92,10 @@ export class FichasMedicasHistorialController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Body() datos: CrearVersionFichaMedicaDto,
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    return this.fichasMedicasHistorialService.actualizarFichaMedica(clinicaUrl, pacienteId, datos);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.actualizarFichaMedica(clinicaUrl, pacienteId, datos, userToken);
   }
 
   @Post('version')
@@ -100,8 +106,10 @@ export class FichasMedicasHistorialController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Body() datos: CrearVersionFichaMedicaDto,
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaHistorialResponseDto> {
-    return this.fichasMedicasHistorialService.crearNuevaVersion(clinicaUrl, pacienteId, datos);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.crearNuevaVersion(clinicaUrl, pacienteId, datos, userToken);
   }
 
   @Get('compare/:version1Id/:version2Id')
@@ -113,8 +121,10 @@ export class FichasMedicasHistorialController {
     @Param('pacienteId') pacienteId: string,
     @Param('version1Id') version1Id: string,
     @Param('version2Id') version2Id: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<ComparacionFichaMedicaResponseDto> {
-    return this.fichasMedicasHistorialService.compararVersiones(clinicaUrl, pacienteId, version1Id, version2Id);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.compararVersiones(clinicaUrl, pacienteId, version1Id, version2Id, userToken);
   }
 
   @Post('version/:versionId/upload-file')
@@ -332,8 +342,10 @@ export class FichasMedicasHistorialController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Param('versionId') versionId: string,
+    @Headers('authorization') authHeader?: string,
   ): Promise<ArchivoMedicoHistorialDto[]> {
-    return this.fichasMedicasHistorialService.getArchivosVersion(clinicaUrl, pacienteId, versionId);
+    const userToken = authHeader?.replace('Bearer ', '');
+    return this.fichasMedicasHistorialService.getArchivosVersion(clinicaUrl, pacienteId, versionId, userToken);
   }
 
   @Delete('version/:versionId/archivos/:archivoId')
@@ -358,12 +370,15 @@ export class FichasMedicasHistorialController {
     @Param('pacienteId') pacienteId: string,
     @Param('versionId') versionId: string,
     @Body() body: { notasCambio: string },
+    @Headers('authorization') authHeader?: string,
   ): Promise<FichaMedicaHistorialResponseDto> {
+    const userToken = authHeader?.replace('Bearer ', '');
     return this.fichasMedicasHistorialService.restaurarVersion(
       clinicaUrl,
       pacienteId,
       versionId,
-      body.notasCambio
+      body.notasCambio,
+      userToken
     );
   }
 }

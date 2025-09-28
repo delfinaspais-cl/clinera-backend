@@ -55,14 +55,14 @@ export class FichasMedicasHistorialService {
 
     if (!versionActual) {
       // Si no hay versión actual, crear la primera versión
-      return await this.crearPrimeraVersion(pacienteId, clinica.id);
+      return await this.crearPrimeraVersion(pacienteId, clinica.id, userToken);
     }
 
-    return this.mapearVersionAResponse(versionActual);
+    return await this.mapearVersionAResponse(versionActual, userToken);
   }
 
   // Obtener historial completo de fichas médicas
-  async getHistorialFichaMedica(clinicaUrl: string, pacienteId: string): Promise<HistorialFichaMedicaResponseDto> {
+  async getHistorialFichaMedica(clinicaUrl: string, pacienteId: string, userToken?: string): Promise<HistorialFichaMedicaResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
 
@@ -99,7 +99,7 @@ export class FichasMedicasHistorialService {
   }
 
   // Obtener una versión específica
-  async getVersionEspecifica(clinicaUrl: string, pacienteId: string, versionId: string): Promise<FichaMedicaHistorialResponseDto> {
+  async getVersionEspecifica(clinicaUrl: string, pacienteId: string, versionId: string, userToken?: string): Promise<FichaMedicaHistorialResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
 
@@ -133,14 +133,15 @@ export class FichasMedicasHistorialService {
       throw new NotFoundException('Versión no encontrada');
     }
 
-    return this.mapearVersionAResponse(version);
+    return await this.mapearVersionAResponse(version, userToken);
   }
 
   // Actualizar ficha médica (modifica la versión actual)
   async actualizarFichaMedica(
     clinicaUrl: string, 
     pacienteId: string, 
-    datos: CrearVersionFichaMedicaDto
+    datos: CrearVersionFichaMedicaDto,
+    userToken?: string
   ): Promise<FichaMedicaHistorialResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
@@ -217,7 +218,7 @@ export class FichasMedicasHistorialService {
         }
       });
 
-      return this.mapearVersionAResponse(primeraVersion);
+      return await this.mapearVersionAResponse(primeraVersion, userToken);
     }
 
     // Actualizar la versión actual existente
@@ -261,14 +262,15 @@ export class FichasMedicasHistorialService {
       }
     });
 
-    return this.mapearVersionAResponse(versionActualizada);
+    return await this.mapearVersionAResponse(versionActualizada, userToken);
   }
 
   // Crear nueva versión de ficha médica
   async crearNuevaVersion(
     clinicaUrl: string, 
     pacienteId: string, 
-    datos: CrearVersionFichaMedicaDto
+    datos: CrearVersionFichaMedicaDto,
+    userToken?: string
   ): Promise<FichaMedicaHistorialResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
@@ -331,7 +333,7 @@ export class FichasMedicasHistorialService {
       }
     });
 
-    return this.mapearVersionAResponse(versionCreada);
+    return await this.mapearVersionAResponse(versionCreada, userToken);
   }
 
   // Comparar dos versiones
@@ -339,14 +341,15 @@ export class FichasMedicasHistorialService {
     clinicaUrl: string, 
     pacienteId: string, 
     version1Id: string, 
-    version2Id: string
+    version2Id: string,
+    userToken?: string
   ): Promise<ComparacionFichaMedicaResponseDto> {
     const clinica = await this.verificarClinica(clinicaUrl);
     const paciente = await this.verificarPaciente(pacienteId, clinica.id);
 
     const [version1, version2] = await Promise.all([
-      this.getVersionEspecifica(clinicaUrl, pacienteId, version1Id),
-      this.getVersionEspecifica(clinicaUrl, pacienteId, version2Id)
+      this.getVersionEspecifica(clinicaUrl, pacienteId, version1Id, userToken),
+      this.getVersionEspecifica(clinicaUrl, pacienteId, version2Id, userToken)
     ]);
 
     const diferencias = this.calcularDiferencias(version1, version2);
@@ -760,9 +763,10 @@ export class FichasMedicasHistorialService {
     clinicaUrl: string,
     pacienteId: string,
     versionId: string,
-    notasCambio: string
+    notasCambio: string,
+    userToken?: string
   ): Promise<FichaMedicaHistorialResponseDto> {
-    const versionAnterior = await this.getVersionEspecifica(clinicaUrl, pacienteId, versionId);
+    const versionAnterior = await this.getVersionEspecifica(clinicaUrl, pacienteId, versionId, userToken);
 
     const datosRestauracion: CrearVersionFichaMedicaDto = {
       datosBasicos: versionAnterior.datosBasicos,
@@ -770,7 +774,7 @@ export class FichasMedicasHistorialService {
       notasCambio: `Restauración de la versión ${versionAnterior.version}. ${notasCambio}`
     };
 
-    return await this.crearNuevaVersion(clinicaUrl, pacienteId, datosRestauracion);
+    return await this.crearNuevaVersion(clinicaUrl, pacienteId, datosRestauracion, userToken);
   }
 
   // Métodos privados auxiliares
@@ -806,7 +810,7 @@ export class FichasMedicasHistorialService {
     return paciente;
   }
 
-  private async crearPrimeraVersion(pacienteId: string, clinicaId: string): Promise<FichaMedicaHistorialResponseDto> {
+  private async crearPrimeraVersion(pacienteId: string, clinicaId: string, userToken?: string): Promise<FichaMedicaHistorialResponseDto> {
     const primeraVersion = await this.prisma.fichaMedicaHistorial.create({
       data: {
         pacienteId,
@@ -821,10 +825,10 @@ export class FichasMedicasHistorialService {
       }
     });
 
-    return this.mapearVersionAResponse(primeraVersion);
+    return await this.mapearVersionAResponse(primeraVersion, userToken);
   }
 
-  private mapearVersionAResponse(version: any): FichaMedicaHistorialResponseDto {
+  private async mapearVersionAResponse(version: any, userToken?: string): Promise<FichaMedicaHistorialResponseDto> {
     const archivos = version.archivos.filter((a: any) => a.tipo === 'archivo');
     const imagenes = version.archivos.filter((a: any) => a.tipo === 'imagen');
 
