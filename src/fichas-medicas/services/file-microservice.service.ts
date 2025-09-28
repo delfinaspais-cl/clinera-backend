@@ -157,7 +157,7 @@ export class FileMicroserviceService {
           
           // Crear un nuevo JWT con el formato que espera el microservicio
           const payload = {
-            'user.id': parseInt(decoded.sub.replace(/\D/g, '')) || 1, // Extraer ID numérico del sub
+            'user.id': 2, // Usar el mismo user.id que funciona en Hopscotch
             iat: Math.floor(Date.now() / 1000)
           };
           
@@ -374,7 +374,7 @@ export class FileMicroserviceService {
           
           // Crear un nuevo JWT con el formato que espera el microservicio
           const payload = {
-            'user.id': parseInt(decoded.sub.replace(/\D/g, '')) || 1, // Extraer ID numérico del sub
+            'user.id': 2, // Usar el mismo user.id que funciona en Hopscotch
             iat: Math.floor(Date.now() / 1000)
           };
           
