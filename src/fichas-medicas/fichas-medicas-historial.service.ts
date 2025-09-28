@@ -475,20 +475,36 @@ export class FichasMedicasHistorialService {
 
     // Intentar usar microservicio primero, luego almacenamiento local
     let uploadResult: any;
-    let useLocalStorage = true; // Forzar uso de almacenamiento local
+    let useLocalStorage = false;
 
-    // Usar almacenamiento local directamente para evitar problemas con microservicio
-    console.log('📁 [UPLOAD_VERSION_SERVICE] Usando almacenamiento local para archivo de historial');
-    
     try {
-      uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo as 'archivos' | 'imagenes');
-      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo guardado localmente:', {
-        url: uploadResult.url,
-        nombre: uploadResult.nombreArchivo
-      });
+      console.log('🌐 [UPLOAD_VERSION_SERVICE] Intentando subir al microservicio...');
+      
+      // Usar el FileMicroserviceService si está disponible
+      const scope = `fichas-medicas-historial/${clinica.id}/${pacienteId}/${versionId}/${tipo}`;
+      const microserviceResult = await this.fileMicroserviceService.uploadFile({
+        file,
+        visibility: 'private',
+        scope,
+        conversationId: versionId,
+        messageId: `archivo-${Date.now()}`
+      }, userToken);
+
+      if ('error' in microserviceResult) {
+        console.log('⚠️ [UPLOAD_VERSION_SERVICE] Microservicio falló, usando almacenamiento local:', microserviceResult.error);
+        throw new Error(microserviceResult.error);
+      }
+
+      uploadResult = microserviceResult;
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo subido exitosamente al microservicio');
+
     } catch (error) {
-      console.error('❌ [UPLOAD_VERSION_SERVICE] Error guardando archivo localmente:', error);
-      throw new Error('Error al guardar el archivo');
+      console.log('⚠️ [UPLOAD_VERSION_SERVICE] Microservicio no disponible, usando almacenamiento local:', error.message);
+      useLocalStorage = true;
+      
+      // Usar almacenamiento local como respaldo
+      uploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, tipo as 'archivos' | 'imagenes');
+      console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo subido al almacenamiento local');
     }
 
     // Guardar en base de datos

@@ -29,7 +29,7 @@ export class FileMicroserviceService {
   constructor(private readonly configService: ConfigService) {
     this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-staging.up.railway.app');
     this.authToken = ''; // No se usa, el microservicio acepta el JWT del usuario
-    this.microserviceJwtSecret = '@leaf$MVC*JWT#AUTH.Secret'; // JWT_SECRET del microservicio
+    this.microserviceJwtSecret = this.configService.get<string>('FILE_MICROSERVICE_JWT_SECRET', '@leaf$MVC*JWT#AUTH.Secret'); // JWT_SECRET del microservicio
     
     console.log('🔧 FileMicroserviceService configurado:', {
       url: this.microserviceUrl,
@@ -61,12 +61,26 @@ export class FileMicroserviceService {
       
       // Agregar el archivo
       // Verificar si tenemos buffer o usar el archivo completo
-      const fileData = params.file.buffer || params.file;
+      let fileData;
+      if (params.file.buffer) {
+        // Usar buffer si está disponible
+        fileData = params.file.buffer;
+        console.log('📦 [UPLOAD] Usando buffer del archivo');
+      } else if (params.file.path) {
+        // Usar el path del archivo si no hay buffer
+        const fs = require('fs');
+        fileData = fs.createReadStream(params.file.path);
+        console.log('📦 [UPLOAD] Usando stream del archivo desde path:', params.file.path);
+      } else {
+        throw new Error('No hay buffer ni path disponible para el archivo');
+      }
+      
       console.log('📦 [UPLOAD] Tipo de archivo para FormData:', {
         hasBuffer: !!params.file.buffer,
-        bufferLength: params.file.buffer?.length,
+        hasPath: !!params.file.path,
         fileSize: params.file.size,
-        usingBuffer: !!params.file.buffer
+        usingBuffer: !!params.file.buffer,
+        usingStream: !params.file.buffer && !!params.file.path
       });
       
       formData.append('file', fileData, {
@@ -165,7 +179,9 @@ export class FileMicroserviceService {
             originalTokenLength: userToken.length,
             newTokenLength: microserviceToken.length,
             payload: payload,
-            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`
+            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`,
+            secretUsed: this.microserviceJwtSecret,
+            secretLength: this.microserviceJwtSecret.length
           });
           
         } catch (error) {

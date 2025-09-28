@@ -239,31 +239,40 @@ export class FichasMedicasService {
     }
 
     let uploadResult: any;
-    let useLocalStorage = true; // Forzar uso de almacenamiento local
+    let useLocalStorage = false;
 
-    // Usar almacenamiento local directamente para evitar problemas con microservicio
-    console.log('📁 [UPLOAD] Usando almacenamiento local para archivo médico');
-    
     try {
+      // Intentar subir archivo al microservicio primero
+      const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'archivos');
+      const microserviceResult = await this.fileMicroserviceService.uploadFile({
+        file,
+        visibility: 'private', // Los archivos médicos son privados
+        scope,
+        conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+        messageId: `archivo-${Date.now()}` // Generar un message_id único
+      }, userToken);
+      
+      // Verificar si el resultado es un error
+      if ('error' in microserviceResult) {
+        throw new Error(microserviceResult.error);
+      }
+      
+      uploadResult = microserviceResult;
+      console.log('✅ Archivo subido exitosamente al microservicio');
+    } catch (error) {
+      console.log('⚠️ Microservicio no disponible, usando almacenamiento local:', error.message);
+      useLocalStorage = true;
+      
+      // Usar almacenamiento local como respaldo
       const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'archivos');
       
       uploadResult = {
         id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: localUploadResult.url, // Usar la URL relativa directamente
+        url: this.storageService.getFileUrl(localUploadResult.url),
         nombre: file.originalname,
         size: file.size,
         mimeType: file.mimetype
       };
-      
-      console.log('✅ [UPLOAD] Archivo guardado localmente:', {
-        id: uploadResult.id,
-        url: uploadResult.url,
-        nombre: uploadResult.nombre,
-        size: uploadResult.size
-      });
-    } catch (error) {
-      console.error('❌ [UPLOAD] Error guardando archivo localmente:', error);
-      throw new Error('Error al guardar el archivo');
     }
 
     // Guardar en base de datos
