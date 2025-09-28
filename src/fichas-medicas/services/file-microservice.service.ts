@@ -155,16 +155,10 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Crear un nuevo JWT con el secret del microservicio
+          // Crear un nuevo JWT con el formato que espera el microservicio
           const payload = {
-            sub: decoded.sub,
-            email: decoded.email,
-            role: decoded.role,
-            name: decoded.name,
-            clinicaId: decoded.clinicaId || 'default-clinic',
-            clinicaUrl: decoded.clinicaUrl || 'default-clinic',
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
+            'user.id': parseInt(decoded.sub.replace(/\D/g, '')) || 1, // Extraer ID numérico del sub
+            iat: Math.floor(Date.now() / 1000)
           };
           
           console.log('🔑 [UPLOAD] Creando JWT para microservicio con payload:', payload);
@@ -378,16 +372,10 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Crear un nuevo JWT con el secret del microservicio
+          // Crear un nuevo JWT con el formato que espera el microservicio
           const payload = {
-            sub: decoded.sub,
-            email: decoded.email,
-            role: decoded.role,
-            name: decoded.name,
-            clinicaId: decoded.clinicaId || 'default-clinic',
-            clinicaUrl: decoded.clinicaUrl || 'default-clinic',
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + (60 * 60) // 1 hora
+            'user.id': parseInt(decoded.sub.replace(/\D/g, '')) || 1, // Extraer ID numérico del sub
+            iat: Math.floor(Date.now() / 1000)
           };
           
           console.log('🔑 [SIGNED_URL] Creando JWT para microservicio con payload:', payload);
