@@ -1820,6 +1820,55 @@ export class ClinicasService {
 
       console.log('Turno creado exitosamente:', turno.id);
 
+      // Enviar email de confirmación automáticamente
+      try {
+        console.log('📧 Enviando email de confirmación de turno...');
+        
+        // Obtener datos de la clínica para el email
+        const clinicaData = await this.prisma.clinica.findUnique({
+          where: { id: clinica.id },
+          select: {
+            name: true,
+            phone: true,
+            email: true,
+            address: true
+          }
+        });
+
+        const emailData = {
+          paciente: turno.paciente,
+          email: turno.email,
+          fecha: turno.fecha,
+          hora: turno.hora,
+          profesional: turno.doctor,
+          tratamiento: turno.servicio || turno.motivo,
+          sucursal: turno.sucursal || 'Sede Principal',
+          clinica: clinicaData?.name || 'Clínica',
+          telefono: clinicaData?.phone || '',
+          direccion: clinicaData?.address || '',
+          turnoId: turno.id,
+          fechaCreacion: turno.createdAt
+        };
+
+        console.log('📧 Datos para el email:', emailData);
+
+        const emailResult = await this.emailService.sendEmail({
+          to: turno.email,
+          subject: `Confirmación de Cita - ${clinicaData?.name || 'Clínica'}`,
+          template: 'turno-confirmation',
+          data: emailData
+        });
+
+        if (emailResult.success) {
+          console.log('✅ Email de confirmación enviado exitosamente');
+        } else {
+          console.error('❌ Error enviando email de confirmación:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('❌ Error en envío de email de confirmación:', emailError);
+        // No lanzar error para no afectar la creación del turno
+      }
+
       return {
         success: true,
         turno,
