@@ -155,28 +155,14 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Crear un nuevo JWT con el formato que espera el microservicio
-          const payload = {
-            'user.id': 2, // Usar el mismo user.id que funciona en Hopscotch
-            iat: Math.floor(Date.now() / 1000)
-          };
+          // Usar el token del usuario directamente
+          console.log('🔑 [UPLOAD] Usando token de usuario directamente');
           
-          console.log('🔑 [UPLOAD] Creando JWT para microservicio con payload:', payload);
+          headers['Authorization'] = `Bearer ${userToken}`;
           
-          const microserviceToken = jwt.sign(
-            payload,
-            this.microserviceJwtSecret
-          );
-          
-          headers['Authorization'] = `Bearer ${microserviceToken}`;
-          
-          console.log('🔑 [UPLOAD] JWT regenerado para microservicio:', {
-            originalTokenLength: userToken.length,
-            newTokenLength: microserviceToken.length,
-            payload: payload,
-            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`,
-            secretUsed: this.microserviceJwtSecret,
-            secretLength: this.microserviceJwtSecret.length
+          console.log('🔑 [UPLOAD] Token configurado:', {
+            tokenLength: userToken.length,
+            authHeader: `Bearer ${userToken.substring(0, 50)}...`
           });
           
         } catch (error) {
@@ -441,25 +427,14 @@ export class FileMicroserviceService {
             throw new BadRequestException('Token de usuario inválido');
           }
           
-          // Crear un nuevo JWT con el formato que espera el microservicio
-          const payload = {
-            'user.id': 2, // Usar el mismo user.id que funciona en Hopscotch
-            iat: Math.floor(Date.now() / 1000)
-          };
+          // Usar el token del usuario directamente
+          console.log('🔑 [SIGNED_URL] Usando token de usuario directamente');
           
-          console.log('🔑 [SIGNED_URL] Creando JWT para microservicio con payload:', payload);
+          headers['Authorization'] = `Bearer ${userToken}`;
           
-          const microserviceToken = jwt.sign(
-            payload,
-            this.microserviceJwtSecret
-          );
-          
-          headers['Authorization'] = `Bearer ${microserviceToken}`;
-          
-          console.log('🔑 [SIGNED_URL] JWT regenerado para microservicio:', {
-            originalTokenLength: userToken.length,
-            newTokenLength: microserviceToken.length,
-            authHeader: `Bearer ${microserviceToken.substring(0, 50)}...`
+          console.log('🔑 [SIGNED_URL] Token configurado:', {
+            tokenLength: userToken.length,
+            authHeader: `Bearer ${userToken.substring(0, 50)}...`
           });
           
         } catch (error) {
