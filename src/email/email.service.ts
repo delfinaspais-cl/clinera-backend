@@ -437,9 +437,18 @@ export class EmailService {
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.FRONTEND_URL || 'https://clinera.com'}" 
-               style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
-              Ver Mis Citas
+            ${data.direccion ? `
+            <a href="https://maps.google.com/maps?q=${encodeURIComponent(data.direccion)}" 
+               target="_blank"
+               style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 5px;">
+              📍 Ver en Google Maps
+            </a>
+            ` : ''}
+            
+            <a href="${this.generateGoogleCalendarLink(data)}" 
+               target="_blank"
+               style="background-color: #4285F4; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 5px;">
+              📅 Agregar a Google Calendar
             </a>
           </div>
           
@@ -844,5 +853,52 @@ export class EmailService {
       data: { code },
     });
     return result.success;
+  }
+
+  private generateGoogleCalendarLink(data: any): string {
+    try {
+      // Crear fecha y hora para Google Calendar
+      const fecha = new Date(data.fecha);
+      const [hora, minutos] = (data.hora || '10:00').split(':');
+      
+      // Establecer la fecha y hora de inicio
+      const startDate = new Date(fecha);
+      startDate.setHours(parseInt(hora), parseInt(minutos || '0'), 0, 0);
+      
+      // Establecer la fecha y hora de fin (1 hora después)
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+      
+      // Formatear fechas para Google Calendar (ISO 8601)
+      const startDateISO = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const endDateISO = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      // Crear el título del evento
+      const title = `Cita médica - ${data.paciente || 'Paciente'}`;
+      
+      // Crear la descripción del evento
+      const description = `Cita médica con ${data.profesional || 'Profesional'}\\n\\n` +
+        `Tratamiento: ${data.tratamiento || 'Consulta'}\\n` +
+        `Sucursal: ${data.sucursal || 'Sede Principal'}\\n` +
+        `Paciente: ${data.paciente || 'Paciente'}\\n` +
+        `Email: ${data.email || ''}\\n\\n` +
+        `Por favor, llegue 10 minutos antes de su cita.`;
+      
+      // Crear la ubicación
+      const location = data.direccion || data.sucursal || 'Sede Principal';
+      
+      // Generar el enlace de Google Calendar
+      const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&` +
+        `text=${encodeURIComponent(title)}&` +
+        `dates=${startDateISO}/${endDateISO}&` +
+        `details=${encodeURIComponent(description)}&` +
+        `location=${encodeURIComponent(location)}`;
+      
+      return googleCalendarUrl;
+    } catch (error) {
+      console.error('Error generando enlace de Google Calendar:', error);
+      // Fallback: enlace básico sin parámetros
+      return 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+    }
   }
 }
