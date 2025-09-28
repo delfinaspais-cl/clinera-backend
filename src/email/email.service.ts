@@ -37,7 +37,13 @@ export class EmailService {
       let html: string;
       let text: string;
 
-      if (emailData.html) {
+      // Priorizar template sobre HTML para emails de confirmación de turnos
+      if (emailData.template && emailData.template === 'turno-confirmation') {
+        console.log(`📧 EmailService: Forzando uso de template turno-confirmation (ignorando HTML directo)`);
+        console.log(`📧 EmailService: Variables/Data del template:`, emailData.variables || emailData.data);
+        html = this.getTemplate(emailData.template, emailData.variables || emailData.data);
+        console.log(`📧 EmailService: Template generado exitosamente`);
+      } else if (emailData.html) {
         html = emailData.html;
         console.log(`📧 EmailService: Usando HTML directo`);
       } else if (emailData.template) {
