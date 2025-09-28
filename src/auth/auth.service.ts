@@ -16,6 +16,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailService } from '../email/email.service';
 import { PasswordGenerator } from '../common/utils/password-generator';
 import { randomBytes } from 'crypto';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -91,22 +92,34 @@ export class AuthService {
   async register(dto: RegisterAuthDto) {
     try {
       // Debug: Log de los datos recibidos
-      console.log('Datos recibidos en registro:', JSON.stringify(dto, null, 2));
+      console.log('🚀 ===== INICIO DE REGISTRO =====');
+      console.log('📋 Datos recibidos en registro:', JSON.stringify(dto, null, 2));
+      console.log('⏰ Timestamp:', new Date().toISOString());
 
       // Validar que el campo role existe
       if (!dto.role) {
+        console.log('❌ Error: Campo role faltante');
         throw new BadRequestException('El campo "role" es requerido');
       }
 
       const role = dto.role.toUpperCase(); // normaliza
+      console.log(`🔍 Rol normalizado: "${role}"`);
+      
       if (!['ADMIN', 'PROFESSIONAL', 'PATIENT', 'OWNER'].includes(role)) {
+        console.log(`❌ Error: Rol inválido "${dto.role}"`);
         throw new BadRequestException(
           `Rol inválido: "${dto.role}". Roles válidos: PATIENT, PROFESSIONAL, ADMIN, OWNER`,
         );
       }
+      
+      console.log('✅ Rol válido confirmado');
 
       // Verificar si el email ya existe en la misma clínica
+      console.log(`🔍 Verificando email existente: ${dto.email}`);
+      console.log(`🏥 ClinicaId: ${dto.clinicaId || 'null'}`);
+      
       if (dto.clinicaId) {
+        console.log('🔍 Buscando usuario en clínica específica...');
         // Si hay clínica, verificar solo en esa clínica
         const existingUser = await this.prisma.user.findFirst({
           where: { 
@@ -116,9 +129,12 @@ export class AuthService {
         });
 
         if (existingUser) {
+          console.log('❌ Error: Email ya registrado en esta clínica');
           throw new BadRequestException('El email ya está registrado en esta clínica');
         }
+        console.log('✅ Email disponible en esta clínica');
       } else {
+        console.log('🔍 Buscando usuario globalmente...');
         // Si no hay clínica, verificar si existe globalmente
         const existingUser = await this.prisma.user.findFirst({
           where: { 
@@ -128,15 +144,22 @@ export class AuthService {
         });
 
         if (existingUser) {
+          console.log('❌ Error: Email ya registrado globalmente');
           throw new BadRequestException('El email ya está registrado');
         }
+        console.log('✅ Email disponible globalmente');
       }
 
+      console.log('🔐 Generando hash de contraseña...');
       const hashed = await bcrypt.hash(dto.password, 10);
+      console.log('✅ Hash de contraseña generado');
       
       // Generar username automáticamente
+      console.log(`👤 Generando username para: ${dto.name}`);
       const username = PasswordGenerator.generateUsername(dto.name);
+      console.log(`✅ Username generado: ${username}`);
       
+      console.log('💾 Creando usuario en base de datos local...');
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
@@ -147,6 +170,69 @@ export class AuthService {
           clinicaId: dto.clinicaId || null,
         },
       });
+      console.log('✅ Usuario creado en BD local:', {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        clinicaId: user.clinicaId
+      });
+
+      // Hacer POST a la API externa de Fluentia
+      console.log('🌐 ===== INICIANDO LLAMADA A API EXTERNA =====');
+      try {
+        const externalApiUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/register';
+        const externalApiData = {
+          name: username, // Usar el username generado
+          email: dto.email,
+          password: dto.password, // Contraseña en texto plano
+        };
+        
+        console.log('📤 Datos que se enviarán a la API externa:', JSON.stringify(externalApiData, null, 2));
+        console.log('🔗 URL de la API externa:', externalApiUrl);
+        console.log('⏱️ Iniciando petición HTTP...');
+        
+        const startTime = Date.now();
+        const externalApiResponse = await axios.post(externalApiUrl, externalApiData, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 segundos de timeout
+        });
+        
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('✅ ===== LLAMADA A API EXTERNA EXITOSA =====');
+        console.log('⏱️ Duración de la petición:', `${duration}ms`);
+        console.log('📊 Status Code:', externalApiResponse.status);
+        console.log('📋 Headers de respuesta:', JSON.stringify(externalApiResponse.headers, null, 2));
+        console.log('📄 Datos de respuesta:', JSON.stringify(externalApiResponse.data, null, 2));
+        console.log('✅ Usuario registrado exitosamente en Fluentia API');
+        
+      } catch (externalApiError) {
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('❌ ===== ERROR EN LLAMADA A API EXTERNA =====');
+        console.log('⏱️ Duración antes del error:', `${duration}ms`);
+        console.log('🚨 Tipo de error:', externalApiError.name || 'Unknown');
+        console.log('📝 Mensaje de error:', externalApiError.message);
+        
+        if (externalApiError.response) {
+          console.log('📊 Status Code de error:', externalApiError.response.status);
+          console.log('📋 Headers de error:', JSON.stringify(externalApiError.response.headers, null, 2));
+          console.log('📄 Datos de error:', JSON.stringify(externalApiError.response.data, null, 2));
+        } else if (externalApiError.request) {
+          console.log('🔌 Error de conexión - No se recibió respuesta');
+          console.log('📋 Request config:', JSON.stringify(externalApiError.config, null, 2));
+        } else {
+          console.log('⚙️ Error de configuración:', externalApiError.message);
+        }
+        
+        console.log('⚠️ IMPORTANTE: El registro local continúa normalmente');
+        console.log('⚠️ El usuario se registra en el sistema local aunque falle la API externa');
+      }
 
       // Enviar email de bienvenida con credenciales (solo si tiene clínica)
       // TEMPORALMENTE COMENTADO PARA DEBUG
@@ -172,12 +258,27 @@ export class AuthService {
       }
       */
 
-      return this.login(user);
+      console.log('🔑 Generando token de acceso...');
+      const loginResult = this.login(user);
+      console.log('✅ Token generado exitosamente');
+      console.log('🎉 ===== REGISTRO COMPLETADO EXITOSAMENTE =====');
+      console.log('📊 Resumen del registro:');
+      console.log('   - Usuario creado localmente: ✅');
+      console.log('   - API externa llamada: ✅ (ver logs anteriores para detalles)');
+      console.log('   - Token generado: ✅');
+      console.log('==========================================');
+      
+      return loginResult;
     } catch (error) {
+      console.log('💥 ===== ERROR EN PROCESO DE REGISTRO =====');
+      console.log('🚨 Error capturado:', error.message);
+      console.log('📊 Stack trace:', error.stack);
+      
       if (error instanceof BadRequestException) {
+        console.log('⚠️ Error de validación - re-lanzando');
         throw error;
       }
-      console.error('Error en registro:', error);
+      console.error('❌ Error interno en registro:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
