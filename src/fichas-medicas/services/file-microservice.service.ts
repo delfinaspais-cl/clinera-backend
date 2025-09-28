@@ -224,12 +224,13 @@ export class FileMicroserviceService {
       console.log('✅ [UPLOAD] Archivo subido exitosamente al microservicio:', response.data);
 
       // Transformar la respuesta al formato esperado
+      const content = response.data.content || response.data;
       const transformedResponse = {
-        id: response.data.id || response.data.fileId,
-        url: response.data.url || response.data.fileUrl,
-        nombre: response.data.nombre || response.data.fileName || params.file.originalname,
-        size: response.data.size || params.file.size,
-        mimeType: response.data.mimeType || params.file.mimetype,
+        id: content.id || response.data.id || response.data.fileId,
+        url: content.url || response.data.url || response.data.fileUrl,
+        nombre: content.original_name || content.nombre || response.data.nombre || response.data.fileName || params.file.originalname,
+        size: content.size || response.data.size || params.file.size,
+        mimeType: content.mime_type || content.mimeType || response.data.mimeType || params.file.mimetype,
       };
       
       console.log('🔄 [UPLOAD] Respuesta transformada:', transformedResponse);
