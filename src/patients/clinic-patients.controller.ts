@@ -198,6 +198,21 @@ export class ClinicPatientsController {
               url: true,
             },
           },
+          professional: {
+            select: {
+              id: true,
+              name: true,
+              especialidades: {
+                select: {
+                  especialidad: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         orderBy: {
           fecha: 'desc',
@@ -222,6 +237,27 @@ export class ClinicPatientsController {
           }
         }
 
+        // Obtener información del profesional
+        let profesionalInfo = null;
+        if (turno.professional) {
+          const especialidades = turno.professional.especialidades
+            ?.map(pe => pe.especialidad.name)
+            .join(', ') || '';
+          
+          profesionalInfo = {
+            id: turno.professional.id,
+            nombre: turno.professional.name,
+            especialidades: especialidades,
+          };
+        } else {
+          // Si no hay relación con professional, usar el campo doctor
+          profesionalInfo = {
+            id: null,
+            nombre: turno.doctor,
+            especialidades: '',
+          };
+        }
+
         return {
           ...turno,
           montoTotal,
@@ -231,6 +267,10 @@ export class ClinicPatientsController {
           // Agregar campos calculados para el frontend
           porcentajePagado: montoTotal > 0 ? Math.round((montoAbonado / montoTotal) * 100) : 0,
           porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
+          // Información del profesional
+          profesional: profesionalInfo,
+          // Información del tratamiento
+          tratamiento: turno.servicio || turno.motivo || 'No especificado',
         };
       });
 
