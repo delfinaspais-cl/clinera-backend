@@ -480,16 +480,32 @@ export class UsersService {
         // PASO 1: Hacer login en Fluentia para obtener el token
         console.log('🔑 PASO 1: Obteniendo token de Fluentia...');
         console.log('🔍 Usuario logueado:', JSON.stringify({ id: user.id, email: user.email }, null, 2));
-        console.log('🔍 DTO recibido para login:', JSON.stringify({ userPassword: dto.userPassword ? '***' : 'UNDEFINED' }, null, 2));
+        console.log('🔍 DTO recibido para login:', JSON.stringify({ 
+          userPassword: dto.userPassword ? '***' : 'UNDEFINED',
+          adminPassword: dto.password ? '***' : 'UNDEFINED'
+        }, null, 2));
         
-        if (!dto.userPassword) {
-          throw new Error('Contraseña del usuario requerida para login en Fluentia');
+        // Intentar primero con userPassword, si no está disponible usar adminPassword
+        let loginEmail, loginPassword;
+        
+        if (dto.userPassword) {
+          console.log('🔑 Usando contraseña del usuario logueado');
+          loginEmail = user.email;
+          loginPassword = dto.userPassword;
+        } else {
+          console.log('🔑 userPassword no disponible, usando contraseña del admin de la clínica');
+          loginEmail = dto.email; // Email del admin de la clínica
+          loginPassword = dto.password; // Contraseña del admin de la clínica
+        }
+        
+        if (!loginPassword) {
+          throw new Error('No se encontró contraseña para login en Fluentia (ni userPassword ni admin password)');
         }
         
         const loginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
         const loginData = {
-          email: user.email, // Email del usuario logueado (no del admin de la clínica)
-          password: dto.userPassword, // Contraseña del usuario logueado
+          email: loginEmail,
+          password: loginPassword,
         };
         
         console.log('📤 Datos de login a Fluentia:', JSON.stringify(loginData, null, 2));
