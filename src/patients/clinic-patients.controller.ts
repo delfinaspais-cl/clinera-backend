@@ -238,7 +238,7 @@ export class ClinicPatientsController {
         }
 
         // Obtener información del profesional
-        let profesionalInfo = null;
+        let profesionalInfo: any = null;
         if (turno.professional) {
           const especialidades = turno.professional.especialidades
             ?.map(pe => pe.especialidad.name)
