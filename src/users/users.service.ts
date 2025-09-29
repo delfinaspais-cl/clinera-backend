@@ -546,6 +546,8 @@ export class UsersService {
         const fluentiaToken = loginResponse.data.content?.accessToken || loginResponse.data.access_token || loginResponse.data.token;
         const fluentiaUserId = loginResponse.data.content?.user?.id || loginResponse.data.user?.id || loginResponse.data.user_id;
         
+        console.log('🔍 Estructura completa del user:', JSON.stringify(loginResponse.data.content?.user, null, 2));
+        
         console.log('🔍 Token extraído:', fluentiaToken ? fluentiaToken.substring(0, 50) + '...' : 'No encontrado');
         console.log('🔍 User ID extraído:', fluentiaUserId || 'No encontrado');
         console.log('✅ Token obtenido de Fluentia:', fluentiaToken ? 'Sí' : 'No');
@@ -558,10 +560,24 @@ export class UsersService {
         // PASO 2: Crear business en Fluentia con el token
         console.log('🏥 PASO 2: Creando business en Fluentia...');
         const businessUrl = 'https://fluentia-api-develop-latest.up.railway.app/businesses';
+        // Función para remover acentos y caracteres especiales
+        const normalizeName = (name: string) => {
+          return name
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+            .replace(/[^a-zA-Z0-9\s]/g, '') // Solo letras, números y espacios
+            .trim();
+        };
+        
+        const normalizedName = normalizeName(dto.nombre);
+        
+        console.log('🔍 Nombre original:', dto.nombre);
+        console.log('🔍 Nombre normalizado:', normalizedName);
+        
         const businessData = {
-          name: dto.nombre, // Nombre de la clínica
+          name: normalizedName, // Nombre de la clínica normalizado
           email: dto.email, // Email de la clínica
-          phone: dto.telefono, // Teléfono de la clínica
+          phone: dto.telefono || '', // Teléfono de la clínica
           business_id: clinica.id, // ID de la clínica como business_id
         };
         
