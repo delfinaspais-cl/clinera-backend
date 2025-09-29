@@ -473,7 +473,7 @@ export class UsersService {
         console.log('❌ No hay planId en Users Service, saltando suscripción automática');
       }
 
-      // Hacer POST a la API externa de Fluentia para registrar la clínica
+      // Hacer POST a la API externa de Fluentia para registrar la clínica (después de crear admin)
       console.log('🌐 ===== INICIANDO REGISTRO DE CLÍNICA EN API EXTERNA (USERS) =====');
       const startTime = Date.now();
       try {
@@ -483,6 +483,18 @@ export class UsersService {
         console.log('🔍 DTO recibido para login:', JSON.stringify({ 
           userPassword: dto.userPassword ? '***' : 'UNDEFINED',
           adminPassword: dto.password ? '***' : 'UNDEFINED'
+        }, null, 2));
+        
+        console.log('🔍 TODOS LOS CAMPOS DEL DTO:', JSON.stringify({
+          nombre: dto.nombre,
+          url: dto.url,
+          email: dto.email,
+          password: dto.password ? '***' : 'UNDEFINED',
+          userPassword: dto.userPassword ? '***' : 'UNDEFINED',
+          direccion: dto.direccion,
+          telefono: dto.telefono,
+          descripcion: dto.descripcion,
+          planId: dto.planId
         }, null, 2));
         
         // Intentar primero con userPassword, si no está disponible usar adminPassword
@@ -499,7 +511,11 @@ export class UsersService {
         }
         
         if (!loginPassword) {
-          throw new Error('No se encontró contraseña para login en Fluentia (ni userPassword ni admin password)');
+          console.log('⚠️ No se encontró contraseña en DTO, usando contraseña generada para admin');
+          // Usar la contraseña generada automáticamente para el admin
+          loginEmail = dto.email; // Email del admin de la clínica
+          loginPassword = adminPassword; // Contraseña generada automáticamente (disponible en este scope)
+          console.log('🔑 Usando credenciales del admin generado:', { email: loginEmail, password: '***' });
         }
         
         const loginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
