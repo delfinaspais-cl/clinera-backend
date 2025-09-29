@@ -194,7 +194,7 @@ export class ClinicasService {
           }
 
           // Calcular edad para pacientes
-          let edad = null;
+          let edad: number | null = null;
           let telefono = user.phone || null;
           
           if (user.role === 'PATIENT' && user.patient) {
@@ -209,9 +209,9 @@ export class ClinicasService {
               const monthDiff = today.getMonth() - birthDate.getMonth();
               
               if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                edad = ageInYears - 1;
+                edad = (ageInYears - 1) as number;
               } else {
-                edad = ageInYears;
+                edad = ageInYears as number;
               }
             }
           }
