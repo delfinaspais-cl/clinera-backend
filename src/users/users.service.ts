@@ -544,9 +544,22 @@ export class UsersService {
         console.log('📄 Respuesta completa de Fluentia:', JSON.stringify(loginResponse.data, null, 2));
         
         const fluentiaToken = loginResponse.data.content?.accessToken || loginResponse.data.access_token || loginResponse.data.token;
-        const fluentiaUserId = loginResponse.data.content?.user?.id || loginResponse.data.user?.id || loginResponse.data.user_id;
+        let fluentiaUserId = loginResponse.data.content?.user?.id || loginResponse.data.user?.id || loginResponse.data.user_id;
         
         console.log('🔍 Estructura completa del user:', JSON.stringify(loginResponse.data.content?.user, null, 2));
+        console.log('🔍 ¿User tiene ID?', loginResponse.data.content?.user?.id ? 'SÍ' : 'NO');
+        console.log('🔍 User ID directo:', loginResponse.data.content?.user?.id);
+        
+        // Si no hay ID en el user, intentar extraerlo del JWT
+        if (!fluentiaUserId && fluentiaToken) {
+          try {
+            const tokenPayload = JSON.parse(Buffer.from(fluentiaToken.split('.')[1], 'base64').toString());
+            fluentiaUserId = tokenPayload['user.id'];
+            console.log('🔍 User ID extraído del JWT:', fluentiaUserId);
+          } catch (error) {
+            console.log('⚠️ Error decodificando JWT:', error.message);
+          }
+        }
         
         console.log('🔍 Token extraído:', fluentiaToken ? fluentiaToken.substring(0, 50) + '...' : 'No encontrado');
         console.log('🔍 User ID extraído:', fluentiaUserId || 'No encontrado');
@@ -560,13 +573,18 @@ export class UsersService {
         // PASO 2: Crear business en Fluentia con el token
         console.log('🏥 PASO 2: Creando business en Fluentia...');
         const businessUrl = 'https://fluentia-api-develop-latest.up.railway.app/businesses';
-        // Función para remover acentos y caracteres especiales
+        // Función para crear nombre válido para Fluentia
         const normalizeName = (name: string) => {
-          return name
+          // Remover números y caracteres especiales, solo letras y espacios
+          const cleanName = name
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '') // Remover acentos
-            .replace(/[^a-zA-Z0-9\s]/g, '') // Solo letras, números y espacios
+            .replace(/[^a-zA-Z\s]/g, '') // Solo letras y espacios
+            .replace(/\s+/g, ' ') // Múltiples espacios a uno
             .trim();
+          
+          // Si queda vacío, usar nombre por defecto
+          return cleanName || 'Clinica';
         };
         
         const normalizedName = normalizeName(dto.nombre);
