@@ -123,6 +123,7 @@ export class ClinicasService {
             id: true,
             name: true,
             email: true,
+            phone: true,
             role: true,
             estado: true,
             createdAt: true,
@@ -144,7 +145,9 @@ export class ClinicasService {
             patient: {
               select: {
                 id: true,
-                name: true
+                name: true,
+                phone: true,
+                birthDate: true
               }
             },
           },
@@ -190,10 +193,35 @@ export class ClinicasService {
             pacientesCount = turnosUnicos.length;
           }
 
+          // Calcular edad para pacientes
+          let edad = null;
+          let telefono = user.phone || null;
+          
+          if (user.role === 'PATIENT' && user.patient) {
+            // Usar teléfono del paciente si está disponible, sino el del usuario
+            telefono = user.patient.phone || user.phone || null;
+            
+            // Calcular edad desde birthDate
+            if (user.patient.birthDate) {
+              const today = new Date();
+              const birthDate = new Date(user.patient.birthDate);
+              const ageInYears = today.getFullYear() - birthDate.getFullYear();
+              const monthDiff = today.getMonth() - birthDate.getMonth();
+              
+              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                edad = ageInYears - 1;
+              } else {
+                edad = ageInYears;
+              }
+            }
+          }
+
           return {
             id: user.id,
             nombre: user.name || 'Sin nombre',
             email: user.email,
+            telefono: telefono,
+            edad: edad,
             rol: user.role.toLowerCase(),
             especialidad,
             estado: user.estado || 'activo',
