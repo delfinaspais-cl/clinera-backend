@@ -531,8 +531,8 @@ export class FichasMedicasHistorialService {
           tipo,
           nombre: file.originalname,
           url: uploadResult.url,
-          descripcion
-          // microserviceFileId: useLocalStorage ? null : uploadResult.id  // Temporalmente comentado hasta migración
+          descripcion,
+          microserviceFileId: useLocalStorage ? null : uploadResult.id
         }
       });
       console.log('✅ [UPLOAD_VERSION_SERVICE] Archivo creado en BD:', archivo);
