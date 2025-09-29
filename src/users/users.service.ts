@@ -531,7 +531,17 @@ export class UsersService {
             'Content-Type': 'application/json',
           },
           timeout: 10000,
+        }).catch(error => {
+          console.log('❌ ERROR EN LOGIN A FLUENTIA:');
+          console.log('📊 Status Code:', error.response?.status);
+          console.log('📋 Headers de error:', JSON.stringify(error.response?.headers, null, 2));
+          console.log('📄 Datos de error:', JSON.stringify(error.response?.data, null, 2));
+          throw error;
         });
+        
+        console.log('📊 Status Code de Fluentia:', loginResponse.status);
+        console.log('📋 Headers de respuesta de Fluentia:', JSON.stringify(loginResponse.headers, null, 2));
+        console.log('📄 Respuesta completa de Fluentia:', JSON.stringify(loginResponse.data, null, 2));
         
         const fluentiaToken = loginResponse.data.access_token || loginResponse.data.token;
         const fluentiaUserId = loginResponse.data.user?.id || loginResponse.data.user_id;
