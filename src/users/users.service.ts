@@ -543,9 +543,11 @@ export class UsersService {
         console.log('📋 Headers de respuesta de Fluentia:', JSON.stringify(loginResponse.headers, null, 2));
         console.log('📄 Respuesta completa de Fluentia:', JSON.stringify(loginResponse.data, null, 2));
         
-        const fluentiaToken = loginResponse.data.access_token || loginResponse.data.token;
-        const fluentiaUserId = loginResponse.data.user?.id || loginResponse.data.user_id;
+        const fluentiaToken = loginResponse.data.content?.accessToken || loginResponse.data.access_token || loginResponse.data.token;
+        const fluentiaUserId = loginResponse.data.content?.user?.id || loginResponse.data.user?.id || loginResponse.data.user_id;
         
+        console.log('🔍 Token extraído:', fluentiaToken ? fluentiaToken.substring(0, 50) + '...' : 'No encontrado');
+        console.log('🔍 User ID extraído:', fluentiaUserId || 'No encontrado');
         console.log('✅ Token obtenido de Fluentia:', fluentiaToken ? 'Sí' : 'No');
         console.log('✅ User ID obtenido de Fluentia:', fluentiaUserId || 'No encontrado');
         
