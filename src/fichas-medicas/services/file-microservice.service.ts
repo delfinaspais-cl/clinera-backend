@@ -485,7 +485,7 @@ export class FileMicroserviceService {
       console.log('✅ [SIGNED_URL] URL firmada obtenida exitosamente:', response.data);
 
       return {
-        url: response.data.url || response.data.signedUrl || response.data.fileUrl
+        url: response.data.content?.url || response.data.url || response.data.signedUrl || response.data.fileUrl
       };
 
     } catch (error) {
