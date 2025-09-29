@@ -343,7 +343,7 @@ export class FichasMedicasService {
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
         url: uploadResult.url, // URL de S3 o ruta local
         tamañoBytes: BigInt(uploadResult.size),
-        microserviceFileId: uploadResult.id // ID del archivo en el microservicio
+        microserviceFileId: uploadResult.id.toString() // ID del archivo en el microservicio
       }
     });
 
