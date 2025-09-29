@@ -155,32 +155,59 @@ export class ClinicasService {
       console.log('🔍 Usuarios encontrados:', users.length);
       console.log('🔍 Total usuarios:', total);
 
-      // Transformar los datos para el formato requerido
-      const usuariosFormateados = users.map((user) => {
-        let especialidad = '';
-        if (user.professional && user.professional.especialidades) {
-          especialidad = user.professional.especialidades
-            .map(pe => pe.especialidad.name)
-            .join(', ');
-        }
+      // Calcular conteo de turnos para cada usuario
+      const usuariosConTurnos = await Promise.all(
+        users.map(async (user) => {
+          let especialidad = '';
+          if (user.professional && user.professional.especialidades) {
+            especialidad = user.professional.especialidades
+              .map(pe => pe.especialidad.name)
+              .join(', ');
+          }
 
-        return {
-          id: user.id,
-          nombre: user.name || 'Sin nombre',
-          email: user.email,
-          rol: user.role.toLowerCase(),
-          especialidad,
-          estado: user.estado || 'activo',
-          fechaCreacion: user.createdAt.toISOString().split('T')[0],
-          ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
-          turnos: 0, // Se puede calcular después si es necesario
-          pacientes: 0, // Se puede calcular después si es necesario
-        };
-      });
+          // Contar turnos para pacientes
+          let turnosCount = 0;
+          if (user.role === 'PATIENT') {
+            turnosCount = await this.prisma.turno.count({
+              where: {
+                email: user.email,
+                clinicaId: clinica.id,
+              },
+            });
+          }
+
+          // Contar pacientes para profesionales
+          let pacientesCount = 0;
+          if (user.role === 'PROFESSIONAL' && user.name) {
+            // Contar turnos únicos por email para este profesional
+            const turnosUnicos = await this.prisma.turno.groupBy({
+              by: ['email'],
+              where: {
+                doctor: user.name!,
+                clinicaId: clinica.id,
+              },
+            });
+            pacientesCount = turnosUnicos.length;
+          }
+
+          return {
+            id: user.id,
+            nombre: user.name || 'Sin nombre',
+            email: user.email,
+            rol: user.role.toLowerCase(),
+            especialidad,
+            estado: user.estado || 'activo',
+            fechaCreacion: user.createdAt.toISOString().split('T')[0],
+            ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
+            turnos: turnosCount,
+            pacientes: pacientesCount,
+          };
+        })
+      );
 
       return {
         success: true,
-        usuarios: usuariosFormateados,
+        usuarios: usuariosConTurnos,
         pagination: {
           page,
           limit,
