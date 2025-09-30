@@ -7,89 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Clinica {
-  id                     String                 @id @default(cuid())
-  name                   String
-  address                String?
-  phone                  String?
-  email                  String?
-  logo                   String?
-  colorPrimario          String?                @default("#3B82F6")
-  colorSecundario        String?                @default("#1E40AF")
-  estado                 String?                @default("activo")
-  estadoPago             String?                @default("trial")
-  fechaCreacion          DateTime               @default(now())
-  ultimoPago             DateTime?
-  proximoPago            DateTime?
-  descripcion            String?
-  contacto               String?
-  rating                 Float?                 @default(4.5)
-  stats                  String?
-  createdAt              DateTime               @default(now())
-  updatedAt              DateTime               @updatedAt
-  url                    String                 @unique @map("slug")
-  fuente                 String?                @default("owner_dashboard")
-  pendienteAprobacion    Boolean                @default(false)
-  mensapiServiceEmail    String?
-  mensapiServicePassword String?
-  administradorId        String?
-  administrador          User?                  @relation("ClinicaAdministrador", fields: [administradorId], references: [id])
-  conversations          Conversation[]
-  especialidades         Especialidad[]
-  fichasMedicas          FichaMedica[]
-  fichasMedicasHistorial FichaMedicaHistorial[] @relation("ClinicaFichaHistorial")
-  horarios               Horario[]
-  mediosPago             MedioPago[]
-  mensajes               Mensaje[]
-  notificaciones         Notificacion[]
-  sucursales             Sucursal[]
-  tratamientos           Tratamiento[]
-  turnos                 Turno[]
-  users                  User[]
-  ventas                 Venta[]
-  whatsappMessages       WhatsAppMessage[]
-  whatsappTemplates      WhatsAppTemplate[]
-  suscripcion            Suscripcion?
+model Agenda {
+  id             String       @id
+  professionalId String
+  dia            String
+  horaInicio     String
+  horaFin        String
+  duracionMin    Int
+  createdAt      DateTime     @default(now())
+  Professional   Professional @relation(fields: [professionalId], references: [id])
 }
 
-model Mensaje {
-  id        String   @id @default(cuid())
-  asunto    String
-  mensaje   String
-  tipo      String
-  leido     Boolean  @default(false)
-  clinicaId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  clinica   Clinica? @relation(fields: [clinicaId], references: [id])
-}
+model ArchivoMedico {
+  id                 String      @id
+  fichaMedicaId      String
+  nombre             String
+  nombreArchivo      String
+  tipo               String
+  url                String
+  tama_oBytes        BigInt?     @map("tamañoBytes")
+  fechaSubida        DateTime    @default(now())
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime
+  microserviceFileId String?
+  FichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
-model Conversation {
-  id            String        @id @default(cuid())
-  name          String
-  role          String
-  avatar        String?
-  stage         String        @default("prospectos")
-  tags          String[]      @default([])
-  isOnline      Boolean       @default(false)
-  phone         String?
-  email         String?
-  unreadCount   Int           @default(0)
-  clinicaId     String
-  lastMessageAt DateTime      @default(now())
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  messages      ChatMessage[]
-  clinica       Clinica       @relation(fields: [clinicaId], references: [id])
-  turnos        Turno[]
-
-  @@index([clinicaId])
-  @@index([stage])
-  @@index([lastMessageAt(sort: Desc)])
+  @@index([fichaMedicaId])
 }
 
 model ChatMessage {
-  id                String           @id @default(cuid())
+  id                String           @id
   content           String
   isFromUser        Boolean          @default(false)
   messageType       String           @default("text")
@@ -99,281 +46,66 @@ model ChatMessage {
   whatsappMessageId String?
   metadata          String?
   createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user              User?            @relation(fields: [userId], references: [id])
-  whatsappMessage   WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id])
+  updatedAt         DateTime
+  Conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  User              User?            @relation(fields: [userId], references: [id])
+  WhatsAppMessage   WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id])
 
   @@index([conversationId])
   @@index([createdAt(sort: Desc)])
   @@index([status])
 }
 
-model Notificacion {
-  id               String    @id @default(cuid())
-  titulo           String
-  mensaje          String
-  tipo             String    @default("info")
-  prioridad        String    @default("media")
-  leida            Boolean   @default(false)
-  clinicaId        String
-  destinatarioId   String?
-  fechaVencimiento DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  clinica          Clinica   @relation(fields: [clinicaId], references: [id])
-  destinatario     User?     @relation("UserNotifications", fields: [destinatarioId], references: [id])
-}
+model Clinica {
+  id                                 String                 @id
+  name                               String
+  address                            String?
+  phone                              String?
+  email                              String?
+  logo                               String?
+  colorPrimario                      String?                @default("#3B82F6")
+  colorSecundario                    String?                @default("#1E40AF")
+  estado                             String?                @default("activo")
+  estadoPago                         String?                @default("trial")
+  fechaCreacion                      DateTime               @default(now())
+  ultimoPago                         DateTime?
+  proximoPago                        DateTime?
+  descripcion                        String?
+  contacto                           String?
+  rating                             Float?                 @default(4.5)
+  stats                              String?
+  createdAt                          DateTime               @default(now())
+  updatedAt                          DateTime
+  slug                               String                 @unique
+  fuente                             String?                @default("owner_dashboard")
+  pendienteAprobacion                Boolean                @default(false)
+  mensapiServiceEmail                String?
+  mensapiServicePassword             String?
+  administradorId                    String?
+  defaultLanguage                    String?                @default("es")
+  User_Clinica_administradorIdToUser User?                  @relation("Clinica_administradorIdToUser", fields: [administradorId], references: [id])
+  Conversation                       Conversation[]
+  Especialidad                       Especialidad[]
+  FichaMedica                        FichaMedica[]
+  FichaMedicaHistorial               FichaMedicaHistorial[]
+  Horario                            Horario[]
+  MedioPago                          MedioPago[]
+  Mensaje                            Mensaje[]
+  Notificacion                       Notificacion[]
+  Sucursal                           Sucursal[]
+  Suscripcion                        Suscripcion?
+  Tratamiento                        Tratamiento[]
+  Turno                              Turno[]
+  User_User_clinicaIdToClinica       User[]                 @relation("User_clinicaIdToClinica")
+  Venta                              Venta[]
+  WhatsAppMessage                    WhatsAppMessage[]
+  WhatsAppTemplate                   WhatsAppTemplate[]
 
-model User {
-  id                    String                  @id @default(cuid())
-  email                 String
-  password              String
-  name                  String?
-  phone                 String?
-  location              String?
-  bio                   String?
-  role                  Role
-  clinicaId             String?
-  estado                String?                 @default("activo")
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  avatar_url            String?
-  configuracion         String?
-  facebook              String?
-  instagram             String?
-  website               String?
-  whatsapp              String?
-  username              String?                 @unique
-  chatMessages          ChatMessage[]
-  clinicasAdministradas Clinica[]               @relation("ClinicaAdministrador")
-  fichasMedicasCreadas  FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
-  notificaciones        Notificacion[]          @relation("UserNotifications")
-  patient               Patient?
-  professional          Professional?
-  pushTokens            PushNotificationToken[]
-  clinica               Clinica?                @relation(fields: [clinicaId], references: [id])
-  whatsappMessages      WhatsAppMessage[]
-
-  @@unique([email, clinicaId], name: "unique_email_per_clinica")
-  @@index([email])
-  @@index([username])
-  @@index([clinicaId])
-}
-
-model Turno {
-  id             String        @id @default(cuid())
-  paciente       String
-  email          String
-  telefono       String?
-  doctor         String
-  fecha          DateTime
-  hora           String
-  estado         String        @default("pendiente")
-  motivo         String?
-  clinicaId      String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  conversationId String?
-  duracionMin    Int           @default(30)
-  notas          String?
-  professionalId String?
-  servicio       String?
-  ate            String?
-  estadoPago     String        @default("pendiente")
-  medioPago      String?
-  montoTotal     String?
-  origen         String?
-  sucursal       String?
-  montoAbonado   String?
-  montoPendiente String?
-  clinica        Clinica       @relation(fields: [clinicaId], references: [id])
-  conversation   Conversation? @relation(fields: [conversationId], references: [id])
-  professional   Professional? @relation(fields: [professionalId], references: [id])
-}
-
-model Patient {
-  id                     String                 @id @default(uuid())
-  userId                 String                 @unique
-  name                   String
-  birthDate              DateTime?
-  phone                  String?
-  notes                  String?
-  createdAt              DateTime               @default(now())
-  fichaMedica            FichaMedica?
-  fichasMedicasHistorial FichaMedicaHistorial[] @relation("PatientFichaHistorial")
-  user                   User                   @relation(fields: [userId], references: [id])
-}
-
-model Professional {
-  id                 String                     @id @default(uuid())
-  userId             String                     @unique
-  name               String
-  defaultDurationMin Int                        @default(30)
-  bufferMin          Int                        @default(10)
-  notes              String?
-  createdAt          DateTime                   @default(now())
-  sucursalId         String?
-  agendas            Agenda[]
-  sucursal           Sucursal?                  @relation(fields: [sucursalId], references: [id])
-  user               User                       @relation(fields: [userId], references: [id])
-  especialidades     ProfessionalEspecialidad[]
-  tratamientos       ProfessionalTratamiento[]
-  turnos             Turno[]
-}
-
-model Agenda {
-  id             String       @id @default(uuid())
-  professionalId String
-  dia            String
-  horaInicio     String
-  horaFin        String
-  duracionMin    Int
-  createdAt      DateTime     @default(now())
-  professional   Professional @relation(fields: [professionalId], references: [id])
-}
-
-model Horario {
-  id        Int     @id @default(autoincrement())
-  day       String
-  openTime  String
-  closeTime String
-  clinicaId String
-  clinica   Clinica @relation(fields: [clinicaId], references: [id])
-}
-
-model Especialidad {
-  id            Int                        @id @default(autoincrement())
-  name          String
-  clinicaId     String
-  clinica       Clinica                    @relation(fields: [clinicaId], references: [id])
-  profesionales ProfessionalEspecialidad[]
-}
-
-model Tratamiento {
-  id            String                    @id @default(cuid())
-  name          String
-  descripcion   String?
-  duracionMin   Int                       @default(30)
-  precio        Float?
-  clinicaId     String
-  estado        String                    @default("activo")
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  profesionales ProfessionalTratamiento[]
-  clinica       Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-
-  @@index([clinicaId])
-  @@index([estado])
-}
-
-model ProfessionalEspecialidad {
-  id             String       @id @default(cuid())
-  professionalId String
-  especialidadId Int
-  createdAt      DateTime     @default(now())
-  especialidad   Especialidad @relation(fields: [especialidadId], references: [id], onDelete: Cascade)
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-
-  @@unique([professionalId, especialidadId])
-  @@index([professionalId])
-  @@index([especialidadId])
-}
-
-model ProfessionalTratamiento {
-  id             String       @id @default(cuid())
-  professionalId String
-  tratamientoId  String
-  precio         Float?
-  duracionMin    Int?
-  createdAt      DateTime     @default(now())
-  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  tratamiento    Tratamiento  @relation(fields: [tratamientoId], references: [id], onDelete: Cascade)
-
-  @@unique([professionalId, tratamientoId])
-  @@index([professionalId])
-  @@index([tratamientoId])
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  email     String
-  token     String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([email])
-  @@index([token])
-}
-
-model PushNotificationToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  platform  String
-  deviceId  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([token])
-  @@index([platform])
-}
-
-model WhatsAppMessage {
-  id             String        @id @default(cuid())
-  phoneNumberId  String
-  to             String
-  from           String
-  messageType    String
-  messageText    String?
-  templateName   String?
-  templateParams String?
-  mediaUrl       String?
-  mediaId        String?
-  wamid          String?
-  status         String        @default("pending")
-  errorCode      String?
-  errorMessage   String?
-  clinicaId      String?
-  userId         String?
-  metadata       String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  chatMessages   ChatMessage[]
-  clinica        Clinica?      @relation(fields: [clinicaId], references: [id])
-  user           User?         @relation(fields: [userId], references: [id])
-
-  @@index([to])
-  @@index([status])
-  @@index([clinicaId])
-  @@index([userId])
-  @@index([wamid])
-}
-
-model WhatsAppTemplate {
-  id         String   @id @default(cuid())
-  name       String
-  language   String   @default("es")
-  category   String
-  status     String   @default("pending")
-  components String
-  example    String?
-  clinicaId  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  clinica    Clinica? @relation(fields: [clinicaId], references: [id])
-
-  @@index([name])
-  @@index([status])
-  @@index([clinicaId])
+  @@index([defaultLanguage])
 }
 
 model Contacto {
-  id           String   @id @default(cuid())
+  id           String   @id
   nombre       String
   email        String
   telefono     String?
@@ -386,47 +118,78 @@ model Contacto {
   notas        String?
   metadata     String?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime
 
-  @@index([estado])
-  @@index([tipoConsulta])
   @@index([createdAt(sort: Desc)])
   @@index([email])
+  @@index([estado])
+  @@index([tipoConsulta])
 }
 
-model WhatsAppWebhook {
-  id        String   @id @default(cuid())
-  eventType String
-  payload   String
-  processed Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@index([eventType])
-  @@index([processed])
-}
-
-model Sucursal {
-  id            String         @id @default(cuid())
-  nombre        String
-  direccion     String?
-  telefono      String?
+model Conversation {
+  id            String        @id
+  name          String
+  role          String
+  avatar        String?
+  stage         String        @default("prospectos")
+  tags          String[]      @default([])
+  isOnline      Boolean       @default(false)
+  phone         String?
   email         String?
-  estado        String         @default("activa")
+  unreadCount   Int           @default(0)
   clinicaId     String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  ciudad        String?
-  pais          String?
-  provincia     String?
-  professionals Professional[]
-  clinica       Clinica        @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime
+  ChatMessage   ChatMessage[]
+  Clinica       Clinica       @relation(fields: [clinicaId], references: [id])
+  Turno         Turno[]
 
   @@index([clinicaId])
-  @@index([estado])
+  @@index([lastMessageAt(sort: Desc)])
+  @@index([stage])
+}
+
+model EmailVerification {
+  id         String    @id
+  email      String
+  code       String
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+  attempts   Int       @default(0)
+  ipAddress  String?
+  userAgent  String?
+
+  @@index([code])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model EmailVerificationLimit {
+  id           String    @id
+  email        String
+  ipAddress    String
+  attempts     Int       @default(1)
+  lastAttempt  DateTime  @default(now())
+  blockedUntil DateTime?
+
+  @@unique([email, ipAddress])
+  @@index([email])
+  @@index([ipAddress])
+}
+
+model Especialidad {
+  id                       Int                        @id @default(autoincrement())
+  name                     String
+  clinicaId                String
+  Clinica                  Clinica                    @relation(fields: [clinicaId], references: [id])
+  ProfessionalEspecialidad ProfessionalEspecialidad[]
 }
 
 model FichaMedica {
-  id                           String                 @id @default(cuid())
+  id                           String                 @id
   pacienteId                   String                 @unique
   clinicaId                    String
   grupoSanguineo               String?
@@ -443,20 +206,35 @@ model FichaMedica {
   tratamiento                  String?
   evolucion                    String?
   createdAt                    DateTime               @default(now())
-  updatedAt                    DateTime               @updatedAt
+  updatedAt                    DateTime
   tratamientosEsteticosPrevios String?
-  archivosMedicos              ArchivoMedico[]
-  clinica                      Clinica                @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  paciente                     Patient                @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  fichasMedicasHistorial       FichaMedicaHistorial[] @relation("PatientFichaHistorial")
-  imagenesMedicas              ImagenMedica[]
+  ArchivoMedico                ArchivoMedico[]
+  Clinica                      Clinica                @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  Patient                      Patient                @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  FichaMedicaHistorial         FichaMedicaHistorial[]
+  ImagenMedica                 ImagenMedica[]
 
-  @@index([pacienteId])
   @@index([clinicaId])
+  @@index([pacienteId])
+}
+
+model FichaMedicaArchivo {
+  id                   String               @id
+  fichaHistorialId     String
+  tipo                 String
+  nombre               String
+  url                  String
+  descripcion          String?
+  fechaSubida          DateTime             @default(now())
+  microserviceFileId   String?
+  FichaMedicaHistorial FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
+
+  @@index([fichaHistorialId])
+  @@index([tipo])
 }
 
 model FichaMedicaHistorial {
-  id                           String               @id @default(cuid())
+  id                           String               @id
   pacienteId                   String
   clinicaId                    String
   version                      Int
@@ -479,86 +257,358 @@ model FichaMedicaHistorial {
   esVersionActual              Boolean              @default(false)
   createdAt                    DateTime             @default(now())
   tratamientosEsteticosPrevios String?
-  archivos                     FichaMedicaArchivo[]
-  clinica                      Clinica              @relation("ClinicaFichaHistorial", fields: [clinicaId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_clinicaId_fkey")
-  creadoPorUser                User?                @relation("FichaMedicaCreadaPor", fields: [creadoPor], references: [id], map: "FichaMedicaHistorial_creadoPor_fkey")
-  paciente                     Patient              @relation("PatientFichaHistorial", fields: [pacienteId], references: [id], onDelete: Cascade, map: "FichaMedicaHistorial_pacienteId_fkey")
-  fichaMedica                  FichaMedica          @relation("PatientFichaHistorial", fields: [pacienteId], references: [pacienteId], onDelete: Cascade, map: "FichaMedicaHistorial_fichaMedica_fkey")
+  FichaMedicaArchivo           FichaMedicaArchivo[]
+  Clinica                      Clinica              @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  User                         User?                @relation(fields: [creadoPor], references: [id])
+  FichaMedica                  FichaMedica          @relation(fields: [pacienteId], references: [pacienteId], onDelete: Cascade, map: "FichaMedicaHistorial_fichaMedica_fkey")
+  Patient                      Patient              @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
 
-  @@index([pacienteId])
   @@index([clinicaId])
-  @@index([version])
   @@index([esVersionActual])
   @@index([fechaCreacion])
+  @@index([pacienteId])
+  @@index([version])
 }
 
-model FichaMedicaArchivo {
-  id                 String               @id @default(cuid())
-  fichaHistorialId   String
-  tipo               String
-  nombre             String
-  url                String
-  descripcion        String?
-  fechaSubida        DateTime             @default(now())
-  microserviceFileId String?              // ID del archivo en el microservicio
-  fichaHistorial     FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
+model HistorialPago {
+  id               String      @id
+  suscripcionId    String
+  planId           String
+  monto            Float
+  moneda           String      @default("USD")
+  estado           String      @default("pending")
+  metodoPago       String?
+  idPagoExterno    String?
+  fechaPago        DateTime?
+  fechaVencimiento DateTime?
+  notas            String?
+  metadata         Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime
+  Plan             Plan        @relation(fields: [planId], references: [id])
+  Suscripcion      Suscripcion @relation(fields: [suscripcionId], references: [id], onDelete: Cascade)
 
-  @@index([fichaHistorialId])
-  @@index([tipo])
+  @@index([estado])
+  @@index([fechaPago])
+  @@index([suscripcionId])
 }
 
-model ArchivoMedico {
-  id                 String      @id @default(cuid())
-  fichaMedicaId      String
-  nombre             String
-  nombreArchivo      String
-  tipo               String
-  url                String
-  tamañoBytes       BigInt?
-  fechaSubida        DateTime    @default(now())
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  microserviceFileId String?     // ID del archivo en el microservicio
-  fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
-
-  @@index([fichaMedicaId])
+model Horario {
+  id        Int     @id @default(autoincrement())
+  day       String
+  openTime  String
+  closeTime String
+  clinicaId String
+  Clinica   Clinica @relation(fields: [clinicaId], references: [id])
 }
 
 model ImagenMedica {
-  id                 String      @id @default(cuid())
+  id                 String      @id
   fichaMedicaId      String
   nombre             String
   nombreArchivo      String
   url                String
   descripcion        String?
-  tamañoBytes       BigInt?
+  tama_oBytes        BigInt?     @map("tamañoBytes")
   fechaSubida        DateTime    @default(now())
   createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  microserviceFileId String?     // ID del archivo en el microservicio
-  fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime
+  microserviceFileId String?
+  FichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
 
   @@index([fichaMedicaId])
 }
 
 model MedioPago {
-  id          String   @id @default(cuid())
+  id          String   @id
   nombre      String
   descripcion String?
   activo      Boolean  @default(true)
   clinicaId   String
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  ventas      Venta[]
+  updatedAt   DateTime
+  Clinica     Clinica  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  Venta       Venta[]
 
   @@unique([nombre, clinicaId])
-  @@index([clinicaId])
   @@index([activo])
+  @@index([clinicaId])
+}
+
+model Mensaje {
+  id        String   @id
+  asunto    String
+  mensaje   String
+  tipo      String
+  leido     Boolean  @default(false)
+  clinicaId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  Clinica   Clinica? @relation(fields: [clinicaId], references: [id])
+}
+
+model Notificacion {
+  id               String    @id
+  titulo           String
+  mensaje          String
+  tipo             String    @default("info")
+  prioridad        String    @default("media")
+  leida            Boolean   @default(false)
+  clinicaId        String
+  destinatarioId   String?
+  fechaVencimiento DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime
+  Clinica          Clinica   @relation(fields: [clinicaId], references: [id])
+  User             User?     @relation(fields: [destinatarioId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String   @id
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+}
+
+model Patient {
+  id                   String                 @id
+  userId               String                 @unique
+  name                 String
+  birthDate            DateTime?
+  phone                String?
+  notes                String?
+  createdAt            DateTime               @default(now())
+  FichaMedica          FichaMedica?
+  FichaMedicaHistorial FichaMedicaHistorial[]
+  User                 User                   @relation(fields: [userId], references: [id])
+}
+
+model Plan {
+  id              String          @id
+  nombre          String          @unique
+  tagline         String?
+  descripcion     String
+  precio          Float
+  moneda          String          @default("USD")
+  intervalo       String          @default("monthly")
+  activo          Boolean         @default(true)
+  popular         Boolean         @default(false)
+  caracteristicas String[]        @default([])
+  limitaciones    Json?
+  orden           Int             @default(0)
+  icono           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime
+  HistorialPago   HistorialPago[]
+  Suscripcion     Suscripcion[]
+
+  @@index([activo])
+  @@index([orden])
+  @@index([popular])
+}
+
+model Professional {
+  id                       String                     @id
+  userId                   String                     @unique
+  name                     String
+  defaultDurationMin       Int                        @default(30)
+  bufferMin                Int                        @default(10)
+  notes                    String?
+  createdAt                DateTime                   @default(now())
+  sucursalId               String?
+  Agenda                   Agenda[]
+  Sucursal                 Sucursal?                  @relation(fields: [sucursalId], references: [id])
+  User                     User                       @relation(fields: [userId], references: [id])
+  ProfessionalEspecialidad ProfessionalEspecialidad[]
+  ProfessionalTratamiento  ProfessionalTratamiento[]
+  Turno                    Turno[]
+}
+
+model ProfessionalEspecialidad {
+  id             String       @id
+  professionalId String
+  especialidadId Int
+  createdAt      DateTime     @default(now())
+  Especialidad   Especialidad @relation(fields: [especialidadId], references: [id], onDelete: Cascade)
+  Professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, especialidadId])
+  @@index([especialidadId])
+  @@index([professionalId])
+}
+
+model ProfessionalTratamiento {
+  id             String       @id
+  professionalId String
+  tratamientoId  String
+  precio         Float?
+  duracionMin    Int?
+  createdAt      DateTime     @default(now())
+  Professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  Tratamiento    Tratamiento  @relation(fields: [tratamientoId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, tratamientoId])
+  @@index([professionalId])
+  @@index([tratamientoId])
+}
+
+model PushNotificationToken {
+  id        String   @id
+  userId    String
+  token     String   @unique
+  platform  String
+  deviceId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([platform])
+  @@index([token])
+  @@index([userId])
+}
+
+model Sucursal {
+  id           String         @id
+  nombre       String
+  direccion    String?
+  telefono     String?
+  email        String?
+  estado       String         @default("activa")
+  clinicaId    String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  ciudad       String?
+  pais         String?
+  provincia    String?
+  Professional Professional[]
+  Clinica      Clinica        @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+
+  @@index([clinicaId])
+  @@index([estado])
+}
+
+model Suscripcion {
+  id                String          @id
+  clinicaId         String          @unique
+  planId            String
+  estado            String          @default("trial")
+  fechaInicio       DateTime        @default(now())
+  fechaFin          DateTime?
+  fechaTrialFin     DateTime?
+  ultimoPago        DateTime?
+  proximoPago       DateTime?
+  metodoPago        String?
+  idPagoExterno     String?
+  trialDias         Int             @default(7)
+  autoRenovar       Boolean         @default(true)
+  canceladoEn       DateTime?
+  motivoCancelacion String?
+  notas             String?
+  metadata          Json?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime
+  HistorialPago     HistorialPago[]
+  Clinica           Clinica         @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  Plan              Plan            @relation(fields: [planId], references: [id])
+
+  @@index([autoRenovar])
+  @@index([estado])
+  @@index([fechaFin])
+  @@index([fechaTrialFin])
+}
+
+model Tratamiento {
+  id                      String                    @id
+  name                    String
+  descripcion             String?
+  duracionMin             Int                       @default(30)
+  precio                  Float?
+  clinicaId               String
+  estado                  String                    @default("activo")
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  ProfessionalTratamiento ProfessionalTratamiento[]
+  Clinica                 Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+
+  @@index([clinicaId])
+  @@index([estado])
+}
+
+model Turno {
+  id             String        @id
+  paciente       String
+  email          String
+  telefono       String?
+  doctor         String
+  fecha          DateTime
+  hora           String
+  estado         String        @default("pendiente")
+  motivo         String?
+  clinicaId      String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  conversationId String?
+  duracionMin    Int           @default(30)
+  notas          String?
+  professionalId String?
+  servicio       String?
+  ate            String?
+  estadoPago     String        @default("pendiente")
+  medioPago      String?
+  montoTotal     String?
+  origen         String?
+  sucursal       String?
+  montoAbonado   String?
+  montoPendiente String?
+  Clinica        Clinica       @relation(fields: [clinicaId], references: [id])
+  Conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  Professional   Professional? @relation(fields: [professionalId], references: [id])
+}
+
+model User {
+  id                                    String                  @id
+  email                                 String
+  password                              String
+  name                                  String?
+  phone                                 String?
+  location                              String?
+  bio                                   String?
+  role                                  Role
+  clinicaId                             String?
+  estado                                String?                 @default("activo")
+  createdAt                             DateTime                @default(now())
+  updatedAt                             DateTime
+  avatar_url                            String?
+  configuracion                         String?
+  facebook                              String?
+  instagram                             String?
+  website                               String?
+  whatsapp                              String?
+  username                              String?                 @unique
+  ChatMessage                           ChatMessage[]
+  Clinica_Clinica_administradorIdToUser Clinica[]               @relation("Clinica_administradorIdToUser")
+  FichaMedicaHistorial                  FichaMedicaHistorial[]
+  Notificacion                          Notificacion[]
+  Patient                               Patient?
+  Professional                          Professional?
+  PushNotificationToken                 PushNotificationToken[]
+  Clinica_User_clinicaIdToClinica       Clinica?                @relation("User_clinicaIdToClinica", fields: [clinicaId], references: [id])
+  WhatsAppMessage                       WhatsAppMessage[]
+
+  @@unique([email, clinicaId])
+  @@index([clinicaId])
+  @@index([email])
+  @@index([username])
 }
 
 model Venta {
-  id               String     @id @default(cuid())
+  id               String     @id
   ventaId          String     @unique
   comprador        String
   paciente         String
@@ -583,121 +633,74 @@ model Venta {
   notas            String?
   clinicaId        String
   medioPagoId      String?
-  clinica          Clinica    @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  medioPagoRel     MedioPago? @relation(fields: [medioPagoId], references: [id])
+  Clinica          Clinica    @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  MedioPago        MedioPago? @relation(fields: [medioPagoId], references: [id])
 
   @@index([clinicaId])
-  @@index([estado])
   @@index([estadoPago])
+  @@index([estado])
   @@index([fechaCreacion])
   @@index([medioPagoId])
 }
 
-model Plan {
-  id                String        @id @default(cuid())
-  nombre            String        @unique
-  tagline           String?       // "Agenda + Ventas", "Agenda + Ventas + Mensajería", etc.
-  descripcion       String
-  precio            Float
-  moneda            String        @default("USD")
-  intervalo         String        @default("monthly") // monthly, yearly
-  activo            Boolean       @default(true)
-  popular           Boolean       @default(false) // Para marcar el plan popular
-  caracteristicas   String[]      @default([])
-  limitaciones      Json?         // { profesionales: 3, uam: 1000, extraProfesional: 10, extraUam: 0.25 }
-  orden             Int           @default(0)
-  icono             String?       // Para iconos como el robot de NEXUS
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  suscripciones     Suscripcion[]
-  historialPagos    HistorialPago[]
+model WhatsAppMessage {
+  id             String        @id
+  phoneNumberId  String
+  to             String
+  from           String
+  messageType    String
+  messageText    String?
+  templateName   String?
+  templateParams String?
+  mediaUrl       String?
+  mediaId        String?
+  wamid          String?
+  status         String        @default("pending")
+  errorCode      String?
+  errorMessage   String?
+  clinicaId      String?
+  userId         String?
+  metadata       String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime
+  ChatMessage    ChatMessage[]
+  Clinica        Clinica?      @relation(fields: [clinicaId], references: [id])
+  User           User?         @relation(fields: [userId], references: [id])
 
-  @@index([activo])
-  @@index([orden])
-  @@index([popular])
+  @@index([clinicaId])
+  @@index([status])
+  @@index([to])
+  @@index([userId])
+  @@index([wamid])
 }
 
-model Suscripcion {
-  id                String        @id @default(cuid())
-  clinicaId         String        @unique
-  planId            String
-  estado            String        @default("trial") // trial, active, suspended, cancelled, expired
-  fechaInicio       DateTime      @default(now())
-  fechaFin          DateTime?
-  fechaTrialFin     DateTime?     // Fecha de fin del período de prueba (7 días después de fechaInicio)
-  ultimoPago        DateTime?
-  proximoPago       DateTime?
-  metodoPago        String?       // stripe, paypal, etc.
-  idPagoExterno     String?       // ID del pago en el sistema externo
-  trialDias         Int           @default(7) // Días de prueba (por defecto 7)
-  autoRenovar       Boolean       @default(true) // Si se renueva automáticamente
-  canceladoEn       DateTime?     // Fecha de cancelación
-  motivoCancelacion String?       // Razón de cancelación
-  notas             String?
-  metadata          Json?         // Datos adicionales como límites usados
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  clinica           Clinica       @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
-  plan              Plan          @relation(fields: [planId], references: [id])
-  historialPagos    HistorialPago[]
+model WhatsAppTemplate {
+  id         String   @id
+  name       String
+  language   String   @default("es")
+  category   String
+  status     String   @default("pending")
+  components String
+  example    String?
+  clinicaId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+  Clinica    Clinica? @relation(fields: [clinicaId], references: [id])
 
-  @@index([estado])
-  @@index([fechaFin])
-  @@index([fechaTrialFin])
-  @@index([autoRenovar])
+  @@index([clinicaId])
+  @@index([name])
+  @@index([status])
 }
 
-model HistorialPago {
-  id                String        @id @default(cuid())
-  suscripcionId      String
-  planId             String
-  monto              Float
-  moneda             String        @default("USD")
-  estado             String        @default("pending") // pending, completed, failed, refunded
-  metodoPago         String?       // stripe, paypal, etc.
-  idPagoExterno      String?       // ID del pago en el sistema externo
-  fechaPago          DateTime?
-  fechaVencimiento   DateTime?
-  notas              String?
-  metadata           Json?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  suscripcion        Suscripcion   @relation(fields: [suscripcionId], references: [id], onDelete: Cascade)
-  plan               Plan          @relation(fields: [planId], references: [id])
+model WhatsAppWebhook {
+  id        String   @id
+  eventType String
+  payload   String
+  processed Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  @@index([estado])
-  @@index([fechaPago])
-  @@index([suscripcionId])
-}
-
-model EmailVerification {
-  id          String   @id @default(cuid())
-  email       String
-  code        String
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
-  verified    Boolean  @default(false)
-  verifiedAt  DateTime?
-  attempts    Int      @default(0)
-  ipAddress   String?
-  userAgent   String?
-
-  @@index([email])
-  @@index([code])
-  @@index([expiresAt])
-}
-
-model EmailVerificationLimit {
-  id           String   @id @default(cuid())
-  email        String
-  ipAddress    String
-  attempts     Int      @default(1)
-  lastAttempt  DateTime @default(now())
-  blockedUntil DateTime?
-
-  @@unique([email, ipAddress], name: "email_ipAddress")
-  @@index([email])
-  @@index([ipAddress])
+  @@index([eventType])
+  @@index([processed])
 }
 
 enum Role {

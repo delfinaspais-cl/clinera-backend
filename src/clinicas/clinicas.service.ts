@@ -9,6 +9,7 @@ import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
 import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
+import { UpdateClinicaLanguageDto } from './dto/update-clinica-language.dto';
 import { CreateTurnoLandingDto } from '../public/dto/create-turno-landing.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
@@ -1241,6 +1242,7 @@ export class ClinicasService {
         horarios: clinica.horarios,
         especialidades: clinica.especialidades,
         descripcion: clinica.descripcion,
+        defaultLanguage: clinica.defaultLanguage,
         contacto: clinica.contacto ? JSON.parse(clinica.contacto) : {},
       };
 
@@ -1288,6 +1290,10 @@ export class ClinicasService {
 
       if (dto.descripcion) {
         updateData.descripcion = dto.descripcion;
+      }
+
+      if (dto.defaultLanguage) {
+        updateData.defaultLanguage = dto.defaultLanguage;
       }
 
       if (dto.contacto) {
@@ -1404,6 +1410,7 @@ export class ClinicasService {
         direccion: clinica.address,
         telefono: clinica.phone,
         email: clinica.email,
+        defaultLanguage: clinica.defaultLanguage,
         horarios: clinica.horarios,
         especialidades: clinica.especialidades,
         rating: clinica.rating,
@@ -3566,5 +3573,46 @@ export class ClinicasService {
         } : null,
       },
     };
+  }
+
+  async updateClinicaLanguage(
+    clinicaUrl: string,
+    dto: UpdateClinicaLanguageDto,
+  ) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Actualizar solo el idioma
+      const clinicaActualizada = await this.prisma.clinica.update({
+        where: { url: clinicaUrl },
+        data: {
+          defaultLanguage: dto.defaultLanguage,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Idioma de la clínica actualizado exitosamente',
+        clinica: {
+          id: clinicaActualizada.id,
+          nombre: clinicaActualizada.name,
+          url: clinicaActualizada.url,
+          defaultLanguage: clinicaActualizada.defaultLanguage,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar idioma de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
   }
 }

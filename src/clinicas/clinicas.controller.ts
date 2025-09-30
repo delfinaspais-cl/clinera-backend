@@ -29,6 +29,7 @@ import { GetTurnosFiltersDto } from './dto/get-turnos-filters.dto';
 import { GetUsuariosFiltersDto } from './dto/get-usuarios-filters.dto';
 import { UpdateTurnoEstadoDto } from './dto/update-turno-estado.dto';
 import { UpdateClinicaConfiguracionDto } from './dto/update-clinica-configuracion.dto';
+import { UpdateClinicaLanguageDto } from './dto/update-clinica-language.dto';
 import { CreateTurnoDto } from './dto/create-turno.dto';
 import { UpdateTurnoDto } from './dto/update-turno.dto';
 import { UpdateTurnoFechaHoraDto } from './dto/update-turno-fecha-hora.dto';
@@ -640,6 +641,33 @@ export class ClinicasController {
     ) {
       // ADMIN solo puede acceder a su propia clínica
       return this.clinicasService.updateClinicaConfiguracion(clinicaUrl, dto);
+    } else {
+      throw new UnauthorizedException(
+        'Acceso denegado. No tienes permisos para actualizar esta clínica.',
+      );
+    }
+  }
+
+  @Put(':clinicaUrl/configuracion/idioma')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Actualizar idioma predeterminado de la clínica' })
+  @ApiResponse({ status: 200, description: 'Idioma actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async updateClinicaLanguage(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Body() dto: UpdateClinicaLanguageDto,
+  ) {
+    // Verificar que el usuario tenga acceso a esta clínica
+    if (req.user.role === 'OWNER') {
+      return this.clinicasService.updateClinicaLanguage(clinicaUrl, dto);
+    } else if (
+      req.user.role === 'ADMIN' &&
+      req.user.clinicaUrl === clinicaUrl
+    ) {
+      return this.clinicasService.updateClinicaLanguage(clinicaUrl, dto);
     } else {
       throw new UnauthorizedException(
         'Acceso denegado. No tienes permisos para actualizar esta clínica.',
