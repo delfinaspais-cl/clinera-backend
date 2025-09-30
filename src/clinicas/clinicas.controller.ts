@@ -794,7 +794,7 @@ export class ClinicasController {
       throw error;
     }
   }
-
+ 
   // Endpoint de prueba simple sin filtros
   @Get(':clinicaUrl/turnos-simple')
   @ApiOperation({ summary: 'DEBUG: Obtener turnos simple sin filtros' })

@@ -4,7 +4,7 @@ export class UpdateClinicaConfiguracionDto {
   @IsOptional()
   @IsString()
   nombre?: string;
-
+ 
   @IsOptional()
   @IsString()
   colorPrimario?: string;

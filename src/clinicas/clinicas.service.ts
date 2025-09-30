@@ -1857,7 +1857,7 @@ export class ClinicasService {
               phone: dto.telefono,
               clinicaId: clinica.id,
             },
-          });
+          }); 
 
           // Crear el paciente
           const paciente = await this.prisma.patient.create({
