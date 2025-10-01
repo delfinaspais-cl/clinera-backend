@@ -3,6 +3,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   UseGuards,
   Request,
   Param,
@@ -19,6 +20,7 @@ import { UserLoginDto } from '../auth/dto/user-login.dto';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
+import { UpdateUserLanguageDto } from '../auth/dto/update-user-language.dto';
 
 @ApiTags('Usuarios')
 @Controller('users')
@@ -101,5 +103,26 @@ export class UsersController {
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
     return this.usersService.checkClinicaAccess(req.user.id, clinicaUrl);
+  }
+
+  @Put('language')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar idioma preferido del usuario' })
+  @ApiResponse({ status: 200, description: 'Idioma actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async updateLanguage(@Request() req, @Body() dto: UpdateUserLanguageDto) {
+    return this.usersService.updateUserLanguage(req.user.id, dto.preferredLanguage);
+  }
+
+  @Get('language')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener idioma preferido del usuario' })
+  @ApiResponse({ status: 200, description: 'Idioma obtenido exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  async getUserLanguage(@Request() req) {
+    return this.usersService.getUserLanguage(req.user.id);
   }
 }

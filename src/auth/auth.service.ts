@@ -88,9 +88,21 @@ export class AuthService {
       email: user.email, 
       role: user.role,
       clinicaId: user.clinicaId,
-      clinicaUrl: user.clinicaUrl
+      clinicaUrl: user.clinicaUrl,
+      preferredLanguage: user.preferredLanguage
     };
-    return { access_token: this.jwtService.sign(payload) };
+    return { 
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        clinicaId: user.clinicaId,
+        clinicaUrl: user.clinicaUrl,
+        preferredLanguage: user.preferredLanguage || 'es'
+      }
+    };
   }
 
   async register(dto: RegisterAuthDto) {

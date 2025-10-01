@@ -156,6 +156,7 @@ export class UsersService {
           username: user.username,
           name: user.name,
           role: user.role,
+          preferredLanguage: user.preferredLanguage || 'es',
         },
       };
     } catch (error) {
@@ -281,6 +282,7 @@ export class UsersService {
           username: user.username,
           name: user.name,
           role: user.role,
+          preferredLanguage: user.preferredLanguage || 'es',
           clinica: user.clinica, // Incluir información de la clínica
         },
       };
@@ -329,6 +331,7 @@ export class UsersService {
           estado: user.estado,
           createdAt: user.createdAt,
           avatar_url: user.avatar_url,
+          preferredLanguage: user.preferredLanguage || 'es',
           clinica: user.clinica, // Incluir información de la clínica
         },
       };
@@ -744,6 +747,87 @@ export class UsersService {
         throw error;
       }
       console.error('Error al verificar acceso a clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async updateUserLanguage(userId: string, preferredLanguage: string) {
+    try {
+      console.log(`🌍 Actualizando idioma del usuario ${userId} a: ${preferredLanguage}`);
+
+      // Validar que el idioma sea válido
+      const idiomasValidos = ['es', 'pt-BR', 'en'];
+      if (!idiomasValidos.includes(preferredLanguage)) {
+        throw new BadRequestException('Idioma no válido. Idiomas disponibles: es, pt-BR, en');
+      }
+
+      // Actualizar el idioma del usuario
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: { preferredLanguage },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          preferredLanguage: true,
+        }
+      });
+
+      console.log(`✅ Idioma actualizado exitosamente para usuario ${userId}`);
+
+      return {
+        success: true,
+        message: 'Idioma actualizado exitosamente',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          preferredLanguage: user.preferredLanguage,
+        }
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar idioma del usuario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async getUserLanguage(userId: string) {
+    try {
+      console.log(`🌍 Obteniendo idioma del usuario ${userId}`);
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          preferredLanguage: true,
+        }
+      });
+
+      if (!user) {
+        throw new NotFoundException('Usuario no encontrado');
+      }
+
+      console.log(`✅ Idioma obtenido para usuario ${userId}: ${user.preferredLanguage}`);
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          preferredLanguage: user.preferredLanguage || 'es', // Default a español si no está configurado
+        }
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error al obtener idioma del usuario:', error);
       throw new BadRequestException('Error interno del servidor');
     }
   }
