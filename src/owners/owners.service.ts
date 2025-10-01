@@ -109,6 +109,7 @@ export class OwnersService {
         fechaCreacion: new Date(),
         ultimoPago: null,
         proximoPago: null,
+        defaultLanguage: dto.defaultLanguage || 'es',
       },
     });
 
@@ -1545,6 +1546,7 @@ export class OwnersService {
           fechaCreacion: new Date(),
           ultimoPago: null,
           proximoPago: null,
+          defaultLanguage: dto.defaultLanguage || 'es',
         },
       });
 

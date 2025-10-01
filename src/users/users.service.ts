@@ -420,6 +420,7 @@ export class UsersService {
           colorSecundario: dto.colorSecundario,
           estado: dto.estado,
           administradorId: userId,
+          defaultLanguage: dto.defaultLanguage || 'es',
       },
     });
 

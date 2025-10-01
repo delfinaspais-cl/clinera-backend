@@ -7,6 +7,7 @@ import {
   IsEmail,
   MinLength,
   Matches,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -98,6 +99,11 @@ export class CreateClinicaDto {
   @IsString()
   @IsOptional()
   estado?: string = 'activa';
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['es', 'pt-BR', 'en'], { message: 'El idioma debe ser uno de: es, pt-BR, en' })
+  defaultLanguage?: string = 'es';
 
   // Campo adicional para admin
   @IsOptional()
