@@ -26,9 +26,9 @@ export class PatientsService {
 
     return this.prisma.patient.findMany({
       where: {
-        user: { clinicaId: clinica.id },
+        clinicaId: clinica.id,
       },
-      include: { user: true },
+      include: { clinica: true },
     });
   }
 
@@ -36,8 +36,6 @@ export class PatientsService {
     try {
       console.log('🔍 Creando paciente para clínica:', clinicaUrl);
       console.log('🔍 DTO recibido:', JSON.stringify(dto, null, 2));
-      console.log('🔍 Tipo de datos DTO:', typeof dto);
-      console.log('🔍 Claves del DTO:', Object.keys(dto));
       
       const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
@@ -45,36 +43,6 @@ export class PatientsService {
       
       console.log('🔍 Clínica encontrada:', clinica ? 'Sí' : 'No');
       if (!clinica) throw new NotFoundException('Clínica no encontrada');
-
-      // Validar que el email esté presente y sea válido
-      if (!dto.email || dto.email.trim() === '') {
-        throw new BadRequestException('El email es requerido');
-      }
-
-      // Validar formato básico de email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(dto.email)) {
-        throw new BadRequestException('El formato del email no es válido');
-      }
-
-      // Generar contraseña automáticamente
-      const password = this.generateRandomPassword();
-
-      // Verificar si ya existe un usuario con ese email en esta clínica
-      const existingUser = await this.prisma.user.findFirst({
-        where: { 
-          email: dto.email,
-          clinicaId: clinica.id
-        },
-      });
-
-      console.log('🔍 Usuario existente:', existingUser ? 'Sí' : 'No');
-      if (existingUser) {
-        throw new BadRequestException('Ya existe un usuario con este email');
-      }
-
-      console.log('🔍 Encriptando contraseña...');
-      const hashedPassword = await bcrypt.hash(password, 10);
 
       // Usar telefono si está disponible, sino phone
       const phoneNumber = dto.telefono || dto.phone;
@@ -95,33 +63,30 @@ export class PatientsService {
         throw new BadRequestException('El teléfono del paciente es requerido');
       }
 
-      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
-      console.log('🔍 Datos del usuario a crear:', {
-        email: dto.email,
-        password: '***',
-        role: 'PATIENT',
-        name: patientName,
-        phone: phoneNumber,
-        location: dto.direccion,
-        clinicaId: clinica.id
-      });
+      // Validar email si se proporciona
+      let patientEmail = dto.email || null;
+      if (patientEmail && patientEmail.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(patientEmail)) {
+          throw new BadRequestException('El formato del email no es válido');
+        }
+      }
 
-      console.log('🔍 Creando usuario...');
-      const user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          role: 'PATIENT',
-          name: patientName,
-          phone: phoneNumber,
-          location: dto.direccion,
-          clinicaId: clinica.id,
-        },
-      });
+      // Verificar si ya existe un paciente con ese email en esta clínica (si se proporciona email)
+      if (patientEmail) {
+        const existingPatient = await this.prisma.patient.findFirst({
+          where: { 
+            email: patientEmail,
+            clinicaId: clinica.id
+          },
+        });
 
-      console.log('🔍 Usuario creado con ID:', user.id);
+        if (existingPatient) {
+          throw new BadRequestException('Ya existe un paciente con este email');
+        }
+      }
 
-      console.log('🔍 Creando paciente...');
+      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Email:', patientEmail, 'Fecha nacimiento:', birthDate);
       
       // Combinar notas existentes con documento si está presente
       let combinedNotes = dto.notes || '';
@@ -131,15 +96,18 @@ export class PatientsService {
           `Documento: ${dto.documento}`;
       }
       
+      console.log('🔍 Creando paciente directamente en la tabla patients...');
+      
       const patient = await this.prisma.patient.create({
         data: {
           name: patientName,
+          email: patientEmail,
           birthDate: birthDate ? new Date(birthDate) : null,
           phone: phoneNumber,
           notes: combinedNotes,
-          userId: user.id,
+          clinicaId: clinica.id,
         },
-        include: { user: true },
+        include: { clinica: true },
       });
 
       console.log('🔍 Paciente creado exitosamente con ID:', patient.id);
@@ -172,13 +140,22 @@ export class PatientsService {
   }
 
   async findOne(clinicaUrl: string, id: string) {
-    const paciente = await this.prisma.patient.findFirst({
-      where: { id },
-      include: { user: true },
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl },
     });
+
+    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id,
+        clinicaId: clinica.id,
+      },
+      include: { clinica: true },
+    });
+    
     if (!paciente) throw new NotFoundException('Paciente no encontrado');
 
-    // Opcional: validar que pertenezca a la clínica
     return paciente;
   }
 
@@ -188,12 +165,25 @@ export class PatientsService {
     });
 
     if (!clinica) {
-      throw new Error('Clínica no encontrada');
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente pertenece a esta clínica
+    const existingPatient = await this.prisma.patient.findFirst({
+      where: { 
+        id,
+        clinicaId: clinica.id,
+      },
+    });
+
+    if (!existingPatient) {
+      throw new NotFoundException('Paciente no encontrado en esta clínica');
     }
 
     return this.prisma.patient.update({
       where: { id },
       data: dto,
+      include: { clinica: true },
     });
   }
 
@@ -211,8 +201,11 @@ export class PatientsService {
 
       // Buscar el paciente existente
       const existingPatient = await this.prisma.patient.findFirst({
-        where: { id },
-        include: { user: true },
+        where: { 
+          id,
+          clinicaId: clinica.id,
+        },
+        include: { clinica: true },
       });
 
       console.log('🔍 Paciente encontrado:', existingPatient ? 'Sí' : 'No');
@@ -222,34 +215,27 @@ export class PatientsService {
       const phoneNumber = dto.telefono || dto.phone;
       const birthDate = dto.fechaNacimiento || dto.birthDate || dto.fecha_nacimiento;
       const patientName = dto.name || dto.nombre;
+      const patientEmail = dto.email || null;
 
       // Validar que el nombre no esté vacío si se proporciona
       if (patientName && patientName.trim() === '') {
         throw new BadRequestException('El nombre del paciente no puede estar vacío');
       }
 
-      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Fecha nacimiento:', birthDate);
-
-      // Preparar datos de actualización para el usuario
-      const userUpdateData: any = {};
-      if (dto.email) userUpdateData.email = dto.email;
-      if (patientName) userUpdateData.name = patientName;
-      if (phoneNumber) userUpdateData.phone = phoneNumber;
-      if (dto.direccion) userUpdateData.location = dto.direccion;
-
-      // Actualizar usuario si hay datos para actualizar
-      if (Object.keys(userUpdateData).length > 0) {
-        console.log('🔍 Actualizando usuario...');
-        await this.prisma.user.update({
-          where: { id: existingPatient.userId },
-          data: userUpdateData,
-        });
-        console.log('🔍 Usuario actualizado exitosamente');
+      // Validar email si se proporciona
+      if (patientEmail && patientEmail.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(patientEmail)) {
+          throw new BadRequestException('El formato del email no es válido');
+        }
       }
+
+      console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Email:', patientEmail, 'Fecha nacimiento:', birthDate);
 
       // Preparar datos de actualización para el paciente
       const patientUpdateData: any = {};
       if (patientName) patientUpdateData.name = patientName;
+      if (patientEmail !== null) patientUpdateData.email = patientEmail;
       if (birthDate) patientUpdateData.birthDate = new Date(birthDate);
       if (phoneNumber) patientUpdateData.phone = phoneNumber;
       
@@ -271,7 +257,7 @@ export class PatientsService {
         const updatedPatient = await this.prisma.patient.update({
           where: { id },
           data: patientUpdateData,
-          include: { user: true },
+          include: { clinica: true },
         });
         console.log('🔍 Paciente actualizado exitosamente con ID:', updatedPatient.id);
 
@@ -303,56 +289,37 @@ export class PatientsService {
     });
 
     if (!clinica) {
-      throw new Error('Clínica no encontrada');
+      throw new NotFoundException('Clínica no encontrada');
     }
 
     // Verificar que el paciente pertenece a la clínica
     const patient = await this.prisma.patient.findFirst({
       where: {
         id,
-        user: {
-          clinicaId: clinica.id,
-        },
-      },
-      include: {
-        user: true,
+        clinicaId: clinica.id,
       },
     });
 
     if (!patient) {
-      throw new Error('Paciente no encontrado en esta clínica');
+      throw new NotFoundException('Paciente no encontrado en esta clínica');
     }
 
-    // Eliminar el paciente y su usuario asociado
+    // Eliminar el paciente
     await this.prisma.patient.delete({
       where: { id },
-    });
-
-    await this.prisma.user.delete({
-      where: { id: patient.user.id },
     });
 
     return { message: 'Paciente eliminado correctamente' };
   }
 
   async getMisTurnos(email: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { email },
-      include: {
-        patient: true,
-      },
-    });
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
+    // Buscar paciente por email directamente
     const patient = await this.prisma.patient.findFirst({
-      where: { userId: user.id },
+      where: { email },
     });
 
     if (!patient) {
-      throw new Error('Paciente no encontrado');
+      throw new NotFoundException('Paciente no encontrado');
     }
 
     return this.prisma.turno.findMany({
@@ -379,48 +346,22 @@ export class PatientsService {
 
       // Construir filtros de búsqueda
       const where: any = {
-        user: {
-          clinicaId: clinica.id,
-          role: 'PATIENT',
-        },
+        clinicaId: clinica.id,
       };
 
       // Filtro por nombre
       if (searchDto.nombre) {
-        where.OR = [
-          { name: { contains: searchDto.nombre, mode: 'insensitive' } },
-          {
-            user: { name: { contains: searchDto.nombre, mode: 'insensitive' } },
-          },
-        ];
+        where.name = { contains: searchDto.nombre, mode: 'insensitive' };
       }
 
       // Filtro por email
       if (searchDto.email) {
-        where.user = {
-          ...where.user,
-          email: { contains: searchDto.email, mode: 'insensitive' },
-        };
+        where.email = { contains: searchDto.email, mode: 'insensitive' };
       }
 
       // Filtro por teléfono
       if (searchDto.telefono) {
-        where.OR = [
-          { phone: { contains: searchDto.telefono, mode: 'insensitive' } },
-          {
-            user: {
-              phone: { contains: searchDto.telefono, mode: 'insensitive' },
-            },
-          },
-        ];
-      }
-
-      // Filtro por ubicación
-      if (searchDto.ubicacion) {
-        where.user = {
-          ...where.user,
-          location: { contains: searchDto.ubicacion, mode: 'insensitive' },
-        };
+        where.phone = { contains: searchDto.telefono, mode: 'insensitive' };
       }
 
       // Filtro por fecha de nacimiento
@@ -436,38 +377,19 @@ export class PatientsService {
 
       // Filtro por fecha de creación
       if (searchDto.fechaCreacionDesde || searchDto.fechaCreacionHasta) {
-        where.user = {
-          ...where.user,
-          createdAt: {},
-        };
+        where.createdAt = {};
         if (searchDto.fechaCreacionDesde) {
-          where.user.createdAt.gte = new Date(searchDto.fechaCreacionDesde);
+          where.createdAt.gte = new Date(searchDto.fechaCreacionDesde);
         }
         if (searchDto.fechaCreacionHasta) {
-          where.user.createdAt.lte = new Date(searchDto.fechaCreacionHasta);
+          where.createdAt.lte = new Date(searchDto.fechaCreacionHasta);
         }
-      }
-
-      // Filtro por estado
-      if (searchDto.estado) {
-        where.user = {
-          ...where.user,
-          estado: searchDto.estado,
-        };
       }
 
       // Construir ordenamiento
       const orderBy: any = {};
       if (searchDto.sortBy) {
-        if (searchDto.sortBy === 'name') {
-          orderBy.name = searchDto.sortOrder || 'asc';
-        } else if (searchDto.sortBy === 'email') {
-          orderBy.user = { email: searchDto.sortOrder || 'asc' };
-        } else if (searchDto.sortBy === 'createdAt') {
-          orderBy.user = { createdAt: searchDto.sortOrder || 'asc' };
-        } else {
-          orderBy[searchDto.sortBy] = searchDto.sortOrder || 'asc';
-        }
+        orderBy[searchDto.sortBy] = searchDto.sortOrder || 'asc';
       } else {
         orderBy.name = 'asc';
       }
@@ -482,16 +404,11 @@ export class PatientsService {
         this.prisma.patient.findMany({
           where,
           include: {
-            user: {
+            clinica: {
               select: {
                 id: true,
-                email: true,
                 name: true,
-                phone: true,
-                location: true,
-                estado: true,
-                createdAt: true,
-                updatedAt: true,
+                url: true,
               },
             },
           },
@@ -506,16 +423,14 @@ export class PatientsService {
       const pacientesFormateados = pacientes.map((paciente) => ({
         id: paciente.id,
         nombre: paciente.name,
-        email: paciente.user.email,
-        telefono: paciente.phone || paciente.user.phone,
-        ubicacion: paciente.user.location,
+        email: paciente.email,
+        telefono: paciente.phone,
         fechaNacimiento: paciente.birthDate
           ? paciente.birthDate.toISOString().split('T')[0]
           : null,
         notas: paciente.notes,
-        estado: paciente.user.estado,
-        fechaCreacion: paciente.user.createdAt.toISOString(),
-        fechaActualizacion: paciente.user.updatedAt.toISOString(),
+        fechaCreacion: paciente.createdAt.toISOString(),
+        clinica: paciente.clinica,
       }));
 
       return {
@@ -531,12 +446,10 @@ export class PatientsService {
           nombre: searchDto.nombre,
           email: searchDto.email,
           telefono: searchDto.telefono,
-          ubicacion: searchDto.ubicacion,
           fechaNacimientoDesde: searchDto.fechaNacimientoDesde,
           fechaNacimientoHasta: searchDto.fechaNacimientoHasta,
           fechaCreacionDesde: searchDto.fechaCreacionDesde,
           fechaCreacionHasta: searchDto.fechaCreacionHasta,
-          estado: searchDto.estado,
         },
       };
     } catch (error) {
@@ -548,15 +461,4 @@ export class PatientsService {
     }
   }
 
-  private generateRandomPassword(): string {
-    const length = 8;
-    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let password = '';
-    
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    
-    return password;
-  }
 }

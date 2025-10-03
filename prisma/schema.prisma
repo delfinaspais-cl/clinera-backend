@@ -47,6 +47,7 @@ model Clinica {
   tratamientos           Tratamiento[]
   turnos                 Turno[]
   users                  User[]
+  patients               Patient[]
   ventas                 Venta[]
   whatsappMessages       WhatsAppMessage[]
   whatsappTemplates      WhatsAppTemplate[]
@@ -80,7 +81,6 @@ model User {
   clinicasAdministradas Clinica[]               @relation("ClinicaAdministrador")
   fichasMedicasCreadas  FichaMedicaHistorial[]  @relation("FichaMedicaCreadaPor")
   notificaciones        Notificacion[]          @relation("UserNotifications")
-  patient               Patient?
   professional          Professional?
   pushTokens            PushNotificationToken[]
   clinica               Clinica?                @relation(fields: [clinicaId], references: [id])
@@ -232,15 +232,16 @@ model Notificacion {
 
 model Patient {
   id                     String                 @id @default(uuid())
-  userId                 String                 @unique
   name                   String
+  email                  String?
   birthDate              DateTime?
   phone                  String?
   notes                  String?
+  clinicaId              String
   createdAt              DateTime               @default(now())
+  clinica                Clinica                @relation(fields: [clinicaId], references: [id])
   fichaMedica            FichaMedica?
   fichasMedicasHistorial FichaMedicaHistorial[] @relation("PatientFichaHistorial")
-  user                   User                   @relation(fields: [userId], references: [id])
 }
 
 model ProfessionalEspecialidad {
@@ -706,7 +707,6 @@ model EmailVerificationLimit {
 }
 
 enum Role {
-  PATIENT
   PROFESSIONAL
   ADMIN
   OWNER

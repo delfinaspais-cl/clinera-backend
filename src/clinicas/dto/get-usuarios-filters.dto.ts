@@ -2,7 +2,6 @@ import { IsOptional, IsEnum } from 'class-validator';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export enum UserRole {
-  PATIENT = 'PATIENT',
   PROFESSIONAL = 'PROFESSIONAL',
   ADMIN = 'ADMIN',
   SECRETARY = 'SECRETARY',

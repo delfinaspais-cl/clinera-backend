@@ -143,14 +143,6 @@ export class ClinicasService {
                 }
               }
             },
-            patient: {
-              select: {
-                id: true,
-                name: true,
-                phone: true,
-                birthDate: true
-              }
-            },
           },
         }),
         this.prisma.user.count({ where }),
@@ -169,16 +161,8 @@ export class ClinicasService {
               .join(', ');
           }
 
-          // Contar turnos para pacientes
+          // Contar turnos para usuarios (ya no hay pacientes en users)
           let turnosCount = 0;
-          if (user.role === 'PATIENT') {
-            turnosCount = await this.prisma.turno.count({
-              where: {
-                email: user.email,
-                clinicaId: clinica.id,
-              },
-            });
-          }
 
           // Contar pacientes para profesionales
           let pacientesCount = 0;
@@ -194,28 +178,9 @@ export class ClinicasService {
             pacientesCount = turnosUnicos.length;
           }
 
-          // Calcular edad para pacientes
+          // Calcular edad para usuarios (ya no hay pacientes en users)
           let edad: number | null = null;
           let telefono = user.phone || null;
-          
-          if (user.role === 'PATIENT' && user.patient) {
-            // Usar teléfono del paciente si está disponible, sino el del usuario
-            telefono = user.patient.phone || user.phone || null;
-            
-            // Calcular edad desde birthDate
-            if (user.patient.birthDate) {
-              const today = new Date();
-              const birthDate = new Date(user.patient.birthDate);
-              const ageInYears = today.getFullYear() - birthDate.getFullYear();
-              const monthDiff = today.getMonth() - birthDate.getMonth();
-              
-              if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-                edad = (ageInYears - 1) as number;
-              } else {
-                edad = ageInYears as number;
-              }
-            }
-          }
 
           return {
             id: user.id,
@@ -236,6 +201,7 @@ export class ClinicasService {
 
       return {
         success: true,
+        message: "FILTRO DE PACIENTES ACTIVADO - Los pacientes han sido excluidos de esta lista",
         usuarios: usuariosConTurnos,
         pagination: {
           page,
@@ -415,7 +381,6 @@ export class ClinicasService {
         where: { id: userId },
         include: {
           professional: true,
-          patient: true,
         },
       });
 
@@ -451,12 +416,7 @@ export class ClinicasService {
         });
       }
 
-      if (usuario.role === 'PATIENT' && usuario.patient) {
-        // Eliminar el paciente
-        await this.prisma.patient.delete({
-          where: { id: usuario.patient.id },
-        });
-      }
+      // Ya no hay usuarios con rol PATIENT, esta lógica se eliminó
 
       // Eliminar turnos relacionados
       // await this.prisma.turno.deleteMany({
@@ -1810,23 +1770,14 @@ export class ClinicasService {
       // Verificar si ya existe un paciente con ese email
       const pacienteExistente = await this.prisma.patient.findFirst({
         where: {
-          user: {
-            email: dto.email,
-          },
+          email: dto.email,
+          clinicaId: clinica.id,
         },
         include: {
-          user: {
+          clinica: {
             select: {
-              id: true,
               name: true,
-              email: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -1837,38 +1788,24 @@ export class ClinicasService {
         console.log('Paciente existente:', {
           id: pacienteExistente.id,
           name: pacienteExistente.name,
-          email: pacienteExistente.user.email,
-          clinica: pacienteExistente.user.clinica?.name || 'Sin clínica',
+          email: pacienteExistente.email,
+          clinica: pacienteExistente.clinica?.name || 'Sin clínica',
         });
       } else {
         console.log('🆕 Paciente no existe, se creará paciente + turno para:', dto.email);
         
-        // Crear paciente automáticamente ya que no existe
+        // Crear paciente automáticamente ya que no existe (SOLO PACIENTE, NO USUARIO)
         try {
-          // Crear el usuario primero
-          const hashedPassword = await bcrypt.hash('defaultPassword123', 10);
-          
-          const user = await this.prisma.user.create({
-            data: {
-              email: dto.email,
-              password: hashedPassword,
-              role: 'PATIENT',
-              name: dto.paciente,
-              phone: dto.telefono,
-              clinicaId: clinica.id,
-            },
-          }); 
-
-          // Crear el paciente
           const paciente = await this.prisma.patient.create({
             data: {
               name: dto.paciente,
+              email: dto.email,
               phone: dto.telefono,
-              userId: user.id,
+              clinicaId: clinica.id,
             },
           });
 
-          console.log('✅ Usuario y paciente creados automáticamente:', { userId: user.id, pacienteId: paciente.id });
+          console.log('✅ Paciente creado automáticamente:', { pacienteId: paciente.id });
         } catch (error) {
           console.error('❌ Error al crear paciente automáticamente:', error);
           // Si falla la creación del paciente, lanzar error
