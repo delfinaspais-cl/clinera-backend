@@ -24,12 +24,31 @@ export class PatientsService {
 
     if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    return this.prisma.patient.findMany({
+    const pacientes = await this.prisma.patient.findMany({
       where: {
         clinicaId: clinica.id,
       },
       include: { clinica: true },
     });
+
+    // Agregar conteo de turnos para cada paciente
+    const pacientesConTurnos = await Promise.all(
+      pacientes.map(async (paciente) => {
+        const turnosCount = await this.prisma.turno.count({
+          where: {
+            email: paciente.email,
+            clinicaId: clinica.id,
+          },
+        });
+
+        return {
+          ...paciente,
+          totalTurnos: turnosCount,
+        };
+      })
+    );
+
+    return pacientesConTurnos;
   }
 
   async create(clinicaUrl: string, dto: CreatePatientDto) {
