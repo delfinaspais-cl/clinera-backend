@@ -56,22 +56,11 @@ export class GlobalPatientsController {
         take: limitNum,
         skip: offsetNum,
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
               name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -107,22 +96,11 @@ export class GlobalPatientsController {
       const paciente = await this.prisma.patient.findUnique({
         where: { id },
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
               name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -162,44 +140,22 @@ export class GlobalPatientsController {
         throw new BadRequestException('Clínica no encontrada');
       }
 
-      // Crear usuario primero
-      const user = await this.prisma.user.create({
-        data: {
-          email: createPacienteDto.email,
-          password: createPacienteDto.password || 'defaultPassword123', // En producción, generar password seguro
-          name: createPacienteDto.name,
-          phone: createPacienteDto.phone,
-          role: 'PATIENT',
-          clinicaId: createPacienteDto.clinicaId,
-        },
-      });
-
-      // Crear paciente
+      // Crear paciente directamente (NO usuario)
       const paciente = await this.prisma.patient.create({
         data: {
-          userId: user.id,
           name: createPacienteDto.name,
+          email: createPacienteDto.email,
           birthDate: createPacienteDto.birthDate ? new Date(createPacienteDto.birthDate) : null,
           phone: createPacienteDto.phone,
           notes: createPacienteDto.notes,
+          clinicaId: createPacienteDto.clinicaId,
         },
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
               name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -226,7 +182,7 @@ export class GlobalPatientsController {
       const paciente = await this.prisma.patient.findUnique({
         where: { id },
         include: {
-          user: true,
+          clinica: true,
         },
       });
 
@@ -244,22 +200,11 @@ export class GlobalPatientsController {
           notes: updatePacienteDto.notes,
         },
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
               name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -268,7 +213,7 @@ export class GlobalPatientsController {
       // Actualizar datos del usuario si se proporcionan
       if (updatePacienteDto.email || updatePacienteDto.name || updatePacienteDto.phone) {
         await this.prisma.user.update({
-          where: { id: paciente.userId },
+          where: { id: paciente.id },
           data: {
             email: updatePacienteDto.email,
             name: updatePacienteDto.name,
@@ -301,7 +246,7 @@ export class GlobalPatientsController {
       const paciente = await this.prisma.patient.findUnique({
         where: { id },
         include: {
-          user: true,
+          clinica: true,
         },
       });
 
@@ -345,29 +290,16 @@ export class GlobalPatientsController {
 
       const pacientes = await this.prisma.patient.findMany({
         where: {
-          user: {
-            clinicaId: clinicaId,
-          },
+          clinicaId: clinicaId,
         },
         take: limitNum,
         skip: offsetNum,
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
               name: true,
-              email: true,
-              phone: true,
-              role: true,
-              estado: true,
-              clinicaId: true,
-              clinica: {
-                select: {
-                  id: true,
-                  name: true,
-                  url: true,
-                },
-              },
+              url: true,
             },
           },
         },
@@ -385,9 +317,7 @@ export class GlobalPatientsController {
           offset: offsetNum,
           total: await this.prisma.patient.count({
             where: {
-              user: {
-                clinicaId: clinicaId,
-              },
+              clinicaId: clinicaId,
             },
           }),
         },
@@ -420,20 +350,14 @@ export class GlobalPatientsController {
       const pacientesActivos = await this.prisma.patient.count({
         where: {
           ...where,
-          user: {
-            ...where.user,
-            estado: 'activo',
-          },
+          // Los pacientes siempre están activos (no tienen estado)
         },
       });
 
       const pacientesInactivos = await this.prisma.patient.count({
         where: {
           ...where,
-          user: {
-            ...where.user,
-            estado: 'inactivo',
-          },
+          // Los pacientes no tienen estado inactivo
         },
       });
 
@@ -441,9 +365,10 @@ export class GlobalPatientsController {
       const pacientesConTurnos = await this.prisma.patient.findMany({
         where,
         include: {
-          user: {
+          clinica: {
             select: {
-              email: true,
+              id: true,
+              name: true,
             },
           },
         },
@@ -454,14 +379,14 @@ export class GlobalPatientsController {
         pacientesConTurnos.map(async (paciente) => {
           const turnosCount = await this.prisma.turno.count({
             where: {
-              email: paciente.user.email,
+              email: paciente.email || '',
               ...(clinicaId && { clinicaId }),
             },
           });
           return {
             pacienteId: paciente.id,
             pacienteName: paciente.name,
-            email: paciente.user.email,
+            email: paciente.email,
             turnosCount,
           };
         })

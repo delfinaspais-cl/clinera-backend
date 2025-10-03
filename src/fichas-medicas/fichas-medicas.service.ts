@@ -31,9 +31,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -136,9 +134,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -207,9 +203,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -380,9 +374,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -478,9 +470,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -540,9 +530,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 
@@ -612,9 +600,7 @@ export class FichasMedicasService {
     const paciente = await this.prisma.patient.findFirst({
       where: { 
         id: pacienteId,
-        user: {
-          clinicaId: clinica.id
-        }
+        clinicaId: clinica.id
       }
     });
 

@@ -39,9 +39,7 @@ export class ClinicPatientsController {
       }
 
       const where = {
-        user: {
-          clinicaId: clinica.id,
-        },
+        clinicaId: clinica.id,
       };
 
       // Contar total de pacientes
@@ -51,30 +49,19 @@ export class ClinicPatientsController {
       const pacientesActivos = await this.prisma.patient.count({
         where: {
           ...where,
-          user: {
-            ...where.user,
-            estado: 'activo',
-          },
+          // Los pacientes siempre están activos (no tienen estado)
         },
       });
 
-      const pacientesInactivos = await this.prisma.patient.count({
-        where: {
-          ...where,
-          user: {
-            ...where.user,
-            estado: 'inactivo',
-          },
-        },
-      });
+      const pacientesInactivos = 0; // Los pacientes no tienen estado inactivo
 
       // Obtener pacientes con turnos
       const pacientesConTurnos = await this.prisma.patient.findMany({
         where,
         include: {
-          user: {
+          clinica: {
             select: {
-              email: true,
+              name: true,
             },
           },
         },
@@ -85,14 +72,14 @@ export class ClinicPatientsController {
         pacientesConTurnos.map(async (paciente) => {
           const turnosCount = await this.prisma.turno.count({
             where: {
-              email: paciente.user.email,
+              email: paciente.email || '',
               clinicaId: clinica.id,
             },
           });
           return {
             pacienteId: paciente.id,
             pacienteName: paciente.name,
-            email: paciente.user.email,
+            email: paciente.email,
             turnosCount,
           };
         })
@@ -162,10 +149,10 @@ export class ClinicPatientsController {
       const paciente = await this.prisma.patient.findUnique({
         where: { id: pacienteId },
         include: {
-          user: {
+          clinica: {
             select: {
-              email: true,
-              clinicaId: true,
+              id: true,
+              name: true,
             },
           },
         },
@@ -176,12 +163,12 @@ export class ClinicPatientsController {
       }
 
       // Verificar que el paciente pertenece a la clínica
-      if (paciente.user.clinicaId !== clinica.id) {
+      if (paciente.clinicaId !== clinica.id) {
         throw new NotFoundException('Paciente no encontrado en esta clínica');
       }
 
       const where: any = { 
-        email: paciente.user.email,
+        email: paciente.email,
         clinicaId: clinica.id,
       };
       if (estado) where.estado = estado;
@@ -286,7 +273,7 @@ export class ClinicPatientsController {
         paciente: {
           id: paciente.id,
           name: paciente.name,
-          email: paciente.user.email,
+          email: paciente.email,
         },
         clinica: {
           id: clinica.id,

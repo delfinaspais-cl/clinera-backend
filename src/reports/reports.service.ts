@@ -65,9 +65,7 @@ export class ReportsService {
 
     const pacientes = await this.prisma.patient.findMany({
       where: {
-        user: {
-          clinicaId: clinica.id,
-        },
+        clinicaId: clinica.id,
       },
       select: {
         createdAt: true,
@@ -156,25 +154,18 @@ export class ReportsService {
     const clinica = await this.getClinicaInfo(clinicaUrl);
 
     const where: any = {
-      user: {
-        clinicaId: clinica.id,
-        role: 'PATIENT',
-      },
+      clinicaId: clinica.id,
     };
 
-    if (filters.estado) {
-      where.user.estado = filters.estado;
-    }
+    // Los pacientes no tienen estado, siempre están activos
 
     const pacientes = await this.prisma.patient.findMany({
       where,
       include: {
-        user: {
+        clinica: {
           select: {
-            email: true,
-            phone: true,
-            location: true,
-            estado: true,
+            id: true,
+            name: true,
           },
         },
       },

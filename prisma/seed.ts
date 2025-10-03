@@ -42,7 +42,7 @@ async function main() {
   });
 
   // 4. Crea usuarios por rol
-  const roles = ['ADMIN', 'SECRETARY', 'PROFESSIONAL', 'PATIENT'] as const;
+  const roles = ['ADMIN', 'SECRETARY', 'PROFESSIONAL'] as const;
 
   for (const role of roles) {
     for (let i = 1; i <= 2; i++) {
@@ -101,20 +101,19 @@ async function main() {
     });
   }
 
-  // 7. Crea pacientes (relacionados con usuarios de rol PATIENT)
-  const patientUsers = await prisma.user.findMany({
-    where: { role: 'PATIENT' },
-  });
-  for (const user of patientUsers) {
+  // 7. Crea pacientes independientes (NO relacionados con usuarios)
+  for (let i = 1; i <= 5; i++) {
     await prisma.patient.upsert({
-      where: { userId: user.id },
+      where: { id: `patient-${i}-id` },
       update: {},
       create: {
-        userId: user.id,
-        name: user.name ?? 'Paciente sin nombre',
+        id: `patient-${i}-id`,
+        name: `Paciente ${i}`,
+        email: `paciente${i}@clinera.io`,
         birthDate: new Date('1990-01-01'),
-        phone: user.phone,
+        phone: `+54 11 6666-66${i}${i}`,
         notes: 'Paciente de prueba',
+        clinicaId: clinica.id,
       },
     });
   }

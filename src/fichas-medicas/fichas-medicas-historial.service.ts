@@ -91,7 +91,7 @@ export class FichasMedicasHistorialService {
       paciente: {
         id: paciente.id,
         nombre: paciente.name,
-        email: paciente.user.email
+        email: paciente.email || ''
       },
       versiones: versionesMapeadas,
       totalVersiones: versiones.length
@@ -655,11 +655,7 @@ export class FichasMedicasHistorialService {
     const fichas = await this.prisma.fichaMedicaHistorial.findMany({
       where,
       include: {
-        paciente: {
-          include: {
-            user: true
-          }
-        },
+        paciente: true,
         creadoPorUser: true
       },
       orderBy: { fechaCreacion: 'desc' }
@@ -670,7 +666,7 @@ export class FichasMedicasHistorialService {
       paciente: {
         id: ficha.paciente.id,
         nombre: ficha.paciente.name,
-        email: ficha.paciente.user.email
+        email: ficha.paciente.email
       },
       version: ficha.version,
       fechaCreacion: ficha.fechaCreacion.toISOString(),
@@ -740,11 +736,7 @@ export class FichasMedicasHistorialService {
         }
       },
       include: {
-        paciente: {
-          include: {
-            user: true
-          }
-        }
+        paciente: true
       },
       orderBy: { fechaCreacion: 'desc' }
     });
@@ -752,7 +744,7 @@ export class FichasMedicasHistorialService {
     return fichas.map(ficha => ({
       id: ficha.paciente.id,
       nombre: ficha.paciente.name,
-      email: ficha.paciente.user.email,
+      email: ficha.paciente.email || '',
       ultimaActualizacion: ficha.fechaCreacion.toISOString(),
       versionActual: ficha.version
     }));
@@ -794,12 +786,10 @@ export class FichasMedicasHistorialService {
     const paciente = await this.prisma.patient.findFirst({
       where: {
         id: pacienteId,
-        user: {
-          clinicaId
-        }
+        clinicaId
       },
       include: {
-        user: true
+        clinica: true
       }
     });
 

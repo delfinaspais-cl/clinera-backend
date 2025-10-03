@@ -556,13 +556,11 @@ export class PublicController {
 
       // Construir filtros de búsqueda
       const where: any = {
-        user: {
-          clinicaId: clinica.id,
-        },
+        clinicaId: clinica.id,
       };
 
       if (email) {
-        where.user.email = email;
+        where.email = email;
       }
       if (dni) {
         where.dni = dni;
@@ -575,12 +573,10 @@ export class PublicController {
       const patients = await this.prisma.patient.findMany({
         where,
         include: {
-          user: {
+          clinica: {
             select: {
               id: true,
-              email: true,
               name: true,
-              phone: true,
             },
           },
         },
