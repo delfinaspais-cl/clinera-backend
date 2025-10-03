@@ -668,10 +668,9 @@ export class GlobalTurnosController {
       const paciente = await this.prisma.patient.findUnique({
         where: { id: pacienteId },
         include: {
-          user: {
+          clinica: {
             select: {
-              email: true,
-              clinicaId: true,
+              id: true,
             },
           },
         },
@@ -681,7 +680,7 @@ export class GlobalTurnosController {
         throw new NotFoundException('Paciente no encontrado');
       }
 
-      const where: any = { email: paciente.user.email };
+      const where: any = { email: paciente.email };
       if (clinicaId) where.clinicaId = clinicaId;
       if (estado) where.estado = estado;
 
@@ -718,7 +717,7 @@ export class GlobalTurnosController {
         paciente: {
           id: paciente.id,
           name: paciente.name,
-          email: paciente.user.email,
+          email: paciente.email,
         },
       };
     } catch (error) {

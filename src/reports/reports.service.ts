@@ -183,10 +183,10 @@ export class ReportsService {
 
     return pacientes.map((paciente) => ({
       nombre: paciente.name,
-      email: paciente.user.email,
-      telefono: paciente.phone || paciente.user.phone,
-      ubicacion: paciente.user.location,
-      estado: paciente.user.estado,
+      email: paciente.email,
+      telefono: paciente.phone,
+      ubicacion: null, // Ya no hay ubicación en pacientes
+      estado: 'activo', // Los pacientes siempre están activos
       fechaNacimiento: paciente.birthDate
         ? paciente.birthDate.toISOString().split('T')[0]
         : null,
