@@ -36,7 +36,7 @@ export class PatientsService {
       pacientes.map(async (paciente) => {
         const turnosCount = await this.prisma.turno.count({
           where: {
-            email: paciente.email,
+            email: paciente.email || '',
             clinicaId: clinica.id,
           },
         });
