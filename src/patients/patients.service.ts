@@ -34,12 +34,22 @@ export class PatientsService {
     // Agregar conteo de turnos para cada paciente
     const pacientesConTurnos = await Promise.all(
       pacientes.map(async (paciente) => {
-        const turnosCount = await this.prisma.turno.count({
-          where: {
-            email: paciente.email || '',
-            clinicaId: clinica.id,
-          },
-        });
+        let turnosCount = 0;
+        
+        console.log(`🔍 [DEBUG] Contando turnos para paciente: ${paciente.name} (${paciente.email})`);
+        
+        // Solo contar turnos si el paciente tiene email
+        if (paciente.email) {
+          turnosCount = await this.prisma.turno.count({
+            where: {
+              email: paciente.email,
+              clinicaId: clinica.id,
+            },
+          });
+          console.log(`🔍 [DEBUG] Paciente ${paciente.name}: ${turnosCount} turnos encontrados`);
+        } else {
+          console.log(`🔍 [DEBUG] Paciente ${paciente.name}: Sin email, no se cuentan turnos`);
+        }
 
         return {
           ...paciente,
