@@ -18,8 +18,7 @@ export class PrismaService
           url: url + '?connection_limit=5&pool_timeout=20&connect_timeout=60'
         } 
       },
-      log: ['error'], // Solo logs de error
-      errorFormat: 'minimal'
+      log: ['error'] as const // Solo logs de error
     } : {};
 
     super(configOptions);
