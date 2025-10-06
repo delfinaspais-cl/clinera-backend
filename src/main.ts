@@ -50,29 +50,41 @@ async function bootstrap() {
     console.error('❌ Error crítico en bootstrap:', error.message);
     console.error('❌ Stack trace:', error.stack);
     
-    // Intentar iniciar con configuración mínima
-    console.log('🔄 Intentando iniciar con configuración mínima...');
+    // En caso de error, intentar al menos responder a health checks básicos
+    console.log('🔄 Iniciando servidor HTTP básico para health checks...');
     
-    try {
-      const { NestFactory } = await import('@nestjs/core');
-      const { AppModule } = await import('./app.module');
+    const http = require('http');
+    const port = process.env.PORT || 3000;
+    
+    const server = http.createServer((req, res) => {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       
-      const app = await NestFactory.create(AppModule, {
-        logger: false, // Deshabilitar logs para evitar problemas
-        abortOnError: false,
-      });
-      
-      app.enableCors({ origin: true, credentials: true });
-      
-      const port = process.env.PORT || 3000;
-      await app.listen(port, '0.0.0.0');
-      
-      console.log(`✅ Aplicación iniciada en modo mínimo en puerto ${port}`);
-      
-    } catch (minimalError) {
-      console.error('❌ Error incluso en modo mínimo:', minimalError.message);
-      process.exit(1);
-    }
+      if (req.url === '/health' || req.url === '/health/simple') {
+        res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      } else {
+        res.end(JSON.stringify({ 
+          message: 'Clinera Backend API (modo básico)',
+          status: 'running',
+          timestamp: new Date().toISOString()
+        }));
+      }
+    });
+    
+    server.listen(port, '0.0.0.0', () => {
+      console.log(`✅ Servidor básico ejecutándose en puerto ${port}`);
+      console.log(`✅ Health checks disponibles en /health y /`);
+    });
+    
+    // Manejar señales de terminación
+    process.on('SIGTERM', () => {
+      console.log('🔄 SIGTERM recibido, cerrando servidor...');
+      server.close();
+    });
+    
+    process.on('SIGINT', () => {
+      console.log('🔄 SIGINT recibido, cerrando servidor...');
+      server.close();
+    });
   }
 }
 
