@@ -18,6 +18,7 @@ import { PushNotificationsModule } from './push-notifications/push-notifications
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { ContactosModule } from './contactos/contactos.module';
 import { EmailModule } from './email/email.module';
+import { HealthModule } from './health/health.module';
 import { PlansModule } from './plans/plans.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
@@ -64,6 +65,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     WhatsAppModule,
     ContactosModule,
     EmailModule,
+    HealthModule,
     PlansModule,
     SubscriptionsModule,
     FichasMedicasModule,
