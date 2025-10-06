@@ -32,7 +32,6 @@ export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Listar pacientes con paginación' })
   @ApiResponse({ status: 200, description: 'Lista de pacientes obtenida exitosamente' })
   @ApiQuery({ name: 'page', required: false, description: 'Número de página' })
