@@ -509,6 +509,9 @@ export class GlobalTurnosController {
         throw new BadRequestException('Clínica no encontrada');
       }
 
+      // Generar token único de confirmación
+      const confirmationToken = this.generateConfirmationToken();
+
       // Crear el turno con el schema correcto
       const turno = await this.prisma.turno.create({
         data: {
@@ -521,6 +524,7 @@ export class GlobalTurnosController {
           motivo: createTurnoDto.motivo || 'Consulta',
           clinicaId: clinica.id,
           estado: 'pendiente',
+          confirmationToken: confirmationToken,
         },
         include: {
           clinica: {
@@ -528,6 +532,8 @@ export class GlobalTurnosController {
               id: true,
               name: true,
               url: true,
+              phone: true,
+              email: true,
             },
           },
         },
@@ -544,10 +550,13 @@ export class GlobalTurnosController {
         },
       });
 
+      // Enviar email de confirmación al paciente
+      await this.sendConfirmationEmail(turno);
+
       return {
         success: true,
         data: turno,
-        message: 'Turno público creado exitosamente. Nos pondremos en contacto contigo pronto.',
+        message: 'Turno público creado exitosamente. Revisa tu email para confirmar la cita.',
       };
     } catch (error) {
       console.error('Error creando turno público:', error);
@@ -788,6 +797,54 @@ export class GlobalTurnosController {
         error: error.message || 'Error interno del servidor',
         code: 'EMAIL_SEND_FAILED'
       };
+    }
+  }
+
+  // Método helper para generar token de confirmación
+  private generateConfirmationToken(): string {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}_${random}`;
+  }
+
+  // Método helper para enviar email de confirmación
+  private async sendConfirmationEmail(turno: any): Promise<void> {
+    try {
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const confirmationUrl = `${baseUrl}/confirmar-cita/${turno.confirmationToken}`;
+      
+      const emailData = {
+        to: turno.email,
+        subject: `Confirma tu cita - ${turno.clinica.name}`,
+        template: 'appointment-confirmation',
+        data: {
+          paciente: turno.paciente,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          hora: turno.hora,
+          clinica: turno.clinica.name,
+          telefonoClinica: turno.clinica.phone,
+          emailClinica: turno.clinica.email,
+          confirmationUrl: confirmationUrl,
+          motivo: turno.motivo,
+        },
+      };
+
+      const result = await this.emailService.sendEmail(emailData);
+      
+      if (result.success) {
+        console.log(`✅ Email de confirmación enviado a ${turno.email}`);
+      } else {
+        console.error(`❌ Error enviando email de confirmación: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Error en sendConfirmationEmail:', error);
+      // No lanzar error para no afectar el flujo principal
     }
   }
 } 

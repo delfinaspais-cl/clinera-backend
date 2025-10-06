@@ -32,6 +32,7 @@ import { OwnersService } from './owners/owners.service';
 // Importar los nuevos controladores globales
 import { GlobalClinicasController } from './clinicas/global-clinicas.controller';
 import { GlobalTurnosController } from './turnos/global-turnos.controller';
+import { PublicTurnosController } from './turnos/public-turnos.controller';
 import { GlobalPatientsController } from './patients/global-patients.controller';
 import { GlobalProfessionalsController } from './professionals/global-professionals.controller';
 import { GlobalNotificationsController } from './notifications/global-notifications.controller';
@@ -76,6 +77,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     AppController, 
     GlobalClinicasController,
     GlobalTurnosController,
+    PublicTurnosController,
     GlobalPatientsController,
     GlobalProfessionalsController,
     GlobalNotificationsController,

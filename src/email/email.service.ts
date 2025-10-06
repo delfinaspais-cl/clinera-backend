@@ -111,6 +111,8 @@ export class EmailService {
         return this.getAdminCredentialsTemplate(data);
       case 'email-verification':
         return this.getEmailVerificationTemplate(data);
+      case 'appointment-confirmation':
+        return this.getAppointmentConfirmationTemplate(data);
       default:
         throw new Error(`Template '${template}' no encontrado`);
     }
@@ -900,5 +902,75 @@ export class EmailService {
       // Fallback: enlace básico sin parámetros
       return 'https://calendar.google.com/calendar/render?action=TEMPLATE';
     }
+  }
+
+  private getAppointmentConfirmationTemplate(data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #3B82F6; margin: 0;">${data.clinica}</h1>
+            <p style="color: #6B7280; margin: 10px 0 0 0;">Confirmación de Cita</p>
+          </div>
+          
+          <h2 style="color: #1F2937; margin-bottom: 20px;">¡Tu cita está pendiente de confirmación!</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hola <strong>${data.paciente}</strong>,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hemos recibido tu solicitud de cita médica. Para completar el proceso, necesitamos que confirmes tu asistencia.
+          </p>
+          
+          <div style="background-color: #F3F4F6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">Detalles de tu cita:</h3>
+            <p style="color: #374151; margin: 5px 0;"><strong>Paciente:</strong> ${data.paciente}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Doctor:</strong> ${data.doctor}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${data.fecha}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Hora:</strong> ${data.hora}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Motivo:</strong> ${data.motivo}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Clínica:</strong> ${data.clinica}</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${data.confirmationUrl}" 
+               style="background-color: #10B981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              ✅ Confirmar Cita
+            </a>
+          </div>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${data.confirmationUrl.replace('/confirmar-cita/', '/cancelar-cita/')}" 
+               style="color: #EF4444; text-decoration: none; font-size: 14px;">
+              ❌ Cancelar Cita
+            </a>
+          </div>
+          
+          <div style="background-color: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B;">
+            <p style="color: #92400E; margin: 0; font-size: 14px;">
+              <strong>⚠️ Importante:</strong> Este enlace expira en 7 días. Si no confirmas tu cita, será cancelada automáticamente.
+            </p>
+          </div>
+          
+          <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="color: #1E40AF; margin: 0 0 10px 0;">Información de contacto:</h4>
+            <p style="color: #374151; margin: 5px 0; font-size: 14px;">
+              <strong>Teléfono:</strong> ${data.telefonoClinica || 'No disponible'}
+            </p>
+            <p style="color: #374151; margin: 5px 0; font-size: 14px;">
+              <strong>Email:</strong> ${data.emailClinica || 'No disponible'}
+            </p>
+          </div>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
+          
+          <p style="color: #6B7280; font-size: 12px; text-align: center; margin: 0;">
+            Este es un email automático, por favor no respondas a este mensaje.<br>
+            Si tienes alguna consulta, contacta directamente con la clínica.
+          </p>
+        </div>
+      </div>
+    `;
   }
 }

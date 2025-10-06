@@ -94,34 +94,35 @@ model User {
 }
 
 model Turno {
-  id             String        @id @default(cuid())
-  paciente       String
-  email          String
-  telefono       String?
-  doctor         String
-  fecha          DateTime
-  hora           String
-  estado         String        @default("pendiente")
-  motivo         String?
-  clinicaId      String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  conversationId String?
-  duracionMin    Int           @default(30)
-  notas          String?
-  professionalId String?
-  servicio       String?
-  ate            String?
-  estadoPago     String        @default("pendiente")
-  medioPago      String?
-  montoTotal     String?
-  origen         String?
-  sucursal       String?
-  montoAbonado   String?
-  montoPendiente String?
-  clinica        Clinica       @relation(fields: [clinicaId], references: [id])
-  conversation   Conversation? @relation(fields: [conversationId], references: [id])
-  professional   Professional? @relation(fields: [professionalId], references: [id])
+  id                 String        @id @default(cuid())
+  paciente           String
+  email              String
+  telefono           String?
+  doctor             String
+  fecha              DateTime
+  hora               String
+  estado             String        @default("pendiente")
+  motivo             String?
+  clinicaId          String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  conversationId     String?
+  duracionMin        Int           @default(30)
+  notas              String?
+  professionalId     String?
+  servicio           String?
+  ate                String?
+  estadoPago         String        @default("pendiente")
+  medioPago          String?
+  montoTotal         String?
+  origen             String?
+  sucursal           String?
+  montoAbonado       String?
+  montoPendiente     String?
+  confirmationToken  String?       @unique
+  clinica            Clinica       @relation(fields: [clinicaId], references: [id])
+  conversation       Conversation? @relation(fields: [conversationId], references: [id])
+  professional       Professional? @relation(fields: [professionalId], references: [id])
 }
 
 model Especialidad {
