@@ -13,52 +13,72 @@ import * as bcrypt from 'bcrypt';
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(clinicaUrl: string) {
-    const clinica = await this.prisma.clinica.findFirst({
-      where: { url: clinicaUrl },
-      include: {
-        especialidades: true,
-        horarios: true,
-      },
-    });
+  async findAll(clinicaUrl: string, page: number = 1, limit: number = 20) {
+    try {
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+        select: { id: true, name: true, url: true }
+      });
 
-    if (!clinica) throw new NotFoundException('Clínica no encontrada');
+      if (!clinica) throw new NotFoundException('Clínica no encontrada');
 
-    const pacientes = await this.prisma.patient.findMany({
-      where: {
-        clinicaId: clinica.id,
-      },
-      include: { clinica: true },
-    });
+      // Calcular offset para paginación
+      const skip = (page - 1) * limit;
 
-    // Agregar conteo de turnos para cada paciente
-    const pacientesConTurnos = await Promise.all(
-      pacientes.map(async (paciente) => {
-        let turnosCount = 0;
-        
-        // console.log(`🔍 [DEBUG] Contando turnos para paciente: ${paciente.name} (${paciente.email})`);
-        
-        // Solo contar turnos si el paciente tiene email
-        if (paciente.email) {
-          turnosCount = await this.prisma.turno.count({
-            where: {
-              email: paciente.email,
-              clinicaId: clinica.id,
-            },
-          });
-          // console.log(`🔍 [DEBUG] Paciente ${paciente.name}: ${turnosCount} turnos encontrados`);
-        } else {
-          // console.log(`🔍 [DEBUG] Paciente ${paciente.name}: Sin email, no se cuentan turnos`);
+      // Obtener pacientes con paginación
+      const pacientes = await this.prisma.patient.findMany({
+        where: {
+          clinicaId: clinica.id,
+        },
+        include: { clinica: true },
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // Contar total de pacientes para paginación
+      const total = await this.prisma.patient.count({
+        where: { clinicaId: clinica.id }
+      });
+
+      // Solo contar turnos para los pacientes de esta página (optimización)
+      const pacientesConTurnos = await Promise.all(
+        pacientes.map(async (paciente) => {
+          let turnosCount = 0;
+          
+          // Solo contar turnos si el paciente tiene email
+          if (paciente.email) {
+            turnosCount = await this.prisma.turno.count({
+              where: {
+                email: paciente.email,
+                clinicaId: clinica.id,
+              },
+            });
+          }
+
+          return {
+            ...paciente,
+            totalTurnos: turnosCount,
+          };
+        })
+      );
+
+      return {
+        success: true,
+        data: pacientesConTurnos,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
         }
-
-        return {
-          ...paciente,
-          totalTurnos: turnosCount,
-        };
-      })
-    );
-
-    return pacientesConTurnos;
+      };
+    } catch (error) {
+      console.error('Error en findAll pacientes:', error);
+      throw new BadRequestException('Error al obtener los pacientes');
+    }
   }
 
   async create(clinicaUrl: string, dto: CreatePatientDto) {

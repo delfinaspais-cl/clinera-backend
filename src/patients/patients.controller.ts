@@ -32,8 +32,18 @@ export class PatientsController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Param('clinicaUrl') clinicaUrl: string) {
-    return this.patientsService.findAll(clinicaUrl);
+  @ApiOperation({ summary: 'Listar pacientes con paginación' })
+  @ApiResponse({ status: 200, description: 'Lista de pacientes obtenida exitosamente' })
+  @ApiQuery({ name: 'page', required: false, description: 'Número de página' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Límite de resultados por página' })
+  async findAll(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20; // Límite por defecto más pequeño
+    return this.patientsService.findAll(clinicaUrl, pageNum, limitNum);
   }
 
   @Post()
