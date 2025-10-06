@@ -1,0 +1,16 @@
+[
+  {
+    "row": 3675,
+    "email": "N/A",
+    "error": "Email y nombres son requeridos",
+    "data": {
+      "Nombres": "Maria Jose",
+      "Apellidos": "De la Roza",
+      "RUT": "19.011.705-7",
+      "Teléfono": "+56 9 5442 7817",
+      "Edad": 28,
+      "Género. 1 = Femenino, 2 = Masculino": 1,
+      "Fecha de creación.": "17/03/2022"
+    }
+  }
+]

@@ -36,7 +36,7 @@ export class PatientsService {
       pacientes.map(async (paciente) => {
         let turnosCount = 0;
         
-        console.log(`🔍 [DEBUG] Contando turnos para paciente: ${paciente.name} (${paciente.email})`);
+        // console.log(`🔍 [DEBUG] Contando turnos para paciente: ${paciente.name} (${paciente.email})`);
         
         // Solo contar turnos si el paciente tiene email
         if (paciente.email) {
@@ -46,9 +46,9 @@ export class PatientsService {
               clinicaId: clinica.id,
             },
           });
-          console.log(`🔍 [DEBUG] Paciente ${paciente.name}: ${turnosCount} turnos encontrados`);
+          // console.log(`🔍 [DEBUG] Paciente ${paciente.name}: ${turnosCount} turnos encontrados`);
         } else {
-          console.log(`🔍 [DEBUG] Paciente ${paciente.name}: Sin email, no se cuentan turnos`);
+          // console.log(`🔍 [DEBUG] Paciente ${paciente.name}: Sin email, no se cuentan turnos`);
         }
 
         return {
