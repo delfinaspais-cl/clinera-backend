@@ -26,15 +26,27 @@ export class AppController {
 
   @Get()
   getRoot() {
-    console.log('🌐 Endpoint raíz llamado');
-    return {
-      message: 'Clinera Backend API',
-      version: '1.0.0',
-      status: 'running',
-      documentation: '/docs',
-      health: '/health',
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      console.log('🌐 Endpoint raíz llamado');
+      return {
+        message: 'Clinera Backend API',
+        version: '1.0.0',
+        status: 'running',
+        documentation: '/docs',
+        health: '/health',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+      };
+    } catch (error) {
+      console.error('❌ Error en endpoint raíz:', error);
+      return {
+        message: 'Clinera Backend API',
+        status: 'error',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 
   @Get('manifest.json')
