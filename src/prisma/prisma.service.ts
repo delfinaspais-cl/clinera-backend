@@ -17,8 +17,7 @@ export class PrismaService
         db: { 
           url: url + '?connection_limit=5&pool_timeout=20&connect_timeout=60'
         } 
-      },
-      log: ['error'] as const // Solo logs de error
+      }
     } : {};
 
     super(configOptions);
