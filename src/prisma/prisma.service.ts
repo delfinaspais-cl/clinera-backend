@@ -11,16 +11,36 @@ export class PrismaService
     const url = config.get<string>('DATABASE_URL') ?? process.env.DATABASE_URL;
     console.log('DB URL present?', !!process.env.DATABASE_URL);
 
-    // Si no hay URL, no pases datasources para no inyectar "undefined"
-    super(url ? { datasources: { db: { url } } } : {});
+    // Configuración optimizada para Railway
+    const configOptions = url ? {
+      datasources: { 
+        db: { 
+          url: url + '?connection_limit=5&pool_timeout=20&connect_timeout=60'
+        } 
+      },
+      log: ['error'], // Solo logs de error
+      errorFormat: 'minimal'
+    } : {};
+
+    super(configOptions);
   }
 
   async onModuleInit() {
-    await this.$connect();
-    console.log('Conexión exitosa a la base de datos');
+    try {
+      await this.$connect();
+      console.log('✅ Conexión exitosa a la base de datos');
+    } catch (error) {
+      console.error('❌ Error conectando a la base de datos:', error.message);
+      // No lanzar el error, permitir que la aplicación continúe
+    }
   }
 
   async onModuleDestroy() {
-    await this.$disconnect();
+    try {
+      await this.$disconnect();
+      console.log('✅ Conexión a base de datos cerrada');
+    } catch (error) {
+      console.error('❌ Error cerrando conexión:', error.message);
+    }
   }
 }
