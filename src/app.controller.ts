@@ -114,8 +114,23 @@ Disallow: /api/admin/`;
   }
 
   @Get('health')
-  healthCheck() {
-    return this.appService.healthCheck();
+  async healthCheck() {
+    try {
+      // Health check básico sin depender de la base de datos
+      return {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        version: process.version
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      };
+    }
   }
 
   @Get('plans')
