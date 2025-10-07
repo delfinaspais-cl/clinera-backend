@@ -110,6 +110,7 @@ export class OwnersService {
         ultimoPago: null,
         proximoPago: null,
         defaultLanguage: dto.defaultLanguage || 'es',
+        currencyCode: dto.currencyCode || 'USD',
       },
     });
 
@@ -1547,6 +1548,7 @@ export class OwnersService {
           ultimoPago: null,
           proximoPago: null,
           defaultLanguage: dto.defaultLanguage || 'es',
+          currencyCode: dto.currencyCode || 'USD',
         },
       });
 

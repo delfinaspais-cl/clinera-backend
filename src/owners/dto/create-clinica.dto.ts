@@ -102,6 +102,13 @@ export class CreateClinicaDto {
 
   @IsString()
   @IsOptional()
+  @IsIn(['USD', 'BRL', 'PEN', 'ARS', 'CLP', 'COP', 'MXN'], { 
+    message: 'El código de moneda debe ser: USD, BRL, PEN, ARS, CLP, COP, o MXN' 
+  })
+  currencyCode?: string = 'USD';
+
+  @IsString()
+  @IsOptional()
   @IsIn(['es', 'pt-BR', 'en'], { message: 'El idioma debe ser uno de: es, pt-BR, en' })
   defaultLanguage?: string = 'es';
 

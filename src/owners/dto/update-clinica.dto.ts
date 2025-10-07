@@ -7,6 +7,7 @@ import {
   Matches,
   MinLength,
   IsHexColor,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -113,4 +114,11 @@ export class UpdateClinicaDto {
   @IsOptional()
   @IsString({ message: 'La descripción debe ser una cadena de texto' })
   descripcion?: string;
+
+  @IsOptional()
+  @IsString({ message: 'El código de moneda debe ser una cadena de texto' })
+  @IsIn(['USD', 'BRL', 'PEN', 'ARS', 'CLP', 'COP', 'MXN'], { 
+    message: 'El código de moneda debe ser: USD, BRL, PEN, ARS, CLP, COP, o MXN' 
+  })
+  currencyCode?: string;
 }

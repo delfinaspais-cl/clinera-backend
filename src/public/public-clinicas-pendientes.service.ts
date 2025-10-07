@@ -61,6 +61,8 @@ export class PublicClinicasPendientesService {
           fechaCreacion: new Date(),
           ultimoPago: null,
           proximoPago: null,
+          defaultLanguage: 'es',
+          currencyCode: 'USD',
         },
       });
 

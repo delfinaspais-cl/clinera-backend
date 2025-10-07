@@ -23,6 +23,13 @@ export class UpdateClinicaConfiguracionDto {
   defaultLanguage?: string;
 
   @IsOptional()
+  @IsString()
+  @IsIn(['USD', 'BRL', 'PEN', 'ARS', 'CLP', 'COP', 'MXN'], { 
+    message: 'El código de moneda debe ser: USD, BRL, PEN, ARS, CLP, COP, o MXN' 
+  })
+  currencyCode?: string;
+
+  @IsOptional()
   @IsObject()
   contacto?: {
     whatsapp?: string;

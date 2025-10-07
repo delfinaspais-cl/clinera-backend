@@ -1138,6 +1138,8 @@ export class ClinicasService {
         fechaCreacion: clinica.fechaCreacion.toISOString(),
         createdAt: clinica.createdAt.toISOString(),
         updatedAt: clinica.updatedAt.toISOString(),
+        // defaultLanguage: clinica.defaultLanguage || 'es',
+        currencyCode: clinica.currencyCode || 'USD',
       };
 
       return {
@@ -1203,6 +1205,7 @@ export class ClinicasService {
         especialidades: clinica.especialidades,
         descripcion: clinica.descripcion,
         defaultLanguage: clinica.defaultLanguage,
+        currencyCode: clinica.currencyCode,
         contacto: clinica.contacto ? JSON.parse(clinica.contacto) : {},
       };
 
@@ -1254,6 +1257,10 @@ export class ClinicasService {
 
       if (dto.defaultLanguage) {
         updateData.defaultLanguage = dto.defaultLanguage;
+      }
+
+      if (dto.currencyCode) {
+        updateData.currencyCode = dto.currencyCode;
       }
 
       if (dto.contacto) {
@@ -1371,6 +1378,7 @@ export class ClinicasService {
         telefono: clinica.phone,
         email: clinica.email,
         defaultLanguage: clinica.defaultLanguage,
+        currencyCode: clinica.currencyCode,
         horarios: clinica.horarios,
         especialidades: clinica.especialidades,
         rating: clinica.rating,
