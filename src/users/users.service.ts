@@ -171,12 +171,15 @@ export class UsersService {
 
   async login(dto: UserLoginDto) {
     try {
+      // Normalizar username a minúsculas para búsqueda case-insensitive
+      const normalizedUsername = dto.username.toLowerCase();
+      
       // Buscar usuario por username o email con información de la clínica
       const user = await this.prisma.user.findFirst({
         where: { 
           OR: [
-            { username: dto.username },
-            { email: dto.username },
+            { username: normalizedUsername },
+            { email: normalizedUsername },
           ],
         },
         include: {
