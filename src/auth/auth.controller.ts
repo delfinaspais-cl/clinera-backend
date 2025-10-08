@@ -104,9 +104,14 @@ export class AuthController {
         throw new UnauthorizedException('Clínica no encontrada');
       }
 
+      // Normalizar username a minúsculas para búsqueda case-insensitive
+      const normalizedUsername = username.toLowerCase();
       const user = await this.prisma.user.findFirst({
         where: {
-          email: username,
+          OR: [
+            { email: normalizedUsername },
+            { username: normalizedUsername }
+          ],
           clinicaId: clinica.id,
         },
         include: {

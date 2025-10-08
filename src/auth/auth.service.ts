@@ -31,7 +31,10 @@ export class AuthService {
     const normalizedEmail = email.toLowerCase();
     const user = await this.prisma.user.findFirst({ 
       where: { 
-        email: normalizedEmail
+        OR: [
+          { email: normalizedEmail },
+          { username: normalizedEmail }
+        ]
       } 
     });
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -206,13 +209,15 @@ export class AuthService {
       
       // Generar username automáticamente
       const username = PasswordGenerator.generateUsername(dto.name);
+      // Normalizar username a minúsculas para almacenamiento consistente
+      const normalizedUsername = username.toLowerCase();
       
       console.log('💾 Creando usuario en la base de datos...');
-      // Usar el email ya normalizado para almacenamiento consistente
+      // Usar el email y username ya normalizados para almacenamiento consistente
       const user = await this.prisma.user.create({
         data: {
           email: normalizedEmail,
-          username: username,
+          username: normalizedUsername,
           password: hashed,
           name: dto.name,
           role: role as any,
@@ -305,12 +310,15 @@ export class AuthService {
     try {
       console.log('Owner login DTO:', dto); // Debug log
 
-      // Buscar usuario por username (que será el email para owners)
-      // Normalizar email a minúsculas para búsqueda case-insensitive
-      const normalizedEmail = dto.username.toLowerCase();
+      // Buscar usuario por email o username
+      // Normalizar a minúsculas para búsqueda case-insensitive
+      const normalizedEmailOrUsername = dto.username.toLowerCase();
       const user = await this.prisma.user.findFirst({
         where: { 
-          email: normalizedEmail
+          OR: [
+            { email: normalizedEmailOrUsername },
+            { username: normalizedEmailOrUsername }
+          ]
         },
       });
 
@@ -387,12 +395,15 @@ export class AuthService {
         throw new BadRequestException('La clínica está inactiva. Contacta al administrador del sistema.');
       }
 
-      // Buscar usuario por email y clínica
-      // Normalizar email a minúsculas para búsqueda case-insensitive
-      const normalizedEmail = dto.email.toLowerCase();
+      // Buscar usuario por email o username y clínica
+      // Normalizar a minúsculas para búsqueda case-insensitive
+      const normalizedEmailOrUsername = dto.email.toLowerCase();
       const user = await this.prisma.user.findFirst({
         where: {
-          email: normalizedEmail,
+          OR: [
+            { email: normalizedEmailOrUsername },
+            { username: normalizedEmailOrUsername }
+          ],
           clinicaId: clinica.id,
         },
         include: {
