@@ -35,6 +35,7 @@ export class AuthService {
   }
 
   async loginWithDto(dto: LoginAuthDto) {
+    console.log('🔥 SERVICE LOGIN - VERSIÓN ACTUALIZADA');
     console.log('🚀 ===== INICIO DE LOGIN =====');
     console.log('📋 Datos recibidos:', dto);
     

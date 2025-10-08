@@ -65,6 +65,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   @Post('login')
   login(@Body() dto: LoginAuthDto) {
+    console.log('🔥 CONTROLLER LOGIN - VERSIÓN ACTUALIZADA');
     return this.authService.loginWithDto(dto);
   }
 
