@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   console.log('🚀 Iniciando aplicación...');
@@ -22,6 +23,61 @@ async function bootstrap() {
     });
     console.log('✅ CORS habilitado');
 
+    // Configuración de Swagger/OpenAPI
+    const config = new DocumentBuilder()
+      .setTitle('Clinera Backend API')
+      .setDescription('API completa para gestión de clínicas, turnos, profesionales y pacientes')
+      .setVersion('1.0.0')
+      .addTag('Autenticación', 'Endpoints de registro, login y gestión de sesiones')
+      .addTag('Planes', 'Gestión de planes de suscripción')
+      .addTag('Suscripciones', 'Gestión de suscripciones de clínicas')
+      .addTag('Clínicas', 'Gestión de clínicas del sistema')
+      .addTag('Turnos', 'Gestión de turnos y citas médicas')
+      .addTag('Pacientes', 'Gestión de pacientes')
+      .addTag('Profesionales', 'Gestión de profesionales médicos')
+      .addTag('Notificaciones', 'Sistema de notificaciones')
+      .addTag('Mensajes', 'Sistema de mensajería')
+      .addTag('Reportes', 'Generación de reportes')
+      .addTag('WhatsApp', 'Integración con WhatsApp')
+      .addTag('Fichas Médicas', 'Gestión de historias clínicas')
+      .addTag('Ventas', 'Gestión de ventas y pagos')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Ingresa tu token JWT',
+          in: 'header',
+        },
+        'JWT-auth', // Este nombre se usa en los decoradores
+      )
+      .addServer('https://clinera-backend-develop.up.railway.app', 'Servidor de Producción')
+      .addServer('http://localhost:3000', 'Servidor Local')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document, {
+      customSiteTitle: 'Clinera API Docs',
+      customfavIcon: 'https://clinera.io/favicon.ico',
+      customCss: `
+        .swagger-ui .topbar { display: none }
+        .swagger-ui .info { margin: 50px 0 }
+        .swagger-ui .info .title { font-size: 36px }
+      `,
+      swaggerOptions: {
+        persistAuthorization: true,
+        docExpansion: 'none',
+        filter: true,
+        showRequestDuration: true,
+        syntaxHighlight: {
+          activate: true,
+          theme: 'monokai',
+        },
+      },
+    });
+    console.log('✅ Swagger configurado en /docs');
+
     // Configuración del puerto
     const port = process.env.PORT || 3000;
     console.log(`🔍 Puerto configurado: ${port}`);
@@ -34,6 +90,7 @@ async function bootstrap() {
     console.log(`✅ Health check disponible en: http://0.0.0.0:${port}/`);
     console.log(`✅ Health check detallado en: http://0.0.0.0:${port}/health`);
     console.log(`✅ Health check simple en: http://0.0.0.0:${port}/health/simple`);
+    console.log(`📚 Documentación Swagger disponible en: http://0.0.0.0:${port}/docs`);
     
     // Manejar señales de terminación
     process.on('SIGTERM', () => {
