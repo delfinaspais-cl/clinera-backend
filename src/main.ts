@@ -52,7 +52,7 @@ async function bootstrap() {
         },
         'JWT-auth', // Este nombre se usa en los decoradores
       )
-      .addServer('https://clinera-backend-develop.up.railway.app', 'Servidor de Producción')
+      .addServer('https://clinera-backend-production.up.railway.app', 'Servidor de Producción')
       .addServer('http://localhost:3000', 'Servidor Local')
       .build();
 
