@@ -372,6 +372,7 @@ export class OwnersController {
       name: admin.nombre,
       role: 'ADMIN' as const,
       clinicaId: clinicaCreada.clinica.id,
+      preferredLanguage: admin.preferredLanguage, // Incluir preferredLanguage si se proporciona
     };
 
     // Crear el usuario admin usando AuthService
@@ -380,6 +381,7 @@ export class OwnersController {
       password: admin.password,
       name: admin.nombre,
       role: 'ADMIN',
+      preferredLanguage: admin.preferredLanguage, // Incluir preferredLanguage si se proporciona
     });
 
     // Actualizar el usuario con la clínica

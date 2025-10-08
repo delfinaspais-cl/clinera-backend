@@ -35,11 +35,20 @@ export class AuthService {
   }
 
   async loginWithDto(dto: LoginAuthDto) {
+    console.log('🚀 ===== INICIO DE LOGIN =====');
+    console.log('📋 Datos recibidos:', dto);
+    
     const user = await this.validateUser(dto.email, dto.password);
     if (!user) {
+      console.log('❌ Usuario no encontrado o credenciales inválidas');
       throw new UnauthorizedException('Credenciales inválidas');
     }
     
+    console.log('✅ Usuario encontrado en login:', { 
+      id: user.id, 
+      email: user.email, 
+      preferredLanguage: user.preferredLanguage 
+    });
     
     // Obtener información de la clínica si el usuario tiene una
     let clinicaUrl: string | null = null;
@@ -79,19 +88,32 @@ export class AuthService {
       console.log('⚠️ Login local continúa normalmente');
     }
     
+    console.log('🔄 Llamando al método login con userWithClinica:', {
+      id: userWithClinica.id,
+      email: userWithClinica.email,
+      preferredLanguage: userWithClinica.preferredLanguage
+    });
+    
     return this.login(userWithClinica);
   }
 
   async login(user: any) {
+    console.log('🔍 Datos del usuario en método login:', {
+      id: user.id,
+      email: user.email,
+      preferredLanguage: user.preferredLanguage,
+      role: user.role
+    });
+
     const payload = { 
       sub: user.id, 
       email: user.email, 
       role: user.role,
       clinicaId: user.clinicaId,
-      clinicaUrl: user.clinicaUrl,
-      preferredLanguage: user.preferredLanguage
+      clinicaUrl: user.clinicaUrl
     };
-    return { 
+    
+    const response = { 
       access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
@@ -103,6 +125,9 @@ export class AuthService {
         preferredLanguage: user.preferredLanguage || 'es'
       }
     };
+    
+    console.log('📋 Respuesta del login:', JSON.stringify(response, null, 2));
+    return response;
   }
 
   async register(dto: RegisterAuthDto) {
@@ -171,6 +196,7 @@ export class AuthService {
       // Generar username automáticamente
       const username = PasswordGenerator.generateUsername(dto.name);
       
+      console.log('💾 Creando usuario en la base de datos...');
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
@@ -179,7 +205,13 @@ export class AuthService {
           name: dto.name,
           role: role as any,
           clinicaId: dto.clinicaId || null,
+          preferredLanguage: dto.preferredLanguage || 'es', // Default a español si no se proporciona
         },
+      });
+      console.log('✅ Usuario creado exitosamente:', {
+        id: user.id,
+        email: user.email,
+        preferredLanguage: user.preferredLanguage
       });
 
       // Hacer POST a la API externa de Fluentia
@@ -205,6 +237,8 @@ export class AuthService {
         console.log('❌ Error en Fluentia API:', externalApiError.response?.data?.message || externalApiError.message);
         console.log('⚠️ Registro local continúa normalmente');
       }
+      
+      console.log('✅ API externa procesada, continuando con el registro local...');
 
       // Enviar email de bienvenida con credenciales (solo si tiene clínica)
       // TEMPORALMENTE COMENTADO PARA DEBUG
@@ -231,7 +265,7 @@ export class AuthService {
       */
 
       console.log('🔑 Generando token de acceso...');
-      const loginResult = this.login(user);
+      const loginResult = await this.login(user);
       console.log('✅ Token generado exitosamente');
       console.log('🎉 ===== REGISTRO COMPLETADO EXITOSAMENTE =====');
       console.log('📊 Resumen del registro:');

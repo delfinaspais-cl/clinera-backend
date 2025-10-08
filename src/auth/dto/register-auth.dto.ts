@@ -24,4 +24,8 @@ export class RegisterAuthDto {
   @IsOptional()
   @IsString()
   clinicaId?: string;
+
+  @IsOptional()
+  @IsString()
+  preferredLanguage?: string;
 }
