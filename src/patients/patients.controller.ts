@@ -36,14 +36,16 @@ export class PatientsController {
   @ApiResponse({ status: 200, description: 'Lista de pacientes obtenida exitosamente' })
   @ApiQuery({ name: 'page', required: false, description: 'Número de página' })
   @ApiQuery({ name: 'limit', required: false, description: 'Límite de resultados por página' })
+  @ApiQuery({ name: 'search', required: false, description: 'Buscar por nombre, email o teléfono' })
   async findAll(
     @Param('clinicaUrl') clinicaUrl: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
   ) {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20; // Límite por defecto más pequeño
-    return this.patientsService.findAll(clinicaUrl, pageNum, limitNum);
+    return this.patientsService.findAll(clinicaUrl, pageNum, limitNum, search);
   }
 
   @Post()

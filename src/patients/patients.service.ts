@@ -13,7 +13,7 @@ import * as bcrypt from 'bcrypt';
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(clinicaUrl: string, page: number = 1, limit: number = 20) {
+  async findAll(clinicaUrl: string, page: number = 1, limit: number = 20, search?: string) {
     try {
       const clinica = await this.prisma.clinica.findFirst({
         where: { url: clinicaUrl },
@@ -25,11 +25,23 @@ export class PatientsService {
       // Calcular offset para paginación
       const skip = (page - 1) * limit;
 
+      // Construir filtro de búsqueda
+      const whereCondition: any = {
+        clinicaId: clinica.id,
+      };
+
+      // Si hay un término de búsqueda, agregar condiciones OR para buscar en nombre, email y teléfono
+      if (search) {
+        whereCondition.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
       // Obtener pacientes con paginación
       const pacientes = await this.prisma.patient.findMany({
-        where: {
-          clinicaId: clinica.id,
-        },
+        where: whereCondition,
         include: { clinica: true },
         skip: skip,
         take: limit,
@@ -38,7 +50,7 @@ export class PatientsService {
 
       // Contar total de pacientes para paginación
       const total = await this.prisma.patient.count({
-        where: { clinicaId: clinica.id }
+        where: whereCondition
       });
 
       // Solo contar turnos para los pacientes de esta página (optimización)

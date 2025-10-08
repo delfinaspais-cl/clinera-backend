@@ -129,20 +129,6 @@ export class ClinicasService {
             estado: true,
             createdAt: true,
             updatedAt: true,
-            professional: {
-              select: {
-                name: true,
-                especialidades: {
-                  select: {
-                    especialidad: {
-                      select: {
-                        name: true
-                      }
-                    }
-                  }
-                }
-              }
-            },
           },
         }),
         this.prisma.user.count({ where }),
@@ -151,58 +137,24 @@ export class ClinicasService {
       console.log('🔍 Usuarios encontrados:', users.length);
       console.log('🔍 Total usuarios:', total);
 
-      // Calcular conteo de turnos para cada usuario
-      const usuariosConTurnos = await Promise.all(
-        users.map(async (user) => {
-          let especialidad = '';
-          if (user.professional && user.professional.especialidades) {
-            especialidad = user.professional.especialidades
-              .map(pe => pe.especialidad.name)
-              .join(', ');
-          }
-
-          // Contar turnos para usuarios (ya no hay pacientes en users)
-          let turnosCount = 0;
-
-          // Contar pacientes para profesionales
-          let pacientesCount = 0;
-          if (user.role === 'PROFESSIONAL' && user.name) {
-            // Contar turnos únicos por email para este profesional
-            const turnosUnicos = await this.prisma.turno.groupBy({
-              by: ['email'],
-              where: {
-                doctor: user.name!,
-                clinicaId: clinica.id,
-              },
-            });
-            pacientesCount = turnosUnicos.length;
-          }
-
-          // Calcular edad para usuarios (ya no hay pacientes en users)
-          let edad: number | null = null;
-          let telefono = user.phone || null;
-
-          return {
-            id: user.id,
-            nombre: user.name || 'Sin nombre',
-            email: user.email,
-            telefono: telefono,
-            edad: edad,
-            rol: user.role.toLowerCase(),
-            especialidad,
-            estado: user.estado || 'activo',
-            fechaCreacion: user.createdAt.toISOString().split('T')[0],
-            ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
-            turnos: turnosCount,
-            pacientes: pacientesCount,
-          };
-        })
-      );
+      // Mapear usuarios a formato de respuesta
+      const usuariosFormateados = users.map((user) => {
+        return {
+          id: user.id,
+          nombre: user.name || 'Sin nombre',
+          email: user.email,
+          telefono: user.phone || null,
+          rol: user.role.toLowerCase(),
+          estado: user.estado || 'activo',
+          fechaCreacion: user.createdAt.toISOString().split('T')[0],
+          ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
+        };
+      });
 
       return {
         success: true,
-        message: "FILTRO DE PACIENTES ACTIVADO - Los pacientes han sido excluidos de esta lista",
-        usuarios: usuariosConTurnos,
+        message: "Usuarios de la clínica obtenidos exitosamente",
+        usuarios: usuariosFormateados,
         pagination: {
           page,
           limit,
