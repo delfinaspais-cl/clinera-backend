@@ -260,7 +260,7 @@ export class AuthService {
         } catch (emailError) {
           console.error('Error al enviar email de bienvenida:', emailError);
           // No lanzamos error para no interrumpir el registro
-        }
+        } 
       }
       */
 
