@@ -62,6 +62,7 @@ export class UsersService {
           name: dto.name,
                   role: 'ADMIN',
           clinicaId: null,
+          preferredLanguage: dto.preferredLanguage || 'es', // Default a español si no se proporciona
       },
     });
       console.log('✅ Usuario creado exitosamente con username');

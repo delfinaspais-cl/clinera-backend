@@ -27,12 +27,11 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
+    // Normalizar email a minúsculas para búsqueda case-insensitive
+    const normalizedEmail = email.toLowerCase();
     const user = await this.prisma.user.findFirst({ 
       where: { 
-        email: {
-          equals: email,
-          mode: 'insensitive'
-        }
+        email: normalizedEmail
       } 
     });
     if (user && (await bcrypt.compare(password, user.password))) {
@@ -168,15 +167,15 @@ export class AuthService {
       console.log(`🔍 Verificando email existente: ${dto.email}`);
       console.log(`🏥 ClinicaId: ${dto.clinicaId || 'null'}`);
       
+      // Normalizar email para búsqueda case-insensitive
+      const normalizedEmail = dto.email.toLowerCase();
+      
       if (dto.clinicaId) {
         console.log('🔍 Buscando usuario en clínica específica...');
         // Si hay clínica, verificar solo en esa clínica
         const existingUser = await this.prisma.user.findFirst({
           where: { 
-            email: {
-              equals: dto.email,
-              mode: 'insensitive'
-            },
+            email: normalizedEmail,
             clinicaId: dto.clinicaId 
           },
         });
@@ -191,10 +190,7 @@ export class AuthService {
         // Si no hay clínica, verificar si existe globalmente
         const existingUser = await this.prisma.user.findFirst({
           where: { 
-            email: {
-              equals: dto.email,
-              mode: 'insensitive'
-            },
+            email: normalizedEmail,
             clinicaId: null 
           },
         });
@@ -212,9 +208,10 @@ export class AuthService {
       const username = PasswordGenerator.generateUsername(dto.name);
       
       console.log('💾 Creando usuario en la base de datos...');
+      // Usar el email ya normalizado para almacenamiento consistente
       const user = await this.prisma.user.create({
         data: {
-          email: dto.email,
+          email: normalizedEmail,
           username: username,
           password: hashed,
           name: dto.name,
@@ -309,12 +306,11 @@ export class AuthService {
       console.log('Owner login DTO:', dto); // Debug log
 
       // Buscar usuario por username (que será el email para owners)
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = dto.username.toLowerCase();
       const user = await this.prisma.user.findFirst({
         where: { 
-          email: {
-            equals: dto.username,
-            mode: 'insensitive'
-          }
+          email: normalizedEmail
         },
       });
 
@@ -392,12 +388,11 @@ export class AuthService {
       }
 
       // Buscar usuario por email y clínica
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = dto.email.toLowerCase();
       const user = await this.prisma.user.findFirst({
         where: {
-          email: {
-            equals: dto.email,
-            mode: 'insensitive'
-          },
+          email: normalizedEmail,
           clinicaId: clinica.id,
         },
         include: {
@@ -469,12 +464,11 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     try {
       // Buscar usuario por email
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = dto.email.toLowerCase();
       const user = await this.prisma.user.findFirst({
           where: { 
-            email: {
-              equals: dto.email,
-              mode: 'insensitive'
-            }
+            email: normalizedEmail
           },
       });
 
@@ -546,12 +540,11 @@ export class AuthService {
       }
 
       // Buscar usuario
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = resetToken.email.toLowerCase();
       const user = await this.prisma.user.findFirst({
           where: { 
-            email: {
-              equals: resetToken.email,
-              mode: 'insensitive'
-            }
+            email: normalizedEmail
           },
       });
 
@@ -594,12 +587,11 @@ export class AuthService {
   async changePassword(dto: ChangePasswordDto) {
     try {
       // Buscar usuario por email
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = dto.email.toLowerCase();
       const user = await this.prisma.user.findFirst({
           where: { 
-            email: {
-              equals: dto.email,
-              mode: 'insensitive'
-            }
+            email: normalizedEmail
           },
       });
 

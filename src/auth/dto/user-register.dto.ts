@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UserRegisterDto {
@@ -36,4 +36,13 @@ export class UserRegisterDto {
   @IsNotEmpty({ message: 'La contraseña es requerida' })
   @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   password: string;
+
+  @ApiProperty({
+    description: 'Idioma preferido del usuario',
+    example: 'es',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'El idioma preferido debe ser una cadena de texto' })
+  preferredLanguage?: string;
 }
