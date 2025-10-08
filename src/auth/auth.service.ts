@@ -27,7 +27,14 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string) {
-    const user = await this.prisma.user.findFirst({ where: { email } });
+    const user = await this.prisma.user.findFirst({ 
+      where: { 
+        email: {
+          equals: email,
+          mode: 'insensitive'
+        }
+      } 
+    });
     if (user && (await bcrypt.compare(password, user.password))) {
       return user;
     }
@@ -99,6 +106,7 @@ export class AuthService {
   }
 
   async login(user: any) {
+    console.log('🔥🔥🔥 MÉTODO LOGIN ACTUALIZADO - VERSIÓN NUEVA 🔥🔥🔥');
     console.log('🔍 Datos del usuario en método login:', {
       id: user.id,
       email: user.email,
@@ -165,7 +173,10 @@ export class AuthService {
         // Si hay clínica, verificar solo en esa clínica
         const existingUser = await this.prisma.user.findFirst({
           where: { 
-            email: dto.email, 
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            },
             clinicaId: dto.clinicaId 
           },
         });
@@ -180,7 +191,10 @@ export class AuthService {
         // Si no hay clínica, verificar si existe globalmente
         const existingUser = await this.prisma.user.findFirst({
           where: { 
-            email: dto.email, 
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            },
             clinicaId: null 
           },
         });
@@ -296,7 +310,12 @@ export class AuthService {
 
       // Buscar usuario por username (que será el email para owners)
       const user = await this.prisma.user.findFirst({
-        where: { email: dto.username },
+        where: { 
+          email: {
+            equals: dto.username,
+            mode: 'insensitive'
+          }
+        },
       });
 
       if (!user) {
@@ -375,7 +394,10 @@ export class AuthService {
       // Buscar usuario por email y clínica
       const user = await this.prisma.user.findFirst({
         where: {
-          email: dto.email,
+          email: {
+            equals: dto.email,
+            mode: 'insensitive'
+          },
           clinicaId: clinica.id,
         },
         include: {
@@ -448,7 +470,12 @@ export class AuthService {
     try {
       // Buscar usuario por email
       const user = await this.prisma.user.findFirst({
-          where: { email: dto.email },
+          where: { 
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            }
+          },
       });
 
       if (!user) {
@@ -520,7 +547,12 @@ export class AuthService {
 
       // Buscar usuario
       const user = await this.prisma.user.findFirst({
-          where: { email: resetToken.email },
+          where: { 
+            email: {
+              equals: resetToken.email,
+              mode: 'insensitive'
+            }
+          },
       });
 
       if (!user) {
@@ -563,7 +595,12 @@ export class AuthService {
     try {
       // Buscar usuario por email
       const user = await this.prisma.user.findFirst({
-          where: { email: dto.email },
+          where: { 
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            }
+          },
       });
 
       if (!user) {
