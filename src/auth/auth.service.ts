@@ -433,6 +433,10 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
+      // Obtener permisos desde la base de datos (campo permisos)
+      // Si no tiene permisos asignados, usar permisos por defecto según rol (fallback)
+      let permisos = user.permisos || this.getPermisosByRole(user.role);
+
       return {
         success: true,
         message: 'Login exitoso',
@@ -444,7 +448,7 @@ export class AuthService {
           role: user.role,
           clinicaId: user.clinicaId,
           clinicaUrl: clinica.url,
-          permisos: this.getPermisosByRole(user.role),
+          permisos: permisos,
         },
         clinica: {
           id: clinica.id,

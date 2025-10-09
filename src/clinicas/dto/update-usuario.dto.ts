@@ -1,15 +1,8 @@
 import { IsObject, IsOptional } from 'class-validator';
+import { Permisos } from '../../common/types/permisos.types';
 
 export class UpdateUsuarioDto {
   @IsObject()
   @IsOptional()
-  permisos?: {
-    puedeGestionarCitas?: boolean;
-    puedeGestionarUsuarios?: boolean;
-    puedeGestionarTurnos?: boolean;
-    puedeGestionarPacientes?: boolean;
-    puedeGestionarProfesionales?: boolean;
-    puedeGestionarEspecialidades?: boolean;
-    puedeGestionarSucursales?: boolean;
-  };
+  permisos?: Permisos;
 }

@@ -380,6 +380,23 @@ export class ClinicasController {
     }
   }
 
+  @Get(':clinicaUrl/usuarios/:userId/permisos')
+  // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
+  @ApiOperation({ summary: 'Obtener permisos de un usuario específico' })
+  @ApiResponse({ status: 200, description: 'Permisos obtenidos exitosamente' })
+  async getUsuarioPermisos(
+    @Request() req,
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('userId') userId: string,
+  ) {
+    try {
+      return this.clinicasService.getUsuarioPermisos(clinicaUrl, userId);
+    } catch (error) {
+      console.error('❌ Error en getUsuarioPermisos controller:', error);
+      throw error;
+    }
+  }
+
   @Put(':clinicaUrl/usuarios/:userId')
   // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
   @ApiOperation({ summary: 'Actualizar permisos de usuario de la clínica' })

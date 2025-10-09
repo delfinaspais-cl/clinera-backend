@@ -127,6 +127,7 @@ export class ClinicasService {
             phone: true,
             role: true,
             estado: true,
+            permisos: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -146,6 +147,7 @@ export class ClinicasService {
           telefono: user.phone || null,
           rol: user.role.toLowerCase(),
           estado: user.estado || 'activo',
+          permisos: user.permisos || null,
           fechaCreacion: user.createdAt.toISOString().split('T')[0],
           ultimoAcceso: user.updatedAt.toISOString().split('T')[0],
         };
@@ -238,6 +240,24 @@ export class ClinicasService {
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Permisos: usar los del frontend o por defecto si no se envían
+      const permisosUsuario = dto.permisos || {
+        gestionarTurnos: false,
+        gestionarPacientes: false,
+        gestionarUsuarios: false,
+        gestionarProfesionales: false,
+        gestionarVentas: false,
+        gestionarReportes: false,
+        gestionarEspecialidades: false,
+        gestionarTratamientos: false,
+        gestionarSucursales: false,
+        gestionarMensajeria: false,
+        gestionarIA: false,
+        gestionarFichasMedicas: false,
+      };
+
+      console.log('🔍 Permisos del usuario a crear:', permisosUsuario);
+
       // Crear el usuario
       const usuario = await this.prisma.user.create({
         data: {
@@ -247,6 +267,7 @@ export class ClinicasService {
           password: hashedPassword,
           role: role,
           clinicaId: clinica.id,
+          permisos: permisosUsuario,
         },
       });
 
@@ -299,6 +320,7 @@ export class ClinicasService {
           rol: dto.rol,
           especialidad: dto.especialidad || null,
           estado: 'activo',
+          permisos: usuario.permisos, // Incluir permisos en la respuesta
           fechaCreacion: usuario.createdAt.toISOString().split('T')[0],
           ultimoAcceso: usuario.updatedAt.toISOString().split('T')[0],
           turnos: 0,
@@ -446,6 +468,68 @@ export class ClinicasService {
     }
   }
 
+  async getUsuarioPermisos(clinicaUrl: string, userId: string) {
+    try {
+      // Buscar la clínica por URL
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar el usuario
+      const usuario = await this.prisma.user.findFirst({
+        where: {
+          id: userId,
+          clinicaId: clinica.id,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          permisos: true,
+        },
+      });
+
+      if (!usuario) {
+        throw new BadRequestException('Usuario no encontrado en esta clínica');
+      }
+
+      return {
+        success: true,
+        usuario: {
+          id: usuario.id,
+          nombre: usuario.name,
+          email: usuario.email,
+          rol: usuario.role,
+        },
+        permisos: usuario.permisos || {
+          gestionarTurnos: false,
+          gestionarPacientes: false,
+          gestionarUsuarios: false,
+          gestionarProfesionales: false,
+          gestionarVentas: false,
+          gestionarReportes: false,
+          gestionarEspecialidades: false,
+          gestionarTratamientos: false,
+          gestionarSucursales: false,
+          gestionarMensajeria: false,
+          gestionarIA: false,
+          gestionarFichasMedicas: false,
+        },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al obtener permisos del usuario:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
   async updateUsuario(
     clinicaUrl: string,
     userId: string,
@@ -482,8 +566,8 @@ export class ClinicasService {
       const updateData: any = {};
 
       if (dto.permisos) {
-        // Los permisos se almacenan en el campo configuracion como JSON
-        updateData.configuracion = JSON.stringify({ permisos: dto.permisos });
+        // Los permisos se almacenan directamente en el campo permisos (tipo Json)
+        updateData.permisos = dto.permisos;
       } else {
         throw new BadRequestException('Los permisos son requeridos para la actualización');
       }
@@ -507,21 +591,10 @@ export class ClinicasService {
 
       console.log('🔍 Usuario actualizado:', usuarioActualizado);
 
-      // Parsear permisos desde configuracion si existe
-      let permisos = null;
-      if (usuarioActualizado.configuracion) {
-        try {
-          const config = JSON.parse(usuarioActualizado.configuracion);
-          permisos = config.permisos;
-        } catch (error) {
-          console.log('Error parseando configuracion:', error);
-        }
-      }
-
       return {
         success: true,
         message: 'Permisos actualizados exitosamente',
-        permisos: permisos,
+        permisos: usuarioActualizado.permisos,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {

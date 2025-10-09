@@ -7,7 +7,9 @@ import {
   IsEmail,
   Matches,
   ValidateIf,
+  IsObject,
 } from 'class-validator';
+import { Permisos } from '../../common/types/permisos.types';
 
 export class CreateUsuarioClinicaDto {
   @IsString()
@@ -42,6 +44,10 @@ export class CreateUsuarioClinicaDto {
   @IsOptional()
   @MinLength(2, { message: 'La especialidad debe tener al menos 2 caracteres' })
   especialidad?: string;
+
+  @IsObject()
+  @IsOptional()
+  permisos?: Permisos;
 
   // Password siempre se genera automáticamente - no se acepta del frontend
 }

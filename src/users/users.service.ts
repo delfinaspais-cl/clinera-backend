@@ -182,7 +182,16 @@ export class UsersService {
             { email: normalizedUsername },
           ],
         },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          password: true,
+          role: true,
+          clinicaId: true,
+          preferredLanguage: true,
+          permisos: true, // Incluir permisos
           clinica: {
             select: {
               id: true,
@@ -272,6 +281,8 @@ export class UsersService {
         username: user.username,
         role: user.role,
         name: user.name,
+        clinicaId: user.clinicaId,
+        clinicaUrl: user.clinica?.url,
       };
 
       const token = this.jwtService.sign(payload);
@@ -287,6 +298,7 @@ export class UsersService {
           name: user.name,
           role: user.role,
           preferredLanguage: user.preferredLanguage || 'es',
+          permisos: user.permisos || null, // Incluir permisos desde la BD
           clinica: user.clinica, // Incluir información de la clínica
         },
       };
@@ -303,7 +315,18 @@ export class UsersService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          phone: true,
+          role: true,
+          estado: true,
+          createdAt: true,
+          avatar_url: true,
+          preferredLanguage: true,
+          permisos: true, // Incluir permisos
           clinica: {
             select: {
               id: true,
@@ -336,6 +359,7 @@ export class UsersService {
           createdAt: user.createdAt,
           avatar_url: user.avatar_url,
           preferredLanguage: user.preferredLanguage || 'es',
+          permisos: user.permisos || null, // Incluir permisos
           clinica: user.clinica, // Incluir información de la clínica
         },
       };
