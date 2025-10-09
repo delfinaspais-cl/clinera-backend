@@ -1,5 +1,5 @@
 import { IsObject, IsOptional } from 'class-validator';
-import { Permisos } from '../../common/types/permisos.types';
+import type { Permisos } from '../../common/types/permisos.types';
 
 export class UpdateUsuarioDto {
   @IsObject()

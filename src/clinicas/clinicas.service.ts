@@ -267,7 +267,7 @@ export class ClinicasService {
           password: hashedPassword,
           role: role,
           clinicaId: clinica.id,
-          permisos: permisosUsuario,
+          permisos: permisosUsuario as any, // Cast para compatibilidad con Prisma
         },
       });
 
@@ -567,7 +567,7 @@ export class ClinicasService {
 
       if (dto.permisos) {
         // Los permisos se almacenan directamente en el campo permisos (tipo Json)
-        updateData.permisos = dto.permisos;
+        updateData.permisos = dto.permisos as any; // Cast para compatibilidad con Prisma
       } else {
         throw new BadRequestException('Los permisos son requeridos para la actualización');
       }

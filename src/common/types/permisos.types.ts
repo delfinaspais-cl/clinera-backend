@@ -11,6 +11,7 @@ export interface Permisos {
   gestionarMensajeria?: boolean;
   gestionarIA?: boolean;
   gestionarFichasMedicas?: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export const PERMISOS_DEFAULT: Permisos = {
