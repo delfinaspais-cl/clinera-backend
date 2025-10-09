@@ -318,4 +318,73 @@ export class GlobalClinicasController {
       throw new BadRequestException('Error al obtener la clínica');
     }
   }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Actualizar clínica (PÚBLICO)' })
+  @ApiResponse({ status: 200, description: 'Clínica actualizada exitosamente' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  async update(@Param('id') id: string, @Body() updateClinicaDto: any) {
+    try {
+      // Verificar que la clínica existe
+      const clinicaExistente = await this.prisma.clinica.findUnique({
+        where: { id },
+      });
+
+      if (!clinicaExistente) {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // Preparar datos de actualización (solo campos que se envían)
+      const dataToUpdate: any = {};
+
+      if (updateClinicaDto.name !== undefined) dataToUpdate.name = updateClinicaDto.name;
+      if (updateClinicaDto.url !== undefined) dataToUpdate.url = updateClinicaDto.url;
+      if (updateClinicaDto.address !== undefined) dataToUpdate.address = updateClinicaDto.address;
+      if (updateClinicaDto.phone !== undefined) dataToUpdate.phone = updateClinicaDto.phone;
+      if (updateClinicaDto.email !== undefined) dataToUpdate.email = updateClinicaDto.email;
+      if (updateClinicaDto.colorPrimario !== undefined) dataToUpdate.colorPrimario = updateClinicaDto.colorPrimario;
+      if (updateClinicaDto.colorSecundario !== undefined) dataToUpdate.colorSecundario = updateClinicaDto.colorSecundario;
+      if (updateClinicaDto.descripcion !== undefined) dataToUpdate.descripcion = updateClinicaDto.descripcion;
+      if (updateClinicaDto.contacto !== undefined) dataToUpdate.contacto = updateClinicaDto.contacto;
+      if (updateClinicaDto.estado !== undefined) dataToUpdate.estado = updateClinicaDto.estado;
+      if (updateClinicaDto.estadoPago !== undefined) dataToUpdate.estadoPago = updateClinicaDto.estadoPago;
+      if (updateClinicaDto.plan !== undefined) dataToUpdate.estadoPago = updateClinicaDto.plan;
+
+      // Actualizar la clínica
+      const clinicaActualizada = await this.prisma.clinica.update({
+        where: { id },
+        data: dataToUpdate,
+        include: {
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              estado: true,
+            },
+          },
+          _count: {
+            select: {
+              users: true,
+              turnos: true,
+            },
+          },
+        },
+      });
+
+      return {
+        success: true,
+        data: clinicaActualizada,
+        message: 'Clínica actualizada exitosamente',
+      };
+    } catch (error) {
+      console.error('Error actualizando clínica:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al actualizar la clínica');
+    }
+  }
 } 
