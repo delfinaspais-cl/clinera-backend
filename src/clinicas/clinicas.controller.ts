@@ -12,15 +12,25 @@ import {
   Request,
   BadRequestException,
   UnauthorizedException,
+  UseInterceptors,
+  UploadedFile,
+  Headers,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { ClinicasService } from './clinicas.service';
+import { ClinicaLogoService } from './services/clinica-logo.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateUsuarioClinicaDto } from './dto/create-usuario-clinica.dto';
 import { UpdateUsuarioEstadoDto } from './dto/update-usuario-estado.dto';
@@ -50,6 +60,7 @@ export class ClinicasController {
     private clinicasService: ClinicasService,
     private emailService: EmailService,
     private ownersService: OwnersService,
+    private clinicaLogoService: ClinicaLogoService,
   ) {}
 
   // Endpoint de prueba simple
@@ -1202,5 +1213,150 @@ export class ClinicasController {
         code: 'EMAIL_SEND_FAILED'
       };
     }
+  }
+
+  // ===== ENDPOINTS PARA MANEJO DE LOGO DE CLÍNICA =====
+
+  @Post(':clinicaUrl/logo')
+  @ApiOperation({ summary: 'Subir logo de la clínica' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        logo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Logo de la clínica (imagen)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Logo subido exitosamente' })
+  @ApiResponse({ status: 400, description: 'El archivo debe ser una imagen válida' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          return cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        if (allowedImageTypes.some(type => file.mimetype === type)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('El archivo debe ser una imagen válida (JPEG, PNG, GIF, WebP, SVG)'), false);
+        }
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async uploadLogo(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    console.log('🖼️ [LOGO] Subiendo logo de clínica:', clinicaUrl);
+    
+    if (!file) {
+      throw new BadRequestException('No se proporcionó archivo');
+    }
+    
+    const token = authHeader?.replace('Bearer ', '') || '';
+    return this.clinicaLogoService.uploadLogo(clinicaUrl, file, token);
+  }
+
+  @Put(':clinicaUrl/logo')
+  @ApiOperation({ summary: 'Actualizar logo de la clínica' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        logo: {
+          type: 'string',
+          format: 'binary',
+          description: 'Nuevo logo de la clínica (imagen)',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Logo actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'El archivo debe ser una imagen válida' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  @UseInterceptors(
+    FileInterceptor('logo', {
+      storage: diskStorage({
+        destination: './uploads/temp',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          return cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+        if (allowedImageTypes.some(type => file.mimetype === type)) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('El archivo debe ser una imagen válida (JPEG, PNG, GIF, WebP, SVG)'), false);
+        }
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB
+      },
+    }),
+  )
+  async updateLogo(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    console.log('🔄 [LOGO] Actualizando logo de clínica:', clinicaUrl);
+    
+    if (!file) {
+      throw new BadRequestException('No se proporcionó archivo');
+    }
+    
+    const token = authHeader?.replace('Bearer ', '') || '';
+    return this.clinicaLogoService.updateLogo(clinicaUrl, file, token);
+  }
+
+  @Delete(':clinicaUrl/logo')
+  @ApiOperation({ summary: 'Eliminar logo de la clínica' })
+  @ApiResponse({ status: 200, description: 'Logo eliminado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada o no tiene logo' })
+  async deleteLogo(
+    @Param('clinicaUrl') clinicaUrl: string,
+  ) {
+    console.log('🗑️ [LOGO] Eliminando logo de clínica:', clinicaUrl);
+    return this.clinicaLogoService.deleteLogo(clinicaUrl);
+  }
+
+  @Get(':clinicaUrl/logo')
+  @ApiOperation({ summary: 'Obtener URL del logo de la clínica' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'URL del logo obtenida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', nullable: true }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
+  async getLogo(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Headers('authorization') authHeader?: string,
+  ) {
+    console.log('📷 [LOGO] Obteniendo logo de clínica:', clinicaUrl);
+    const token = authHeader?.replace('Bearer ', '') || '';
+    return this.clinicaLogoService.getLogo(clinicaUrl, token);
   }
 }
