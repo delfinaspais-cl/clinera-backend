@@ -12,7 +12,10 @@ import {
   Request,
   BadRequestException,
   NotFoundException,
+  Res,
+  Header,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -523,10 +526,11 @@ export class GlobalTurnosController {
 
   // Endpoint público para confirmar turno mediante token
   @Get('confirmar/:token')
+  @Header('Content-Type', 'text/html')
   @ApiOperation({ summary: 'Confirmar turno mediante token (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turno confirmado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
-  async confirmarTurno(@Param('token') token: string) {
+  async confirmarTurno(@Param('token') token: string, @Res() res: Response) {
     console.log('🔵 ========================================');
     console.log('🔵 ENDPOINT CONFIRMAR TURNO LLAMADO');
     console.log('🔵 Token recibido:', token);
@@ -593,27 +597,27 @@ export class GlobalTurnosController {
       console.log('✅ Notificación creada');
       console.log('🎉 Confirmación completada exitosamente');
 
-      return {
-        success: true,
-        data: turnoActualizado,
-        message: 'Turno confirmado exitosamente',
-      };
+      // Devolver página HTML amigable
+      const htmlResponse = this.getConfirmacionExitosaHTML(turnoActualizado);
+      return res.send(htmlResponse);
     } catch (error) {
       console.error('❌ ERROR en confirmarTurno:', error);
       console.error('❌ Error stack:', error.stack);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new BadRequestException('Error al confirmar el turno');
+      
+      // Devolver página HTML de error
+      const errorHTML = this.getErrorHTML('No se pudo confirmar la cita', 
+        'El enlace puede haber expirado o ya fue utilizado.');
+      return res.status(404).send(errorHTML);
     }
   }
 
   // Endpoint público para cancelar turno mediante token
   @Get('cancelar/:token')
+  @Header('Content-Type', 'text/html')
   @ApiOperation({ summary: 'Cancelar turno mediante token (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
-  async cancelarTurno(@Param('token') token: string) {
+  async cancelarTurno(@Param('token') token: string, @Res() res: Response) {
     console.log('🔴 ========================================');
     console.log('🔴 ENDPOINT CANCELAR TURNO LLAMADO');
     console.log('🔴 Token recibido:', token);
@@ -680,18 +684,17 @@ export class GlobalTurnosController {
       console.log('✅ Notificación creada');
       console.log('🎉 Cancelación completada exitosamente');
 
-      return {
-        success: true,
-        data: turnoActualizado,
-        message: 'Turno cancelado exitosamente',
-      };
+      // Devolver página HTML amigable
+      const htmlResponse = this.getCancelacionExitosaHTML(turnoActualizado);
+      return res.send(htmlResponse);
     } catch (error) {
       console.error('❌ ERROR en cancelarTurno:', error);
       console.error('❌ Error stack:', error.stack);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new BadRequestException('Error al cancelar el turno');
+      
+      // Devolver página HTML de error
+      const errorHTML = this.getErrorHTML('No se pudo cancelar la cita', 
+        'El enlace puede haber expirado o ya fue utilizado.');
+      return res.status(404).send(errorHTML);
     }
   }
 
@@ -1014,6 +1017,393 @@ export class GlobalTurnosController {
     const timestamp = Date.now().toString();
     const random = Math.random().toString(36).substring(2, 15);
     return `${timestamp}_${random}`;
+  }
+
+  // Método para generar HTML de confirmación exitosa
+  private getConfirmacionExitosaHTML(turno: any): string {
+    const fecha = new Date(turno.fecha).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cita Confirmada - ${turno.clinica.name}</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+          }
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: checkmark 0.6s ease-in-out;
+          }
+          @keyframes checkmark {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+          }
+          .checkmark {
+            font-size: 48px;
+            color: white;
+          }
+          h1 {
+            color: #1F2937;
+            font-size: 32px;
+            margin: 0 0 10px 0;
+          }
+          .subtitle {
+            color: #6B7280;
+            font-size: 18px;
+            margin: 0 0 30px 0;
+          }
+          .details {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+          }
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E5E7EB;
+          }
+          .detail-row:last-child {
+            border-bottom: none;
+          }
+          .detail-label {
+            color: #6B7280;
+            font-weight: 500;
+          }
+          .detail-value {
+            color: #1F2937;
+            font-weight: 600;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 14px;
+          }
+          .clinic-name {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="success-icon">
+            <span class="checkmark">✓</span>
+          </div>
+          <h1>¡Cita Confirmada!</h1>
+          <p class="subtitle">Tu asistencia ha sido registrada exitosamente</p>
+          
+          <div class="details">
+            <div class="detail-row">
+              <span class="detail-label">Paciente</span>
+              <span class="detail-value">${turno.paciente}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Profesional</span>
+              <span class="detail-value">${turno.doctor}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Fecha</span>
+              <span class="detail-value">${fecha}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Hora</span>
+              <span class="detail-value">${turno.hora}</span>
+            </div>
+            ${turno.servicio ? `
+            <div class="detail-row">
+              <span class="detail-label">Servicio</span>
+              <span class="detail-value">${turno.servicio}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="footer">
+            <p>📍 Te esperamos en</p>
+            <p class="clinic-name">${turno.clinica.name}</p>
+            <p style="margin-top: 20px; font-size: 12px;">
+              Si necesitas hacer cambios, por favor contacta directamente con la clínica.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Método para generar HTML de cancelación exitosa
+  private getCancelacionExitosaHTML(turno: any): string {
+    const fecha = new Date(turno.fecha).toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cita Cancelada - ${turno.clinica.name}</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+            animation: slideIn 0.5s ease-out;
+          }
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .cancel-icon {
+            width: 80px;
+            height: 80px;
+            background: #EF4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: shake 0.6s ease-in-out;
+          }
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+          }
+          .cancel-mark {
+            font-size: 48px;
+            color: white;
+          }
+          h1 {
+            color: #1F2937;
+            font-size: 32px;
+            margin: 0 0 10px 0;
+          }
+          .subtitle {
+            color: #6B7280;
+            font-size: 18px;
+            margin: 0 0 30px 0;
+          }
+          .details {
+            background: #F9FAFB;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: left;
+          }
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #E5E7EB;
+          }
+          .detail-row:last-child {
+            border-bottom: none;
+          }
+          .detail-label {
+            color: #6B7280;
+            font-weight: 500;
+          }
+          .detail-value {
+            color: #1F2937;
+            font-weight: 600;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 14px;
+          }
+          .clinic-name {
+            color: #f5576c;
+            font-weight: 700;
+            font-size: 20px;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="cancel-icon">
+            <span class="cancel-mark">✕</span>
+          </div>
+          <h1>Cita Cancelada</h1>
+          <p class="subtitle">Tu cita ha sido cancelada correctamente</p>
+          
+          <div class="details">
+            <div class="detail-row">
+              <span class="detail-label">Paciente</span>
+              <span class="detail-value">${turno.paciente}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Profesional</span>
+              <span class="detail-value">${turno.doctor}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Fecha</span>
+              <span class="detail-value">${fecha}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Hora</span>
+              <span class="detail-value">${turno.hora}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p class="clinic-name">${turno.clinica.name}</p>
+            <p style="margin-top: 20px; font-size: 14px;">
+              Si deseas reagendar, por favor contacta directamente con la clínica.
+            </p>
+            <p style="margin-top: 10px; font-size: 12px; color: #9CA3AF;">
+              Esperamos verte pronto
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Método para generar HTML de error
+  private getErrorHTML(titulo: string, mensaje: string): string {
+    return `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - Clinera</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+          }
+          .error-icon {
+            width: 80px;
+            height: 80px;
+            background: #FEF3C7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+          }
+          .error-mark {
+            font-size: 48px;
+          }
+          h1 {
+            color: #1F2937;
+            font-size: 28px;
+            margin: 0 0 15px 0;
+          }
+          p {
+            color: #6B7280;
+            font-size: 16px;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="error-icon">
+            <span class="error-mark">⚠️</span>
+          </div>
+          <h1>${titulo}</h1>
+          <p>${mensaje}</p>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   // Método helper para enviar email de confirmación
