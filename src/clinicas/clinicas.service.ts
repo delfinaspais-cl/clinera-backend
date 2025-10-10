@@ -43,6 +43,161 @@ export class ClinicasService {
     return `${timestamp}_${random}`;
   }
 
+  // Método para confirmar turno manualmente desde el frontend
+  async confirmarTurnoManual(clinicaUrl: string, turnoId: string) {
+    try {
+      // Buscar la clínica
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+        },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar y actualizar el turno
+      const turno = await this.prisma.turno.findFirst({
+        where: {
+          id: turnoId,
+          clinicaId: clinica.id,
+        },
+      });
+
+      if (!turno) {
+        throw new BadRequestException('Turno no encontrado');
+      }
+
+      // Actualizar estado
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turnoId },
+        data: { estado: 'confirmado' },
+      });
+
+      // Enviar email al paciente
+      try {
+        const emailData = {
+          paciente: turno.paciente,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          hora: turno.hora,
+          motivo: turno.motivo || 'Consulta médica',
+          clinica: clinica.name,
+          telefonoClinica: clinica.phone,
+          emailClinica: clinica.email,
+        };
+
+        await this.emailService.sendEmail({
+          to: turno.email,
+          subject: `Cita confirmada - ${clinica.name}`,
+          template: 'turno-confirmation',
+          data: emailData
+        });
+
+        console.log('✅ Email de confirmación enviado al paciente');
+      } catch (emailError) {
+        console.error('❌ Error enviando email:', emailError);
+        // No fallar la operación si el email falla
+      }
+
+      return {
+        success: true,
+        turno: turnoActualizado,
+        message: 'Turno confirmado exitosamente. Se ha enviado un email al paciente.',
+      };
+    } catch (error) {
+      console.error('Error confirmando turno manualmente:', error);
+      throw error;
+    }
+  }
+
+  // Método para cancelar turno manualmente desde el frontend
+  async cancelarTurnoManual(clinicaUrl: string, turnoId: string) {
+    try {
+      // Buscar la clínica
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { url: clinicaUrl },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+        },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Buscar y actualizar el turno
+      const turno = await this.prisma.turno.findFirst({
+        where: {
+          id: turnoId,
+          clinicaId: clinica.id,
+        },
+      });
+
+      if (!turno) {
+        throw new BadRequestException('Turno no encontrado');
+      }
+
+      // Actualizar estado
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turnoId },
+        data: { estado: 'cancelado' },
+      });
+
+      // Enviar email al paciente
+      try {
+        const emailData = {
+          paciente: turno.paciente,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          hora: turno.hora,
+          clinica: clinica.name,
+          telefonoClinica: clinica.phone,
+          emailClinica: clinica.email,
+        };
+
+        await this.emailService.sendEmail({
+          to: turno.email,
+          subject: `Cita cancelada - ${clinica.name}`,
+          template: 'turno-cancelado',
+          data: emailData
+        });
+
+        console.log('✅ Email de cancelación enviado al paciente');
+      } catch (emailError) {
+        console.error('❌ Error enviando email:', emailError);
+        // No fallar la operación si el email falla
+      }
+
+      return {
+        success: true,
+        turno: turnoActualizado,
+        message: 'Turno cancelado exitosamente. Se ha enviado un email al paciente.',
+      };
+    } catch (error) {
+      console.error('Error cancelando turno manualmente:', error);
+      throw error;
+    }
+  }
+
   async getClinicaByUserId(userId: string) {
     try {
       const user = await this.prisma.user.findUnique({

@@ -530,25 +530,32 @@ export class ClinicasController {
 
   @Post(':clinicaUrl/turnos/:turnoId/confirm')
   @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Confirmar turno manualmente desde el frontend' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiParam({ name: 'turnoId', description: 'ID del turno a confirmar' })
+  @ApiResponse({ status: 200, description: 'Turno confirmado y email enviado al paciente' })
+  @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
+  @ApiBearerAuth()
   async confirmTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
   ) {
-    return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'confirmado' });
+    return this.clinicasService.confirmarTurnoManual(clinicaUrl, turnoId);
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/cancel')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Cancelar turno' })
+  @ApiOperation({ summary: 'Cancelar turno manualmente desde el frontend' })
   @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
   @ApiParam({ name: 'turnoId', description: 'ID del turno a cancelar' })
-  @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Turno no encontrado' })
+  @ApiResponse({ status: 200, description: 'Turno cancelado y email enviado al paciente' })
+  @ApiResponse({ status: 404, description: 'Clínica o turno no encontrado' })
+  @ApiBearerAuth()
   async cancelTurno(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('turnoId') turnoId: string,
   ) {
-    return this.clinicasService.updateTurnoEstado(clinicaUrl, turnoId, { estado: 'cancelado' });
+    return this.clinicasService.cancelarTurnoManual(clinicaUrl, turnoId);
   }
 
   @Post(':clinicaUrl/turnos/:turnoId/complete')

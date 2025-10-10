@@ -103,6 +103,8 @@ export class EmailService {
         return this.getPasswordChangedTemplate(data);
       case 'turno-confirmation':
         return this.getTurnoConfirmationTemplate(data);
+      case 'turno-cancelado':
+        return this.getTurnoCanceladoTemplate(data);
       case 'welcome-credentials':
         return this.getWelcomeCredentialsTemplate(data);
       case 'user-welcome':
@@ -902,6 +904,58 @@ export class EmailService {
       // Fallback: enlace básico sin parámetros
       return 'https://calendar.google.com/calendar/render?action=TEMPLATE';
     }
+  }
+
+  private getTurnoCanceladoTemplate(data: any): string {
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #EF4444; margin: 0;">${data.clinica}</h1>
+            <p style="color: #6B7280; margin: 10px 0 0 0;">Notificación de Cancelación</p>
+          </div>
+          
+          <h2 style="color: #1F2937; margin-bottom: 20px;">Tu cita ha sido cancelada</h2>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Hola <strong>${data.paciente}</strong>,
+          </p>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Lamentamos informarte que tu cita ha sido cancelada.
+          </p>
+          
+          <div style="background-color: #FEF2F2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #EF4444;">
+            <h3 style="color: #1F2937; margin: 0 0 15px 0;">Detalles de la cita cancelada:</h3>
+            <p style="color: #374151; margin: 5px 0;"><strong>Paciente:</strong> ${data.paciente}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Profesional:</strong> ${data.doctor}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${data.fecha}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Hora:</strong> ${data.hora}</p>
+          </div>
+          
+          <p style="color: #374151; line-height: 1.6; margin-bottom: 20px;">
+            Si deseas reagendar tu cita, por favor contacta directamente con nosotros.
+          </p>
+          
+          <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <h4 style="color: #1E40AF; margin: 0 0 10px 0;">Información de contacto:</h4>
+            <p style="color: #374151; margin: 5px 0; font-size: 14px;">
+              <strong>Teléfono:</strong> ${data.telefonoClinica || 'No disponible'}
+            </p>
+            <p style="color: #374151; margin: 5px 0; font-size: 14px;">
+              <strong>Email:</strong> ${data.emailClinica || 'No disponible'}
+            </p>
+          </div>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
+          
+          <p style="color: #6B7280; font-size: 12px; text-align: center; margin: 0;">
+            Este es un email automático, por favor no respondas a este mensaje.<br>
+            Si tienes alguna consulta, contacta directamente con la clínica.
+          </p>
+        </div>
+      </div>
+    `;
   }
 
   private getAppointmentConfirmationTemplate(data: any): string {
