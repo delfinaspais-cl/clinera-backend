@@ -927,8 +927,9 @@ export class EmailService {
       }
     }
     
-    const confirmarUrl = `${baseUrl}/api/turnos/confirmar/${confirmationToken}`;
-    const cancelarUrl = `${baseUrl}/api/turnos/cancelar/${confirmationToken}`;
+    // IMPORTANTE: Las rutas NO incluyen /api/ porque no hay globalPrefix configurado
+    const confirmarUrl = `${baseUrl}/turnos/confirmar/${confirmationToken}`;
+    const cancelarUrl = `${baseUrl}/turnos/cancelar/${confirmationToken}`;
 
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
