@@ -750,6 +750,7 @@ export class GlobalTurnosController {
           fecha: new Date(createTurnoDto.fecha),
           hora: createTurnoDto.hora,
           motivo: createTurnoDto.motivo || 'Consulta',
+          sucursal: createTurnoDto.sucursal || null,
           clinicaId: clinica.id,
           estado: 'pendiente',
           confirmationToken: confirmationToken,
