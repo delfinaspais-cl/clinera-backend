@@ -116,6 +116,18 @@ export class UpdateClinicaDto {
   descripcion?: string;
 
   @IsOptional()
+  @IsString({ message: 'El título debe ser una cadena de texto' })
+  titulo?: string;
+
+  @IsOptional()
+  @IsString({ message: 'El subtítulo debe ser una cadena de texto' })
+  subtitulo?: string;
+
+  @IsOptional()
+  @IsString({ message: 'Los comentarios HTML deben ser una cadena de texto' })
+  comentariosHTML?: string;
+
+  @IsOptional()
   @IsString({ message: 'El código de moneda debe ser una cadena de texto' })
   @IsIn(['USD', 'BRL', 'PEN', 'ARS', 'CLP', 'COP', 'MXN'], { 
     message: 'El código de moneda debe ser: USD, BRL, PEN, ARS, CLP, COP, o MXN' 

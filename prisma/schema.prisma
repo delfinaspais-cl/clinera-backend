@@ -27,6 +27,9 @@ model Clinica {
   stats                  String?
   defaultLanguage        String?                @default("es")
   currencyCode           String?                @default("USD")
+  titulo                 String?
+  subtitulo              String?
+  comentariosHTML        String?
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   url                    String                 @unique @map("slug")

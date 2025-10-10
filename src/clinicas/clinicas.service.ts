@@ -1442,6 +1442,18 @@ export class ClinicasService {
         updateData.descripcion = dto.descripcion;
       }
 
+      if (dto.titulo !== undefined) {
+        updateData.titulo = dto.titulo;
+      }
+
+      if (dto.subtitulo !== undefined) {
+        updateData.subtitulo = dto.subtitulo;
+      }
+
+      if (dto.comentariosHTML !== undefined) {
+        updateData.comentariosHTML = dto.comentariosHTML;
+      }
+
       if (dto.defaultLanguage) {
         updateData.defaultLanguage = dto.defaultLanguage;
       }
@@ -1561,6 +1573,9 @@ export class ClinicasService {
         colorPrimario: clinica.colorPrimario,
         colorSecundario: clinica.colorSecundario,
         descripcion: clinica.descripcion,
+        titulo: clinica.titulo,
+        subtitulo: clinica.subtitulo,
+        comentariosHTML: clinica.comentariosHTML,
         direccion: clinica.address,
         telefono: clinica.phone,
         email: clinica.email,

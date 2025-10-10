@@ -19,6 +19,18 @@ export class UpdateClinicaConfiguracionDto {
 
   @IsOptional()
   @IsString()
+  titulo?: string;
+
+  @IsOptional()
+  @IsString()
+  subtitulo?: string;
+
+  @IsOptional()
+  @IsString()
+  comentariosHTML?: string;
+
+  @IsOptional()
+  @IsString()
   @IsIn(['es', 'pt-BR', 'en'], { message: 'El idioma debe ser: es (Español), pt-BR (Portugués) o en (Inglés)' })
   defaultLanguage?: string;
 
