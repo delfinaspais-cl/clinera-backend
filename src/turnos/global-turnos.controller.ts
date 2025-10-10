@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { SendEmailDto } from './dto/send-email.dto';
+import { AppointmentWebhookService } from '../webhooks/appointment-webhook.service';
 
 @ApiTags('Turnos Globales')
 @Controller('turnos')
@@ -34,6 +35,7 @@ export class GlobalTurnosController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly appointmentWebhookService: AppointmentWebhookService,
   ) {
     console.log('🚀 ========================================');
     console.log('🚀 GlobalTurnosController INICIALIZADO');
@@ -287,6 +289,17 @@ export class GlobalTurnosController {
 
       // Enviar email de confirmación al paciente
       await this.sendConfirmationEmail(turno);
+
+      // Enviar webhook de cita creada
+      try {
+        await this.appointmentWebhookService.sendAppointmentCreatedWebhook(
+          turno,
+          createTurnoDto.clinicaId,
+        );
+      } catch (webhookError) {
+        console.error('❌ Error enviando webhook:', webhookError);
+        // No lanzar error para no afectar la creación del turno
+      }
 
       return {
         success: true,
@@ -767,6 +780,17 @@ export class GlobalTurnosController {
 
       // Enviar email de confirmación al paciente
       await this.sendConfirmationEmail(turno);
+
+      // Enviar webhook de cita creada
+      try {
+        await this.appointmentWebhookService.sendAppointmentCreatedWebhook(
+          turno,
+          clinica.id,
+        );
+      } catch (webhookError) {
+        console.error('❌ Error enviando webhook:', webhookError);
+        // No lanzar error para no afectar la creación del turno
+      }
 
       return {
         success: true,

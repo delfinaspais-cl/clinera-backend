@@ -18,12 +18,14 @@ import { SearchTurnosDto } from './dto/search-turnos.dto';
 import { CreatePatientDto } from '../patients/dto/create-patient.dto';
 import { EmailService } from '../email/email.service';
 import { PasswordGenerator } from '../common/utils/password-generator';
+import { AppointmentWebhookService } from '../webhooks/appointment-webhook.service';
 
 @Injectable()
 export class ClinicasService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private appointmentWebhookService: AppointmentWebhookService,
   ) {}
 
   // Función para generar contraseña automática
@@ -1714,6 +1716,17 @@ export class ClinicasService {
         // No lanzar error para no afectar la creación del turno
       }
 
+      // Enviar webhook de cita creada
+      try {
+        await this.appointmentWebhookService.sendAppointmentCreatedWebhook(
+          turnoCreado,
+          clinica.id,
+        );
+      } catch (webhookError) {
+        console.error('❌ Error enviando webhook:', webhookError);
+        // No lanzar error para no afectar la creación del turno
+      }
+
       // Formatear la fecha para el mensaje
       const fechaFormateada = fechaTurno.toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -2084,20 +2097,20 @@ export class ClinicasService {
 
       console.log('Turno creado exitosamente:', turno.id);
 
+      // Obtener datos de la clínica para el email y webhook
+      const clinicaData = await this.prisma.clinica.findUnique({
+        where: { id: clinica.id },
+        select: {
+          name: true,
+          phone: true,
+          email: true,
+          address: true
+        }
+      });
+
       // Enviar email de confirmación automáticamente
       try {
         console.log('📧 Enviando email de confirmación de turno...');
-        
-        // Obtener datos de la clínica para el email
-        const clinicaData = await this.prisma.clinica.findUnique({
-          where: { id: clinica.id },
-          select: {
-            name: true,
-            phone: true,
-            email: true,
-            address: true
-          }
-        });
 
         const emailData = {
           paciente: turno.paciente,
@@ -2132,6 +2145,18 @@ export class ClinicasService {
         }
       } catch (emailError) {
         console.error('❌ Error en envío de email de confirmación:', emailError);
+        // No lanzar error para no afectar la creación del turno
+      }
+
+      // Enviar webhook de cita creada
+      try {
+        console.log('🔔 Enviando webhook de cita creada...');
+        await this.appointmentWebhookService.sendAppointmentCreatedWebhook(
+          { ...turno, clinica: clinicaData },
+          clinica.id,
+        );
+      } catch (webhookError) {
+        console.error('❌ Error enviando webhook:', webhookError);
         // No lanzar error para no afectar la creación del turno
       }
 

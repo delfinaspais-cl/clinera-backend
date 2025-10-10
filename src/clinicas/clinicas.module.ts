@@ -10,9 +10,10 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { OwnersService } from '../owners/owners.service';
 import { StorageService } from '../fichas-medicas/services/storage.service';
 import { FileMicroserviceService } from '../fichas-medicas/services/file-microservice.service';
+import { WebhooksModule } from '../webhooks/webhooks.module';
 
 @Module({
-  imports: [PrismaModule, EmailModule, PlansModule, SubscriptionsModule],
+  imports: [PrismaModule, EmailModule, PlansModule, SubscriptionsModule, WebhooksModule],
   controllers: [ClinicasController, ClinicPlansController],
   providers: [
     ClinicasService, 

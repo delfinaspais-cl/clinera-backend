@@ -24,6 +24,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { FichasMedicasModule } from './fichas-medicas/fichas-medicas.module';
 import { VentasModule } from './ventas/ventas.module';
 import { MediosPagoModule } from './medios-pago/medios-pago.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -72,6 +73,7 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     FichasMedicasModule,
     VentasModule,
     MediosPagoModule,
+    WebhooksModule,
   ],
   controllers: [
     AppController, 
