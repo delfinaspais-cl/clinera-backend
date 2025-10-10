@@ -955,7 +955,7 @@ export class EmailService {
             <p style="color: #374151; margin: 5px 0;"><strong>Doctor:</strong> ${data.doctor}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Fecha:</strong> ${data.fecha}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Hora:</strong> ${data.hora}</p>
-            <p style="color: #374151; margin: 5px 0;"><strong>Motivo:</strong> ${data.motivo}</p>
+            <p style="color: #374151; margin: 5px 0;"><strong>Tratamiento:</strong> ${data.tratamiento}</p>
             <p style="color: #374151; margin: 5px 0;"><strong>Clínica:</strong> ${data.clinica}</p>
           </div>
           
