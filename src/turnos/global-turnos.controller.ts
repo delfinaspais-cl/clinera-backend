@@ -497,7 +497,7 @@ export class GlobalTurnosController {
   }
 
   // Endpoint público para confirmar turno mediante token
-  @Patch('confirmar/:token')
+  @Get('confirmar/:token')
   @ApiOperation({ summary: 'Confirmar turno mediante token (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turno confirmado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
@@ -562,7 +562,7 @@ export class GlobalTurnosController {
   }
 
   // Endpoint público para cancelar turno mediante token
-  @Patch('cancelar/:token')
+  @Get('cancelar/:token')
   @ApiOperation({ summary: 'Cancelar turno mediante token (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })

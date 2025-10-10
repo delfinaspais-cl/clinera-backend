@@ -978,16 +978,6 @@ export class EmailService {
             </p>
           </div>
           
-          // <div style="background-color: #EFF6FF; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          //   <h4 style="color: #1E40AF; margin: 0 0 10px 0;">Información de contacto:</h4>
-          //   <p style="color: #374151; margin: 5px 0; font-size: 14px;">
-          //     <strong>Teléfono:</strong> ${data.telefonoClinica || 'No disponible'}
-          //   </p>
-          //   <p style="color: #374151; margin: 5px 0; font-size: 14px;">
-          //     <strong>Email:</strong> ${data.emailClinica || 'No disponible'}
-          //   </p>
-          // </div>
-          
           <hr style="margin: 30px 0; border: none; border-top: 1px solid #E5E7EB;">
           
           <p style="color: #6B7280; font-size: 12px; text-align: center; margin: 0;">
