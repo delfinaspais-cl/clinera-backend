@@ -72,7 +72,7 @@ export class CreateClinicaPendienteDto {
 
   @IsString()
   @IsOptional()
-  estado?: string = 'activo';
+  estado?: string = 'activa';
 
   @IsBoolean()
   @IsOptional()

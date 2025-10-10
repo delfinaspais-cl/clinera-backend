@@ -1540,7 +1540,7 @@ export class OwnersService {
           colorPrimario: dto.color_primario || '#3B82F6',
           colorSecundario: dto.color_secundario || '#1E40AF',
           descripcion: dto.descripcion || '',
-          estado: dto.estado || 'activo',
+          estado: dto.estado || 'activa',
           estadoPago: 'pendiente',
           pendienteAprobacion: dto.pendiente_aprobacion !== undefined ? dto.pendiente_aprobacion : false,
           fuente: dto.fuente || 'owner_dashboard',
@@ -1587,7 +1587,7 @@ export class OwnersService {
     }
   }
 
-  async updateClinicaEstado(clinicaId: string, estado: 'activo' | 'inactiva') {
+  async updateClinicaEstado(clinicaId: string, estado: 'activa' | 'inactiva') {
     try {
       // Verificar que la clínica existe
       const existingClinica = await this.prisma.clinica.findFirst({
@@ -1604,7 +1604,7 @@ export class OwnersService {
         data: {
           estado: estado,
           // Si se activa la clínica, marcar como no pendiente de aprobación
-          pendienteAprobacion: estado === 'activo' ? false : existingClinica.pendienteAprobacion,
+          pendienteAprobacion: estado === 'activa' ? false : existingClinica.pendienteAprobacion,
         },
       });
 

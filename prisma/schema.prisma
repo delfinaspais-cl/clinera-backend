@@ -16,7 +16,7 @@ model Clinica {
   logo                   String?
   colorPrimario          String?                @default("#3B82F6")
   colorSecundario        String?                @default("#1E40AF")
-  estado                 String?                @default("activo")
+  estado                 String?                @default("activa")
   estadoPago             String?                @default("trial")
   fechaCreacion          DateTime               @default(now())
   ultimoPago             DateTime?

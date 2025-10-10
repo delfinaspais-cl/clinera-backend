@@ -72,7 +72,7 @@ export class ClinicSubscriptionIntegrationService {
           colorPrimario: clinicaData.colorPrimario || '#3B82F6',
           colorSecundario: clinicaData.colorSecundario || '#1E40AF',
           descripcion: clinicaData.descripcion || '',
-          estado: clinicaData.estado || 'activo',
+          estado: clinicaData.estado || 'activa',
           estadoPago: 'trial', // Iniciar en trial
           fechaCreacion: new Date(),
         },

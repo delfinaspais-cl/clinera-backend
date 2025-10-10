@@ -18,7 +18,7 @@ async function seedChatData() {
           address: 'Av. Principal 123',
           phone: '+56912345678',
           email: 'contacto@clinicaejemplo.cl',
-          estado: 'activo',
+          estado: 'activa',
         },
       });
     }

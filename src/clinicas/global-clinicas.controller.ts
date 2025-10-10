@@ -146,7 +146,7 @@ export class GlobalClinicasController {
           colorSecundario: createClinicaDto.colorSecundario,
           descripcion: createClinicaDto.descripcion || '',
           contacto: createClinicaDto.contacto || '',
-          estado: 'activa',
+          estado: 'activa', // Consistente: femenino
           estadoPago: createClinicaDto.plan || 'pendiente',
           fechaCreacion: new Date(),
           ultimoPago: null,
