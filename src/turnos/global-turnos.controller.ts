@@ -635,6 +635,7 @@ export class GlobalTurnosController {
               id: true,
               name: true,
               url: true,
+              address: true, // Para Google Maps si agregamos botones aquí también
             },
           },
         },
