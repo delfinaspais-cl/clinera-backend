@@ -31,7 +31,15 @@ export class GlobalTurnosController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+    console.log('🚀 ========================================');
+    console.log('🚀 GlobalTurnosController INICIALIZADO');
+    console.log('🚀 Rutas registradas:');
+    console.log('🚀   GET  /api/turnos/confirmar/:token');
+    console.log('🚀   GET  /api/turnos/cancelar/:token');
+    console.log('🚀   POST /api/turnos/public');
+    console.log('🚀 ========================================');
+  }
 
   // Función helper para procesar datos de pago de un turno
   private procesarDatosPago(turno: any) {
@@ -502,8 +510,15 @@ export class GlobalTurnosController {
   @ApiResponse({ status: 200, description: 'Turno confirmado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
   async confirmarTurno(@Param('token') token: string) {
+    console.log('🔵 ========================================');
+    console.log('🔵 ENDPOINT CONFIRMAR TURNO LLAMADO');
+    console.log('🔵 Token recibido:', token);
+    console.log('🔵 Timestamp:', new Date().toISOString());
+    console.log('🔵 ========================================');
+    
     try {
       // Buscar turno por token
+      console.log('🔍 Buscando turno con token:', token);
       const turno = await this.prisma.turno.findUnique({
         where: { confirmationToken: token },
         include: {
@@ -518,10 +533,18 @@ export class GlobalTurnosController {
       });
 
       if (!turno) {
+        console.log('❌ Turno no encontrado con token:', token);
         throw new NotFoundException('Turno no encontrado o token inválido');
       }
 
+      console.log('✅ Turno encontrado:', {
+        id: turno.id,
+        paciente: turno.paciente,
+        estadoActual: turno.estado,
+      });
+
       // Actualizar estado a confirmado
+      console.log('🔄 Actualizando estado a confirmado...');
       const turnoActualizado = await this.prisma.turno.update({
         where: { id: turno.id },
         data: { estado: 'confirmado' },
@@ -536,7 +559,10 @@ export class GlobalTurnosController {
         },
       });
 
+      console.log('✅ Estado actualizado exitosamente');
+
       // Crear notificación para la clínica
+      console.log('📬 Creando notificación para la clínica...');
       await this.prisma.notificacion.create({
         data: {
           titulo: 'Turno confirmado',
@@ -547,16 +573,20 @@ export class GlobalTurnosController {
         },
       });
 
+      console.log('✅ Notificación creada');
+      console.log('🎉 Confirmación completada exitosamente');
+
       return {
         success: true,
         data: turnoActualizado,
         message: 'Turno confirmado exitosamente',
       };
     } catch (error) {
+      console.error('❌ ERROR en confirmarTurno:', error);
+      console.error('❌ Error stack:', error.stack);
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error confirmando turno:', error);
       throw new BadRequestException('Error al confirmar el turno');
     }
   }
@@ -567,8 +597,15 @@ export class GlobalTurnosController {
   @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
   @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
   async cancelarTurno(@Param('token') token: string) {
+    console.log('🔴 ========================================');
+    console.log('🔴 ENDPOINT CANCELAR TURNO LLAMADO');
+    console.log('🔴 Token recibido:', token);
+    console.log('🔴 Timestamp:', new Date().toISOString());
+    console.log('🔴 ========================================');
+    
     try {
       // Buscar turno por token
+      console.log('🔍 Buscando turno con token:', token);
       const turno = await this.prisma.turno.findUnique({
         where: { confirmationToken: token },
         include: {
@@ -583,10 +620,18 @@ export class GlobalTurnosController {
       });
 
       if (!turno) {
+        console.log('❌ Turno no encontrado con token:', token);
         throw new NotFoundException('Turno no encontrado o token inválido');
       }
 
+      console.log('✅ Turno encontrado:', {
+        id: turno.id,
+        paciente: turno.paciente,
+        estadoActual: turno.estado,
+      });
+
       // Actualizar estado a cancelado
+      console.log('🔄 Actualizando estado a cancelado...');
       const turnoActualizado = await this.prisma.turno.update({
         where: { id: turno.id },
         data: { estado: 'cancelado' },
@@ -601,7 +646,10 @@ export class GlobalTurnosController {
         },
       });
 
+      console.log('✅ Estado actualizado exitosamente');
+
       // Crear notificación para la clínica
+      console.log('📬 Creando notificación para la clínica...');
       await this.prisma.notificacion.create({
         data: {
           titulo: 'Turno cancelado',
@@ -612,16 +660,20 @@ export class GlobalTurnosController {
         },
       });
 
+      console.log('✅ Notificación creada');
+      console.log('🎉 Cancelación completada exitosamente');
+
       return {
         success: true,
         data: turnoActualizado,
         message: 'Turno cancelado exitosamente',
       };
     } catch (error) {
+      console.error('❌ ERROR en cancelarTurno:', error);
+      console.error('❌ Error stack:', error.stack);
       if (error instanceof NotFoundException) {
         throw error;
       }
-      console.error('Error cancelando turno:', error);
       throw new BadRequestException('Error al cancelar el turno');
     }
   }
