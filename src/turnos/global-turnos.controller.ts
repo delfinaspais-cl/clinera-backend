@@ -1019,6 +1019,71 @@ export class GlobalTurnosController {
     return `${timestamp}_${random}`;
   }
 
+  // Método para generar URL de Google Calendar
+  private generateGoogleCalendarUrl(turno: any): string {
+    try {
+      // Formatear fecha y hora para Google Calendar (formato: YYYYMMDDTHHmmss)
+      const fecha = new Date(turno.fecha);
+      const [hora, minutos] = turno.hora.split(':');
+      
+      // Fecha de inicio
+      const startDate = new Date(fecha);
+      startDate.setHours(parseInt(hora), parseInt(minutos), 0);
+      
+      // Fecha de fin (+ 30 minutos por defecto o usar duración del turno)
+      const endDate = new Date(startDate);
+      endDate.setMinutes(endDate.getMinutes() + (turno.duracionMin || 30));
+      
+      // Formatear fechas para Google Calendar
+      const formatDateForGoogle = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const mins = String(date.getMinutes()).padStart(2, '0');
+        return `${year}${month}${day}T${hours}${mins}00`;
+      };
+
+      const startFormatted = formatDateForGoogle(startDate);
+      const endFormatted = formatDateForGoogle(endDate);
+
+      // Construir detalles del evento
+      const titulo = encodeURIComponent(`Cita médica - ${turno.clinica.name}`);
+      const detalles = encodeURIComponent(
+        `Paciente: ${turno.paciente}\n` +
+        `Profesional: ${turno.doctor}\n` +
+        `${turno.motivo ? `Motivo: ${turno.motivo}\n` : ''}` +
+        `${turno.servicio ? `Servicio: ${turno.servicio}\n` : ''}`
+      );
+      const ubicacion = encodeURIComponent(turno.clinica.name);
+
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titulo}&dates=${startFormatted}/${endFormatted}&details=${detalles}&location=${ubicacion}`;
+    } catch (error) {
+      console.error('Error generando URL de Google Calendar:', error);
+      // Fallback: enlace básico
+      return 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+    }
+  }
+
+  // Método para generar URL de Google Maps
+  private generateGoogleMapsUrl(clinica: any): string {
+    try {
+      // Si la clínica tiene dirección, usarla
+      if (clinica.address) {
+        const direccion = encodeURIComponent(clinica.address);
+        return `https://www.google.com/maps/search/?api=1&query=${direccion}`;
+      }
+      
+      // Si no tiene dirección, buscar por nombre de la clínica
+      const nombre = encodeURIComponent(clinica.name);
+      return `https://www.google.com/maps/search/?api=1&query=${nombre}`;
+    } catch (error) {
+      console.error('Error generando URL de Google Maps:', error);
+      // Fallback: búsqueda genérica
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinica.name || 'clinica')}`;
+    }
+  }
+
   // Método para generar HTML de confirmación exitosa
   private getConfirmacionExitosaHTML(turno: any): string {
     const fecha = new Date(turno.fecha).toLocaleDateString('es-ES', {
@@ -1027,6 +1092,10 @@ export class GlobalTurnosController {
       month: 'long',
       day: 'numeric'
     });
+
+    // Generar URLs de Google Calendar y Google Maps
+    const googleCalendarUrl = this.generateGoogleCalendarUrl(turno);
+    const googleMapsUrl = this.generateGoogleMapsUrl(turno.clinica);
 
     return `
       <!DOCTYPE html>
@@ -1166,6 +1235,61 @@ export class GlobalTurnosController {
               <span class="detail-value">${turno.servicio}</span>
             </div>
             ` : ''}
+          </div>
+
+          {/* Botones de Google Calendar y Maps */}
+          <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #E5E7EB;">
+            <h3 style="color: #1F2937; font-size: 18px; margin-bottom: 20px; text-align: center;">
+              Acciones Rápidas
+            </h3>
+            
+            <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+              {/* Botón Google Calendar */}
+              <a 
+                href="${googleCalendarUrl}"
+                target="_blank"
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                  background: #4285F4;
+                  color: white;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  transition: all 0.3s;
+                  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+                "
+                onmouseover="this.style.background='#3367D6'; this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.background='#4285F4'; this.style.transform='translateY(0)'"
+              >
+                📅 Agregar a Google Calendar
+              </a>
+
+              {/* Botón Google Maps */}
+              <a 
+                href="${googleMapsUrl}"
+                target="_blank"
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                  background: #34A853;
+                  color: white;
+                  padding: 12px 24px;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  font-weight: 600;
+                  transition: all 0.3s;
+                  box-shadow: 0 2px 8px rgba(52, 168, 83, 0.3);
+                "
+                onmouseover="this.style.background='#2D8E47'; this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.background='#34A853'; this.style.transform='translateY(0)'"
+              >
+                📍 Ver en Google Maps
+              </a>
+            </div>
           </div>
 
           <div class="footer">
