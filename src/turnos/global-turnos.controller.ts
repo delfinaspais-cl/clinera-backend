@@ -221,6 +221,9 @@ export class GlobalTurnosController {
         throw new BadRequestException('Clínica no encontrada');
       }
 
+      // Generar token único de confirmación
+      const confirmationToken = this.generateConfirmationToken();
+
       const turno = await this.prisma.turno.create({
         data: {
           paciente: createTurnoDto.paciente,
@@ -231,6 +234,8 @@ export class GlobalTurnosController {
           hora: createTurnoDto.hora,
           motivo: createTurnoDto.motivo,
           clinicaId: createTurnoDto.clinicaId,
+          estado: 'pendiente', // Estado inicial siempre pendiente
+          confirmationToken: confirmationToken, // Agregar token de confirmación
           // Nuevos campos para datos de pago
           montoTotal: createTurnoDto.montoTotal,
           estadoPago: createTurnoDto.estadoPago || 'pendiente',
@@ -245,15 +250,20 @@ export class GlobalTurnosController {
               id: true,
               name: true,
               url: true,
+              phone: true,
+              email: true,
             },
           },
         },
       });
 
+      // Enviar email de confirmación al paciente
+      await this.sendConfirmationEmail(turno);
+
       return {
         success: true,
         data: turno,
-        message: 'Turno creado exitosamente',
+        message: 'Turno creado exitosamente. Se ha enviado un email de confirmación al paciente.',
       };
     } catch (error) {
       console.error('Error creando turno:', error);
@@ -483,6 +493,136 @@ export class GlobalTurnosController {
     } catch (error) {
       console.error('Error obteniendo turnos de la clínica:', error);
       throw new BadRequestException('Error al obtener los turnos de la clínica');
+    }
+  }
+
+  // Endpoint público para confirmar turno mediante token
+  @Patch('confirmar/:token')
+  @ApiOperation({ summary: 'Confirmar turno mediante token (sin autenticación)' })
+  @ApiResponse({ status: 200, description: 'Turno confirmado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
+  async confirmarTurno(@Param('token') token: string) {
+    try {
+      // Buscar turno por token
+      const turno = await this.prisma.turno.findUnique({
+        where: { confirmationToken: token },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      if (!turno) {
+        throw new NotFoundException('Turno no encontrado o token inválido');
+      }
+
+      // Actualizar estado a confirmado
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turno.id },
+        data: { estado: 'confirmado' },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      // Crear notificación para la clínica
+      await this.prisma.notificacion.create({
+        data: {
+          titulo: 'Turno confirmado',
+          mensaje: `${turno.paciente} ha confirmado su turno del ${turno.fecha.toLocaleDateString('es-ES')} a las ${turno.hora}`,
+          tipo: 'success',
+          prioridad: 'alta',
+          clinicaId: turno.clinicaId,
+        },
+      });
+
+      return {
+        success: true,
+        data: turnoActualizado,
+        message: 'Turno confirmado exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error confirmando turno:', error);
+      throw new BadRequestException('Error al confirmar el turno');
+    }
+  }
+
+  // Endpoint público para cancelar turno mediante token
+  @Patch('cancelar/:token')
+  @ApiOperation({ summary: 'Cancelar turno mediante token (sin autenticación)' })
+  @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Turno no encontrado o token inválido' })
+  async cancelarTurno(@Param('token') token: string) {
+    try {
+      // Buscar turno por token
+      const turno = await this.prisma.turno.findUnique({
+        where: { confirmationToken: token },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      if (!turno) {
+        throw new NotFoundException('Turno no encontrado o token inválido');
+      }
+
+      // Actualizar estado a cancelado
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id: turno.id },
+        data: { estado: 'cancelado' },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      // Crear notificación para la clínica
+      await this.prisma.notificacion.create({
+        data: {
+          titulo: 'Turno cancelado',
+          mensaje: `${turno.paciente} ha cancelado su turno del ${turno.fecha.toLocaleDateString('es-ES')} a las ${turno.hora}`,
+          tipo: 'warning',
+          prioridad: 'alta',
+          clinicaId: turno.clinicaId,
+        },
+      });
+
+      return {
+        success: true,
+        data: turnoActualizado,
+        message: 'Turno cancelado exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error cancelando turno:', error);
+      throw new BadRequestException('Error al cancelar el turno');
     }
   }
 
@@ -810,9 +950,6 @@ export class GlobalTurnosController {
   // Método helper para enviar email de confirmación
   private async sendConfirmationEmail(turno: any): Promise<void> {
     try {
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const confirmationUrl = `${baseUrl}/confirmar-cita/${turno.confirmationToken}`;
-      
       const emailData = {
         to: turno.email,
         subject: `Confirma tu cita - ${turno.clinica.name}`,
@@ -830,8 +967,8 @@ export class GlobalTurnosController {
           clinica: turno.clinica.name,
           telefonoClinica: turno.clinica.phone,
           emailClinica: turno.clinica.email,
-          confirmationUrl: confirmationUrl,
-          motivo: turno.motivo,
+          confirmationToken: turno.confirmationToken, // Pasar el token directamente
+          motivo: turno.motivo || 'Consulta médica',
         },
       };
 

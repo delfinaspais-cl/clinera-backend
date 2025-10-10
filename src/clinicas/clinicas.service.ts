@@ -36,6 +36,13 @@ export class ClinicasService {
     return password;
   }
 
+  // Función para generar token de confirmación de turno
+  private generateConfirmationToken(): string {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}_${random}`;
+  }
+
   async getClinicaByUserId(userId: string) {
     try {
       const user = await this.prisma.user.findUnique({
@@ -1471,6 +1478,9 @@ export class ClinicasService {
         );
       }
 
+      // Generar token único de confirmación
+      const confirmationToken = this.generateConfirmationToken();
+
       // Crear el turno
       const turnoCreado = await this.prisma.turno.create({
         data: {
@@ -1480,11 +1490,59 @@ export class ClinicasService {
           doctor: dto.doctor,
           fecha: fechaTurno,
           hora: dto.hora,
-          estado: 'confirmado', // Los turnos desde landing se crean confirmados
+          estado: 'pendiente', // Estado inicial pendiente para que confirme desde email
           motivo: dto.motivo || 'Consulta',
           clinicaId: clinica.id,
+          confirmationToken: confirmationToken,
+        },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              phone: true,
+              email: true,
+            },
+          },
         },
       });
+
+      // Enviar email de confirmación al paciente
+      try {
+        const emailData = {
+          paciente: turnoCreado.paciente,
+          doctor: turnoCreado.doctor,
+          fecha: turnoCreado.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
+          hora: turnoCreado.hora,
+          motivo: turnoCreado.motivo || 'Consulta médica',
+          clinica: turnoCreado.clinica.name,
+          telefonoClinica: turnoCreado.clinica.phone,
+          emailClinica: turnoCreado.clinica.email,
+          confirmationToken: turnoCreado.confirmationToken,
+        };
+
+        const emailResult = await this.emailService.sendEmail({
+          to: turnoCreado.email,
+          subject: `Confirma tu cita - ${turnoCreado.clinica.name}`,
+          template: 'appointment-confirmation',
+          data: emailData
+        });
+
+        if (emailResult.success) {
+          console.log(`✅ Email de confirmación enviado a ${turnoCreado.email}`);
+        } else {
+          console.error(`❌ Error enviando email de confirmación: ${emailResult.error}`);
+        }
+      } catch (emailError) {
+        console.error('❌ Error en envío de email de confirmación:', emailError);
+        // No lanzar error para no afectar la creación del turno
+      }
 
       // Formatear la fecha para el mensaje
       const fechaFormateada = fechaTurno.toLocaleDateString('es-ES', {
@@ -1500,14 +1558,13 @@ export class ClinicasService {
           paciente: turnoCreado.paciente,
           email: turnoCreado.email,
           telefono: turnoCreado.telefono,
-
           doctor: turnoCreado.doctor,
           fecha: turnoCreado.fecha.toISOString().split('T')[0],
           hora: turnoCreado.hora,
           estado: turnoCreado.estado,
           motivo: turnoCreado.motivo,
         },
-        mensaje: `Turno confirmado para ${fechaFormateada} a las ${dto.hora} con ${dto.doctor}`,
+        mensaje: `Turno creado para ${fechaFormateada} a las ${dto.hora} con ${dto.doctor}. Por favor revisa tu email para confirmar la cita.`,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -1771,6 +1828,9 @@ export class ClinicasService {
 
       console.log('Clínica encontrada:', clinica.id);
 
+      // Generar token único de confirmación
+      const confirmationToken = this.generateConfirmationToken();
+
       const turnoData = {
         paciente: dto.paciente,
         email: dto.email || `${dto.paciente.toLowerCase().replace(/\s+/g, '.')}@email.com`,
@@ -1784,6 +1844,8 @@ export class ClinicasService {
         servicio: dto.tratamiento,
         professionalId: dto.professionalId,
         clinicaId: clinica.id,
+        estado: 'pendiente', // Estado inicial siempre pendiente
+        confirmationToken: confirmationToken, // Token para confirmar/cancelar desde email
         // Nuevos campos para datos de pago
         montoTotal: dto.montoTotal,
         estadoPago: dto.estadoPago || 'pendiente',
@@ -1869,25 +1931,27 @@ export class ClinicasService {
 
         const emailData = {
           paciente: turno.paciente,
-          email: turno.email,
-          fecha: turno.fecha,
+          doctor: turno.doctor,
+          fecha: turno.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }),
           hora: turno.hora,
-          profesional: turno.doctor,
-          tratamiento: turno.servicio || turno.motivo,
-          sucursal: turno.sucursal || 'Sede Principal',
+          motivo: turno.motivo || 'Consulta médica',
           clinica: clinicaData?.name || 'Clínica',
-          telefono: clinicaData?.phone || '',
-          direccion: clinicaData?.address || '',
-          turnoId: turno.id,
-          fechaCreacion: turno.createdAt
+          telefonoClinica: clinicaData?.phone || '',
+          emailClinica: clinicaData?.email || '',
+          confirmationToken: turno.confirmationToken, // Token para confirmar/cancelar
         };
 
         console.log('📧 Datos para el email:', emailData);
 
         const emailResult = await this.emailService.sendEmail({
           to: turno.email,
-          subject: `Confirmación de Cita - ${clinicaData?.name || 'Clínica'}`,
-          template: 'turno-confirmation',
+          subject: `Confirma tu cita - ${clinicaData?.name || 'Clínica'}`,
+          template: 'appointment-confirmation',
           data: emailData
         });
 

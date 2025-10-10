@@ -905,6 +905,19 @@ export class EmailService {
   }
 
   private getAppointmentConfirmationTemplate(data: any): string {
+    // Extraer el token de confirmación de la URL si viene como URL completa
+    // O usar directamente el token si se pasa como string
+    let confirmationToken = data.confirmationToken;
+    if (data.confirmationUrl && !confirmationToken) {
+      const urlParts = data.confirmationUrl.split('/');
+      confirmationToken = urlParts[urlParts.length - 1];
+    }
+
+    // Construir URLs de los endpoints del backend
+    const baseUrl = process.env.BACKEND_URL || process.env.API_URL || 'http://localhost:3001';
+    const confirmarUrl = `${baseUrl}/api/turnos/confirmar/${confirmationToken}`;
+    const cancelarUrl = `${baseUrl}/api/turnos/cancelar/${confirmationToken}`;
+
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -934,22 +947,22 @@ export class EmailService {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${data.confirmationUrl}" 
+            <a href="${confirmarUrl}" 
                style="background-color: #10B981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
               ✅ Confirmar Cita
             </a>
           </div>
           
           <div style="text-align: center; margin: 20px 0;">
-            <a href="${data.confirmationUrl.replace('/confirmar-cita/', '/cancelar-cita/')}" 
-               style="color: #EF4444; text-decoration: none; font-size: 14px;">
+            <a href="${cancelarUrl}" 
+               style="background-color: #EF4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
               ❌ Cancelar Cita
             </a>
           </div>
           
           <div style="background-color: #FEF3C7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #F59E0B;">
             <p style="color: #92400E; margin: 0; font-size: 14px;">
-              <strong>⚠️ Importante:</strong> Este enlace expira en 7 días. Si no confirmas tu cita, será cancelada automáticamente.
+              <strong>⚠️ Importante:</strong> Si no confirmas tu cita, quedará como pendiente. La clínica se pondrá en contacto contigo para confirmar.
             </p>
           </div>
           
