@@ -1265,14 +1265,12 @@ export class GlobalTurnosController {
             ` : ''}
           </div>
 
-          {/* Botones de Google Calendar y Maps */}
           <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #E5E7EB;">
             <h3 style="color: #1F2937; font-size: 18px; margin-bottom: 20px; text-align: center;">
               Acciones Rápidas
             </h3>
             
             <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-              {/* Botón Google Calendar */}
               <a 
                 href="${googleCalendarUrl}"
                 target="_blank"
@@ -1294,8 +1292,6 @@ export class GlobalTurnosController {
               >
                 📅 Agregar a Google Calendar
               </a>
-
-              {/* Botón Google Maps */}
               <a 
                 href="${googleMapsUrl}"
                 target="_blank"
