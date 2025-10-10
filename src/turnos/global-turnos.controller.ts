@@ -548,6 +548,7 @@ export class GlobalTurnosController {
               id: true,
               name: true,
               url: true,
+              address: true, // Para Google Maps
             },
           },
         },
@@ -575,6 +576,7 @@ export class GlobalTurnosController {
               id: true,
               name: true,
               url: true,
+              address: true, // Para Google Maps
             },
           },
         },
