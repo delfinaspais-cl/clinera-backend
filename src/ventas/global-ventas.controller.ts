@@ -526,9 +526,9 @@ export class GlobalVentasController {
       // SECCIÓN: INFORMACIÓN GENERAL
       const startY = doc.y;
       
-      doc.fontSize(14)
+      doc.fontSize(16)
          .fillColor(primaryColor)
-         .font('Helvetica-Bold')
+         .font('Times-Bold')
          .text('INFORMACIÓN GENERAL', 50, startY)
          .moveDown(0.8);
 
@@ -561,7 +561,7 @@ export class GlobalVentasController {
 
       yPos += 25;
       doc.font('Helvetica-Bold').text('Email:', leftColumn, yPos);
-      doc.font('Helvetica').text(venta.email, leftColumn + 120, yPos, { width: 200 });
+      doc.font('Helvetica').text(venta.email, leftColumn + 120, yPos, { width: 150 });
 
       yPos += 25;
       doc.font('Helvetica-Bold').text('Teléfono:', leftColumn, yPos);
@@ -588,11 +588,11 @@ export class GlobalVentasController {
       doc.y = infoBoxY + 150;
       doc.moveDown(1.5);
 
-      // SECCIÓN: TRATAMIENTO Y SESIONES
-      doc.fontSize(14)
+      // SECCIÓN: TRATAMIENTOS
+      doc.fontSize(16)
          .fillColor(primaryColor)
-         .font('Helvetica-Bold')
-         .text('TRATAMIENTO Y SESIONES', 50)
+         .font('Times-Bold')
+         .text('TRATAMIENTOS', 50)
          .moveDown(0.8);
 
       const tratamientoBoxY = doc.y;
@@ -607,9 +607,7 @@ export class GlobalVentasController {
          .text('Tratamiento:', leftColumn, yPos);
       doc.font('Helvetica').text(venta.tratamiento, leftColumn + 120, yPos, { width: 350 });
 
-      yPos += 25;
-      doc.font('Helvetica-Bold').text('Sesiones:', leftColumn, yPos);
-      doc.font('Helvetica').text(`${venta.sesionesUsadas} / ${venta.sesiones}`, leftColumn + 120, yPos);
+      // Removido el subtítulo de sesiones
 
       if (venta.fechaVencimiento) {
         yPos += 25;
@@ -621,9 +619,9 @@ export class GlobalVentasController {
       doc.moveDown(1.5);
 
       // SECCIÓN: DETALLES FINANCIEROS
-      doc.fontSize(14)
+      doc.fontSize(16)
          .fillColor(primaryColor)
-         .font('Helvetica-Bold')
+         .font('Times-Bold')
          .text('DETALLES FINANCIEROS', 50)
          .moveDown(0.8);
 
@@ -694,9 +692,9 @@ export class GlobalVentasController {
 
       // SECCIÓN: NOTAS (si existen)
       if (venta.notas) {
-        doc.fontSize(14)
+        doc.fontSize(16)
            .fillColor(primaryColor)
-           .font('Helvetica-Bold')
+           .font('Times-Bold')
            .text('NOTAS ADICIONALES', 50)
            .moveDown(0.8);
 
