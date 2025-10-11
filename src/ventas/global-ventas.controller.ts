@@ -528,7 +528,8 @@ export class GlobalVentasController {
       
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('INFORMACIÓN GENERAL', { align: 'right' })
+         .font('Helvetica-Bold')
+         .text('INFORMACIÓN GENERAL', 50, startY)
          .moveDown(0.8);
 
       // Cuadro con fondo gris claro
@@ -590,7 +591,8 @@ export class GlobalVentasController {
       // SECCIÓN: TRATAMIENTO Y SESIONES
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('TRATAMIENTO Y SESIONES', { align: 'right' })
+         .font('Helvetica-Bold')
+         .text('TRATAMIENTO Y SESIONES', 50)
          .moveDown(0.8);
 
       const tratamientoBoxY = doc.y;
@@ -621,7 +623,8 @@ export class GlobalVentasController {
       // SECCIÓN: DETALLES FINANCIEROS
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('DETALLES FINANCIEROS', { align: 'right' })
+         .font('Helvetica-Bold')
+         .text('DETALLES FINANCIEROS', 50)
          .moveDown(0.8);
 
       const financialBoxY = doc.y;
@@ -693,7 +696,8 @@ export class GlobalVentasController {
       if (venta.notas) {
         doc.fontSize(14)
            .fillColor(primaryColor)
-           .text('NOTAS ADICIONALES', { align: 'right' })
+           .font('Helvetica-Bold')
+           .text('NOTAS ADICIONALES', 50)
            .moveDown(0.8);
 
         const notasBoxY = doc.y;
