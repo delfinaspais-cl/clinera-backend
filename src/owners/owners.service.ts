@@ -945,9 +945,12 @@ export class OwnersService {
   // Métodos de validación
   async validateClinicaUrl(url: string) {
     try {
+      // Normalizar URL a minúsculas para consistencia
+      const urlNormalizada = url.toLowerCase().trim();
+      
       // Validar formato de URL (solo letras, números, guiones y guiones bajos)
       const urlRegex = /^[a-zA-Z0-9_-]+$/;
-      if (!urlRegex.test(url)) {
+      if (!urlRegex.test(urlNormalizada)) {
         return {
           success: false,
           available: false,
@@ -958,7 +961,7 @@ export class OwnersService {
 
       // Verificar si la URL ya existe
       const existingClinica = await this.prisma.clinica.findFirst({
-        where: { url },
+        where: { url: urlNormalizada },
       });
 
       return {

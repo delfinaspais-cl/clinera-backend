@@ -118,6 +118,42 @@ export class GlobalClinicasController {
     }
   }
 
+  @Get('check-url/:url')
+  @ApiOperation({ summary: 'Verificar disponibilidad de URL de clínica (PÚBLICO)' })
+  @ApiResponse({ status: 200, description: 'Verificación completada' })
+  async checkUrlAvailability(@Param('url') url: string) {
+    try {
+      // Normalizar URL a minúsculas
+      const urlNormalizada = url.toLowerCase().trim();
+      
+      // Validar formato de URL (solo letras, números, guiones)
+      const urlRegex = /^[a-zA-Z0-9-]+$/;
+      if (!urlRegex.test(urlNormalizada)) {
+        return {
+          success: true,
+          available: false,
+          message: 'La URL solo puede contener letras, números y guiones',
+        };
+      }
+
+      // Verificar si la URL ya existe
+      const existingClinica = await this.prisma.clinica.findFirst({
+        where: { url: urlNormalizada },
+      });
+
+      return {
+        success: true,
+        available: !existingClinica,
+        message: existingClinica
+          ? 'La URL ya está en uso'
+          : 'La URL está disponible',
+      };
+    } catch (error) {
+      console.error('Error verificando URL:', error);
+      throw new BadRequestException('Error al verificar disponibilidad de URL');
+    }
+  }
+
   @Post()
   @ApiOperation({ summary: 'Crear nueva clínica (PÚBLICO)' })
   @ApiResponse({ status: 201, description: 'Clínica creada exitosamente' })
@@ -134,11 +170,23 @@ export class GlobalClinicasController {
 
       // Ya no validamos que el usuario sea OWNER - endpoint público
 
+      // Convertir URL a minúsculas para consistencia
+      const urlNormalizada = createClinicaDto.url.toLowerCase().trim();
+      
+      // Verificar que la URL no exista
+      const existingClinica = await this.prisma.clinica.findFirst({
+        where: { url: urlNormalizada },
+      });
+
+      if (existingClinica) {
+        throw new BadRequestException('La URL de clínica ya está en uso. Por favor, elige otra.');
+      }
+
       // Crear la clínica
       const clinica = await this.prisma.clinica.create({
         data: {
           name: createClinicaDto.name,
-          url: createClinicaDto.url,
+          url: urlNormalizada,
           address: createClinicaDto.address || '',
           phone: createClinicaDto.phone || '',
           email: createClinicaDto.email,
@@ -339,7 +387,26 @@ export class GlobalClinicasController {
       const dataToUpdate: any = {};
 
       if (updateClinicaDto.name !== undefined) dataToUpdate.name = updateClinicaDto.name;
-      if (updateClinicaDto.url !== undefined) dataToUpdate.url = updateClinicaDto.url;
+      
+      // Validar URL única si se está actualizando
+      if (updateClinicaDto.url !== undefined) {
+        const urlNormalizada = updateClinicaDto.url.toLowerCase().trim();
+        
+        // Verificar que la URL no exista en otra clínica
+        const existingClinica = await this.prisma.clinica.findFirst({
+          where: { 
+            url: urlNormalizada,
+            id: { not: id } // Excluir la clínica actual
+          },
+        });
+
+        if (existingClinica) {
+          throw new BadRequestException('La URL de clínica ya está en uso. Por favor, elige otra.');
+        }
+        
+        dataToUpdate.url = urlNormalizada;
+      }
+      
       if (updateClinicaDto.address !== undefined) dataToUpdate.address = updateClinicaDto.address;
       if (updateClinicaDto.phone !== undefined) dataToUpdate.phone = updateClinicaDto.phone;
       if (updateClinicaDto.email !== undefined) dataToUpdate.email = updateClinicaDto.email;
@@ -382,6 +449,9 @@ export class GlobalClinicasController {
     } catch (error) {
       console.error('Error actualizando clínica:', error);
       if (error instanceof NotFoundException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException('Error al actualizar la clínica');

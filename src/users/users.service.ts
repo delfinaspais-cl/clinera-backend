@@ -426,9 +426,12 @@ export class UsersService {
         throw new NotFoundException('Usuario no encontrado');
       }
 
+      // Normalizar URL a minúsculas
+      const urlNormalizada = dto.url.toLowerCase().trim();
+      
       // Verificar que la URL de la clínica no existe
-      const existingClinica = await this.prisma.clinica.findUnique({
-        where: { url: dto.url },
+      const existingClinica = await this.prisma.clinica.findFirst({
+        where: { url: urlNormalizada },
       });
 
       if (existingClinica) {
@@ -439,7 +442,7 @@ export class UsersService {
       const clinica = await this.prisma.clinica.create({
         data: {
           name: dto.nombre,
-          url: dto.url,
+          url: urlNormalizada,
           email: dto.email,
           address: dto.direccion,
           phone: dto.telefono,

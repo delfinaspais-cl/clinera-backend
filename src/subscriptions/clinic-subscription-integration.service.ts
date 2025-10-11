@@ -61,11 +61,23 @@ export class ClinicSubscriptionIntegrationService {
         planId = defaultPlan.id;
       }
 
+      // Normalizar y validar URL
+      const urlNormalizada = clinicaData.url.toLowerCase().trim();
+      
+      // Verificar que la URL no exista
+      const existingClinica = await this.prisma.clinica.findFirst({
+        where: { url: urlNormalizada },
+      });
+
+      if (existingClinica) {
+        throw new BadRequestException('La URL de clínica ya está en uso. Por favor, elige otra.');
+      }
+
       // Crear la clínica
       const clinica = await this.prisma.clinica.create({
         data: {
           name: clinicaData.name,
-          url: clinicaData.url.toLowerCase(),
+          url: urlNormalizada,
           address: clinicaData.address || '',
           phone: clinicaData.phone || '',
           email: clinicaData.email,

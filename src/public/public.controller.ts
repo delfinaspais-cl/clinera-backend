@@ -442,13 +442,16 @@ export class PublicController {
         );
       }
 
+      // Normalizar URL a minúsculas
+      const urlNormalizada = clinica.url.toLowerCase().trim();
+      
       // Verificar si la URL de clínica ya existe
       const existingClinica = await this.prisma.clinica.findFirst({
-        where: { url: clinica.url },
+        where: { url: urlNormalizada },
       });
 
       if (existingClinica) {
-        throw new BadRequestException(`La URL "${clinica.url}" ya está en uso`);
+        throw new BadRequestException(`La URL "${urlNormalizada}" ya está en uso`);
       }
 
       // Verificar si el email del admin ya existe
@@ -465,7 +468,7 @@ export class PublicController {
       // Crear la clínica
       const clinicaData = {
         nombre: clinica.nombre,
-        url: clinica.url,
+        url: urlNormalizada,
         colorPrimario: clinica.color_primario || '#3B82F6',
         colorSecundario: clinica.color_secundario || '#1E40AF',
         direccion: clinica.direccion || '',
