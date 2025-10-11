@@ -209,9 +209,40 @@ export class AuthController {
     return this.authService.changePassword(dto);
   }
 
+  @ApiOperation({ summary: 'Validar disponibilidad de email' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Validación completada',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        available: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'El email está disponible' }
+      }
+    }
+  })
   @Get('validate/email/:email')
   validateEmail(@Param('email') email: string, @Headers('x-clinica-id') clinicaId?: string) {
     return this.authService.validateEmail(email, clinicaId);
+  }
+
+  @ApiOperation({ summary: 'Validar disponibilidad de username' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Validación completada',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        available: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'El username está disponible' }
+      }
+    }
+  })
+  @Get('validate/username/:username')
+  validateUsername(@Param('username') username: string, @Headers('x-clinica-id') clinicaId?: string) {
+    return this.authService.validateUsername(username, clinicaId);
   }
 
   @ApiOperation({ summary: 'Enviar código de verificación por email' })
