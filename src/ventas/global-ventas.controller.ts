@@ -9,6 +9,7 @@ import {
   Query,
   BadRequestException,
   NotFoundException,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +17,9 @@ import {
   ApiResponse,
   ApiQuery,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import PDFDocument from 'pdfkit';
 
 @ApiTags('Ventas Globales')
 @Controller('ventas')
@@ -432,6 +435,299 @@ export class GlobalVentasController {
     } catch (error) {
       console.error('Error obteniendo estadísticas de ventas:', error);
       throw new BadRequestException('Error al obtener las estadísticas de ventas');
+    }
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'Descargar PDF de una venta específica' })
+  @ApiResponse({ status: 200, description: 'PDF generado y descargado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Venta no encontrada' })
+  async downloadPDF(@Param('id') id: string, @Res() res: Response) {
+    try {
+      // Obtener la venta
+      const venta = await this.prisma.venta.findUnique({
+        where: { id },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              email: true,
+              phone: true,
+              address: true,
+            },
+          },
+          medioPagoRel: {
+            select: {
+              id: true,
+              nombre: true,
+              descripcion: true,
+            },
+          },
+        },
+      });
+
+      if (!venta) {
+        throw new NotFoundException('Venta no encontrada');
+      }
+
+      // Crear documento PDF
+      const doc = new PDFDocument({ 
+        size: 'A4',
+        margin: 50,
+      });
+
+      // Configurar headers para descarga
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=venta-${venta.ventaId}.pdf`);
+
+      // Pipe el PDF al response
+      doc.pipe(res);
+
+      // Configurar fuentes y colores
+      const primaryColor = '#3B82F6';
+      const secondaryColor = '#1E40AF';
+      const textColor = '#374151';
+      const lightGray = '#F3F4F6';
+
+      // HEADER - Logo y datos de la clínica
+      doc.fontSize(24)
+         .fillColor(primaryColor)
+         .text(venta.clinica.name.toUpperCase(), { align: 'center' })
+         .moveDown(0.3);
+
+      doc.fontSize(10)
+         .fillColor(textColor)
+         .text(venta.clinica.address || 'Dirección no disponible', { align: 'center' })
+         .text(`Tel: ${venta.clinica.phone || 'No disponible'} | Email: ${venta.clinica.email || 'No disponible'}`, { align: 'center' })
+         .moveDown(1);
+
+      // Línea separadora
+      doc.moveTo(50, doc.y)
+         .lineTo(545, doc.y)
+         .strokeColor(primaryColor)
+         .lineWidth(2)
+         .stroke()
+         .moveDown(1);
+
+      // TÍTULO DEL DOCUMENTO
+      doc.fontSize(20)
+         .fillColor(secondaryColor)
+         .text('DETALLE DE VENTA', { align: 'center' })
+         .moveDown(0.5);
+
+      // ID de venta
+      doc.fontSize(12)
+         .fillColor(textColor)
+         .text(`ID: ${venta.ventaId}`, { align: 'center' })
+         .moveDown(1.5);
+
+      // SECCIÓN: INFORMACIÓN GENERAL
+      const startY = doc.y;
+      
+      doc.fontSize(14)
+         .fillColor(primaryColor)
+         .text('INFORMACIÓN GENERAL', 50, startY)
+         .moveDown(0.8);
+
+      // Cuadro con fondo gris claro
+      const infoBoxY = doc.y;
+      doc.rect(50, infoBoxY, 495, 140)
+         .fillAndStroke(lightGray, textColor);
+
+      // Contenido del cuadro
+      doc.fontSize(11)
+         .fillColor(textColor);
+
+      let yPos = infoBoxY + 15;
+      const leftColumn = 70;
+      const rightColumn = 320;
+      
+      // Columna izquierda
+      doc.font('Helvetica-Bold').text('Fecha de Creación:', leftColumn, yPos);
+      doc.font('Helvetica').text(new Date(venta.fechaCreacion).toLocaleDateString('es-ES', { 
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+      }), leftColumn + 120, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Comprador:', leftColumn, yPos);
+      doc.font('Helvetica').text(venta.comprador, leftColumn + 120, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Paciente:', leftColumn, yPos);
+      doc.font('Helvetica').text(venta.paciente, leftColumn + 120, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Email:', leftColumn, yPos);
+      doc.font('Helvetica').text(venta.email, leftColumn + 120, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Teléfono:', leftColumn, yPos);
+      doc.font('Helvetica').text(venta.telefono, leftColumn + 120, yPos);
+
+      // Columna derecha
+      yPos = infoBoxY + 15;
+      
+      doc.font('Helvetica-Bold').text('Profesional:', rightColumn, yPos);
+      doc.font('Helvetica').text(venta.profesional, rightColumn + 90, yPos, { width: 150 });
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Sucursal:', rightColumn, yPos);
+      doc.font('Helvetica').text(venta.sucursal, rightColumn + 90, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Estado:', rightColumn, yPos);
+      doc.font('Helvetica').text(venta.estado.toUpperCase(), rightColumn + 90, yPos);
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Origen:', rightColumn, yPos);
+      doc.font('Helvetica').text(venta.origen || 'No especificado', rightColumn + 90, yPos);
+
+      doc.y = infoBoxY + 150;
+      doc.moveDown(1.5);
+
+      // SECCIÓN: TRATAMIENTO Y SESIONES
+      doc.fontSize(14)
+         .fillColor(primaryColor)
+         .text('TRATAMIENTO Y SESIONES')
+         .moveDown(0.8);
+
+      const tratamientoBoxY = doc.y;
+      doc.rect(50, tratamientoBoxY, 495, 70)
+         .fillAndStroke(lightGray, textColor);
+
+      yPos = tratamientoBoxY + 15;
+      
+      doc.fontSize(11)
+         .fillColor(textColor)
+         .font('Helvetica-Bold')
+         .text('Tratamiento:', leftColumn, yPos);
+      doc.font('Helvetica').text(venta.tratamiento, leftColumn + 120, yPos, { width: 350 });
+
+      yPos += 25;
+      doc.font('Helvetica-Bold').text('Sesiones:', leftColumn, yPos);
+      doc.font('Helvetica').text(`${venta.sesionesUsadas} / ${venta.sesiones}`, leftColumn + 120, yPos);
+
+      if (venta.fechaVencimiento) {
+        yPos += 25;
+        doc.font('Helvetica-Bold').text('Fecha de Vencimiento:', leftColumn, yPos);
+        doc.font('Helvetica').text(new Date(venta.fechaVencimiento).toLocaleDateString('es-ES'), leftColumn + 120, yPos);
+      }
+
+      doc.y = tratamientoBoxY + 80;
+      doc.moveDown(1.5);
+
+      // SECCIÓN: DETALLES FINANCIEROS
+      doc.fontSize(14)
+         .fillColor(primaryColor)
+         .text('DETALLES FINANCIEROS')
+         .moveDown(0.8);
+
+      const financialBoxY = doc.y;
+      doc.rect(50, financialBoxY, 495, 120)
+         .fillAndStroke(lightGray, textColor);
+
+      yPos = financialBoxY + 15;
+      
+      doc.fontSize(11)
+         .fillColor(textColor)
+         .font('Helvetica-Bold')
+         .text('Monto Total:', leftColumn, yPos);
+      doc.font('Helvetica')
+         .fontSize(13)
+         .text(`$${parseFloat(venta.montoTotal).toFixed(2)}`, leftColumn + 120, yPos);
+
+      yPos += 30;
+      doc.fontSize(11)
+         .font('Helvetica-Bold')
+         .text('Monto Abonado:', leftColumn, yPos);
+      doc.font('Helvetica')
+         .fillColor('#10B981')
+         .fontSize(13)
+         .text(`$${parseFloat(venta.montoAbonado).toFixed(2)}`, leftColumn + 120, yPos);
+
+      yPos += 30;
+      doc.fontSize(11)
+         .fillColor(textColor)
+         .font('Helvetica-Bold')
+         .text('Monto Pendiente:', leftColumn, yPos);
+      doc.font('Helvetica')
+         .fillColor('#EF4444')
+         .fontSize(13)
+         .text(`$${parseFloat(venta.montoPendiente).toFixed(2)}`, leftColumn + 120, yPos);
+
+      yPos = financialBoxY + 15;
+      doc.fontSize(11)
+         .fillColor(textColor)
+         .font('Helvetica-Bold')
+         .text('Estado de Pago:', rightColumn, yPos);
+      
+      const estadoPagoColors: Record<string, string> = {
+        'pagado': '#10B981',
+        'parcial': '#F59E0B',
+        'pendiente': '#EF4444',
+      };
+      
+      doc.font('Helvetica')
+         .fillColor(estadoPagoColors[venta.estadoPago] || textColor)
+         .text(venta.estadoPago.toUpperCase(), rightColumn + 120, yPos);
+
+      yPos += 30;
+      doc.fontSize(11)
+         .fillColor(textColor)
+         .font('Helvetica-Bold')
+         .text('Medio de Pago:', rightColumn, yPos);
+      doc.font('Helvetica').text(venta.medioPagoRel?.nombre || venta.medioPago || 'No especificado', rightColumn + 120, yPos);
+
+      if (venta.ate) {
+        yPos += 30;
+        doc.font('Helvetica-Bold').text('ATE:', rightColumn, yPos);
+        doc.font('Helvetica').text(venta.ate, rightColumn + 120, yPos);
+      }
+
+      doc.y = financialBoxY + 130;
+      doc.moveDown(1.5);
+
+      // SECCIÓN: NOTAS (si existen)
+      if (venta.notas) {
+        doc.fontSize(14)
+           .fillColor(primaryColor)
+           .text('NOTAS ADICIONALES')
+           .moveDown(0.8);
+
+        const notasBoxY = doc.y;
+        doc.rect(50, notasBoxY, 495, 60)
+           .fillAndStroke(lightGray, textColor);
+
+        doc.fontSize(10)
+           .fillColor(textColor)
+           .font('Helvetica')
+           .text(venta.notas, 70, notasBoxY + 15, { width: 455, align: 'justify' });
+
+        doc.y = notasBoxY + 70;
+        doc.moveDown(1);
+      }
+
+      // FOOTER
+      doc.fontSize(8)
+         .fillColor('#9CA3AF')
+         .text(
+           `Documento generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}`,
+           50,
+           doc.page.height - 50,
+           { align: 'center' }
+         );
+
+      // Finalizar el documento
+      doc.end();
+
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error generando PDF de venta:', error);
+      throw new BadRequestException('Error al generar el PDF de la venta');
     }
   }
 }

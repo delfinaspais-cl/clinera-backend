@@ -17,9 +17,11 @@ interface AppointmentWebhookData {
     treatment?: string;
   };
   confirm_url?: string;
+  cancel_url?: string;
   reschedule_url?: string;
   metadata: {
     source: string;
+    confirmationToken?: string;
     [key: string]: any;
   };
 }
@@ -98,14 +100,20 @@ export class AppointmentWebhookService {
     const clinicaName = turno.clinica?.name || 'Clínica';
     const sucursal = turno.sucursal || clinicaName;
 
-    // Construir URLs de confirmación y reagendamiento
+    // Construir URLs de confirmación, cancelación y reagendamiento
+    const backendUrl = this.configService.get<string>('BACKEND_URL') || 'https://api.clinera.com';
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 
                         this.configService.get<string>('APP_URL') || 
                         'https://app.clinera.com';
     
+    // URLs usando token (GET endpoints - funcionan directo en navegador)
     const confirmUrl = turno.confirmationToken 
-      ? `${this.configService.get<string>('BACKEND_URL') || 'https://api.clinera.com'}/api/turnos/confirmar/${turno.confirmationToken}`
+      ? `${backendUrl}/api/turnos/confirmar/${turno.confirmationToken}`
       : `${frontendUrl}/confirm?booking=${turno.id}`;
+    
+    const cancelUrl = turno.confirmationToken
+      ? `${backendUrl}/api/turnos/cancelar/${turno.confirmationToken}`
+      : `${frontendUrl}/cancel?booking=${turno.id}`;
     
     const rescheduleUrl = `${frontendUrl}/reschedule?booking=${turno.id}`;
 
@@ -125,10 +133,12 @@ export class AppointmentWebhookService {
         treatment: turno.servicio || turno.motivo || 'Consulta',
       },
       confirm_url: confirmUrl,
+      cancel_url: cancelUrl,
       reschedule_url: rescheduleUrl,
       metadata: {
         source: 'clinera',
         clinicaId: clinicaId,
+        confirmationToken: turno.confirmationToken, // Incluir el token en metadatos
         estado: turno.estado,
         origen: turno.origen || 'web',
         ...(turno.ate && { ate: turno.ate }),

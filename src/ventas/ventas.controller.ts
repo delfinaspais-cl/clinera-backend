@@ -11,6 +11,7 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +19,7 @@ import {
   ApiResponse,
   ApiQuery,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 import { UpdateVentaDto } from './dto/update-venta.dto';
@@ -137,5 +139,14 @@ export class VentasController {
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
   async remove(@Param('id') id: string) {
     return await this.ventasService.remove(id);
+  }
+
+  @Get(':id/pdf')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Descargar PDF de una venta específica' })
+  @ApiResponse({ status: 200, description: 'PDF generado y descargado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Venta no encontrada' })
+  async downloadPDF(@Param('id') id: string, @Res() res: Response) {
+    return await this.ventasService.generateVentaPDF(id, res);
   }
 }

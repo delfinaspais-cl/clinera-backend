@@ -811,6 +811,174 @@ export class GlobalTurnosController {
 
 
 
+  // ===== ENDPOINTS REST PÚBLICOS PARA CONFIRMAR/CANCELAR POR ID =====
+  
+  @Post(':id/confirm')
+  @ApiOperation({ summary: 'Confirmar turno por ID (sin autenticación - para integraciones)' })
+  @ApiResponse({ status: 200, description: 'Turno confirmado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Turno no encontrado' })
+  async confirmarTurnoPorId(@Param('id') id: string) {
+    console.log('🔵 ========================================');
+    console.log('🔵 ENDPOINT CONFIRMAR TURNO POR ID');
+    console.log('🔵 Turno ID:', id);
+    console.log('🔵 Timestamp:', new Date().toISOString());
+    console.log('🔵 ========================================');
+    
+    try {
+      const turno = await this.prisma.turno.findUnique({
+        where: { id },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      if (!turno) {
+        console.log('❌ Turno no encontrado:', id);
+        throw new NotFoundException('Turno no encontrado');
+      }
+
+      console.log('✅ Turno encontrado:', {
+        id: turno.id,
+        paciente: turno.paciente,
+        estadoActual: turno.estado,
+      });
+
+      // Actualizar estado a confirmado
+      console.log('🔄 Actualizando estado a confirmado...');
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id },
+        data: { estado: 'confirmado' },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      console.log('✅ Estado actualizado exitosamente');
+
+      // Crear notificación para la clínica
+      console.log('📬 Creando notificación para la clínica...');
+      await this.prisma.notificacion.create({
+        data: {
+          titulo: 'Turno confirmado',
+          mensaje: `${turno.paciente} ha confirmado su turno del ${turno.fecha.toLocaleDateString('es-ES')} a las ${turno.hora}`,
+          tipo: 'success',
+          prioridad: 'alta',
+          clinicaId: turno.clinicaId,
+        },
+      });
+
+      console.log('✅ Notificación creada');
+      console.log('🎉 Confirmación completada exitosamente');
+
+      return {
+        success: true,
+        data: turnoActualizado,
+        message: 'Turno confirmado exitosamente',
+      };
+    } catch (error) {
+      console.error('❌ ERROR en confirmarTurnoPorId:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al confirmar el turno');
+    }
+  }
+
+  @Post(':id/cancel')
+  @ApiOperation({ summary: 'Cancelar turno por ID (sin autenticación - para integraciones)' })
+  @ApiResponse({ status: 200, description: 'Turno cancelado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Turno no encontrado' })
+  async cancelarTurnoPorId(@Param('id') id: string) {
+    console.log('🔴 ========================================');
+    console.log('🔴 ENDPOINT CANCELAR TURNO POR ID');
+    console.log('🔴 Turno ID:', id);
+    console.log('🔴 Timestamp:', new Date().toISOString());
+    console.log('🔴 ========================================');
+    
+    try {
+      const turno = await this.prisma.turno.findUnique({
+        where: { id },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      if (!turno) {
+        console.log('❌ Turno no encontrado:', id);
+        throw new NotFoundException('Turno no encontrado');
+      }
+
+      console.log('✅ Turno encontrado:', {
+        id: turno.id,
+        paciente: turno.paciente,
+        estadoActual: turno.estado,
+      });
+
+      // Actualizar estado a cancelado
+      console.log('🔄 Actualizando estado a cancelado...');
+      const turnoActualizado = await this.prisma.turno.update({
+        where: { id },
+        data: { estado: 'cancelado' },
+        include: {
+          clinica: {
+            select: {
+              id: true,
+              name: true,
+              url: true,
+            },
+          },
+        },
+      });
+
+      console.log('✅ Estado actualizado exitosamente');
+
+      // Crear notificación para la clínica
+      console.log('📬 Creando notificación para la clínica...');
+      await this.prisma.notificacion.create({
+        data: {
+          titulo: 'Turno cancelado',
+          mensaje: `${turno.paciente} ha cancelado su turno del ${turno.fecha.toLocaleDateString('es-ES')} a las ${turno.hora}`,
+          tipo: 'warning',
+          prioridad: 'alta',
+          clinicaId: turno.clinicaId,
+        },
+      });
+
+      console.log('✅ Notificación creada');
+      console.log('🎉 Cancelación completada exitosamente');
+
+      return {
+        success: true,
+        data: turnoActualizado,
+        message: 'Turno cancelado exitosamente',
+      };
+    } catch (error) {
+      console.error('❌ ERROR en cancelarTurnoPorId:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al cancelar el turno');
+    }
+  }
+
   @Get('paciente/:email')
   @ApiOperation({ summary: 'Obtener turnos de un paciente por email (sin autenticación)' })
   @ApiResponse({ status: 200, description: 'Turnos del paciente obtenidos exitosamente' })
