@@ -508,7 +508,7 @@ export class VentasService {
       
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('INFORMACIÓN GENERAL', 50, startY)
+         .text('INFORMACIÓN GENERAL', { align: 'right' })
          .moveDown(0.8);
 
       // Cuadro con fondo gris claro
@@ -540,7 +540,7 @@ export class VentasService {
 
       yPos += 25;
       doc.font('Helvetica-Bold').text('Email:', leftColumn, yPos);
-      doc.font('Helvetica').text(venta.email, leftColumn + 120, yPos);
+      doc.font('Helvetica').text(venta.email, leftColumn + 120, yPos, { width: 200 });
 
       yPos += 25;
       doc.font('Helvetica-Bold').text('Teléfono:', leftColumn, yPos);
@@ -570,7 +570,7 @@ export class VentasService {
       // SECCIÓN: TRATAMIENTO Y SESIONES
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('TRATAMIENTO Y SESIONES')
+         .text('TRATAMIENTO Y SESIONES', { align: 'right' })
          .moveDown(0.8);
 
       const tratamientoBoxY = doc.y;
@@ -601,7 +601,7 @@ export class VentasService {
       // SECCIÓN: DETALLES FINANCIEROS
       doc.fontSize(14)
          .fillColor(primaryColor)
-         .text('DETALLES FINANCIEROS')
+         .text('DETALLES FINANCIEROS', { align: 'right' })
          .moveDown(0.8);
 
       const financialBoxY = doc.y;
@@ -673,7 +673,7 @@ export class VentasService {
       if (venta.notas) {
         doc.fontSize(14)
            .fillColor(primaryColor)
-           .text('NOTAS ADICIONALES')
+           .text('NOTAS ADICIONALES', { align: 'right' })
            .moveDown(0.8);
 
         const notasBoxY = doc.y;
