@@ -125,4 +125,42 @@ export class UsersController {
   async getUserLanguage(@Request() req) {
     return this.usersService.getUserLanguage(req.user.id);
   }
+
+  // ===== ENDPOINTS DE VALIDACIÓN =====
+
+  @Get('validate/email/:email')
+  @ApiOperation({ summary: 'Validar disponibilidad de email' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Validación completada',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        available: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'El email está disponible' }
+      }
+    }
+  })
+  async validateEmail(@Param('email') email: string, @Query('clinicaId') clinicaId?: string) {
+    return this.usersService.validateEmail(email, clinicaId);
+  }
+
+  @Get('validate/username/:username')
+  @ApiOperation({ summary: 'Validar disponibilidad de username' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Validación completada',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        available: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'El username está disponible' }
+      }
+    }
+  })
+  async validateUsername(@Param('username') username: string, @Query('clinicaId') clinicaId?: string) {
+    return this.usersService.validateUsername(username, clinicaId);
+  }
 }

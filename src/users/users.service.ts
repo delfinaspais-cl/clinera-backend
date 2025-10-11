@@ -863,4 +863,83 @@ export class UsersService {
       throw new BadRequestException('Error interno del servidor');
     }
   }
+
+  // ===== MÉTODOS DE VALIDACIÓN =====
+
+  async validateEmail(email: string, clinicaId?: string) {
+    try {
+      // Normalizar email a minúsculas
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return {
+          success: true,
+          available: false,
+          message: 'El formato del email no es válido',
+        };
+      }
+
+      // Buscar usuario con ese email
+      const user = await this.prisma.user.findFirst({
+        where: { 
+          email: normalizedEmail,
+          clinicaId: clinicaId || undefined
+        },
+      });
+      
+      return {
+        success: true,
+        available: !user,
+        message: user ? 'El email ya está registrado' : 'El email está disponible',
+      };
+    } catch (error) {
+      console.error('Error validando email:', error);
+      throw new BadRequestException('Error al validar email');
+    }
+  }
+
+  async validateUsername(username: string, clinicaId?: string) {
+    try {
+      // Normalizar username a minúsculas
+      const normalizedUsername = username.toLowerCase().trim();
+      
+      // Validar formato de username (letras, números, guiones, guiones bajos)
+      const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+      if (!usernameRegex.test(normalizedUsername)) {
+        return {
+          success: true,
+          available: false,
+          message: 'El username solo puede contener letras, números, guiones y guiones bajos',
+        };
+      }
+
+      // Validar longitud mínima
+      if (normalizedUsername.length < 3) {
+        return {
+          success: true,
+          available: false,
+          message: 'El username debe tener al menos 3 caracteres',
+        };
+      }
+
+      // Buscar usuario con ese username
+      const user = await this.prisma.user.findFirst({
+        where: { 
+          username: normalizedUsername,
+          clinicaId: clinicaId || undefined
+        },
+      });
+      
+      return {
+        success: true,
+        available: !user,
+        message: user ? 'El username ya está en uso' : 'El username está disponible',
+      };
+    } catch (error) {
+      console.error('Error validando username:', error);
+      throw new BadRequestException('Error al validar username');
+    }
+  }
 }
