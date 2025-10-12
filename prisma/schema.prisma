@@ -35,6 +35,7 @@ model Clinica {
   ga_id                  String?
   video_url              String?
   testimonials           Json?
+  consentimiento_informado String?
   showTreatments         Boolean                @default(true)
   showTestimonials       Boolean                @default(true)
   showProfessionals      Boolean                @default(true)

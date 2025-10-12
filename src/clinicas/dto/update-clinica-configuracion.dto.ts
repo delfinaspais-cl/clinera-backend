@@ -88,6 +88,10 @@ export class UpdateClinicaConfiguracionDto {
   @Type(() => TestimonialDto)
   testimonials?: TestimonialDto[];
 
+  @IsOptional()
+  @IsString()
+  consentimiento_informado?: string;
+
   // Toggles para mostrar/ocultar secciones
   @IsOptional()
   @IsBoolean()

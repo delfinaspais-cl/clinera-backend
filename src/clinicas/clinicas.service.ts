@@ -1401,6 +1401,7 @@ export class ClinicasService {
         ga_id: clinica.ga_id,
         video_url: clinica.video_url,
         testimonials: clinica.testimonials || [],
+        consentimiento_informado: clinica.consentimiento_informado,
         showTreatments: clinica.showTreatments,
         showTestimonials: clinica.showTestimonials,
         showProfessionals: clinica.showProfessionals,
@@ -1506,6 +1507,10 @@ export class ClinicasService {
 
       if (dto.testimonials !== undefined) {
         updateData.testimonials = dto.testimonials;
+      }
+
+      if (dto.consentimiento_informado !== undefined) {
+        updateData.consentimiento_informado = dto.consentimiento_informado;
       }
 
       // Toggles para mostrar/ocultar secciones
@@ -1664,6 +1669,7 @@ export class ClinicasService {
         ga_id: clinica.ga_id,
         video_url: clinica.video_url,
         testimonials: clinica.testimonials || [],
+        consentimiento_informado: clinica.consentimiento_informado,
         showTreatments: clinica.showTreatments,
         showTestimonials: clinica.showTestimonials,
         showProfessionals: clinica.showProfessionals,
