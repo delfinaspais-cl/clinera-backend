@@ -427,6 +427,27 @@ export class GlobalClinicasController {
       if (updateClinicaDto.defaultLanguage !== undefined) dataToUpdate.defaultLanguage = updateClinicaDto.defaultLanguage;
       if (updateClinicaDto.currencyCode !== undefined) dataToUpdate.currencyCode = updateClinicaDto.currencyCode;
 
+      // ✅ Campos de tracking
+      if (updateClinicaDto.pixel_id !== undefined) dataToUpdate.pixel_id = updateClinicaDto.pixel_id;
+      if (updateClinicaDto.gtm_id !== undefined) dataToUpdate.gtm_id = updateClinicaDto.gtm_id;
+      if (updateClinicaDto.ga_id !== undefined) dataToUpdate.ga_id = updateClinicaDto.ga_id;
+
+      // ✅ Campos de contenido
+      if (updateClinicaDto.video_url !== undefined) dataToUpdate.video_url = updateClinicaDto.video_url;
+      if (updateClinicaDto.testimonials !== undefined) dataToUpdate.testimonials = updateClinicaDto.testimonials;
+      if (updateClinicaDto.consentimiento_informado !== undefined) dataToUpdate.consentimiento_informado = updateClinicaDto.consentimiento_informado;
+
+      // ✅ Toggles para mostrar/ocultar secciones
+      if (updateClinicaDto.showTreatments !== undefined) dataToUpdate.showTreatments = updateClinicaDto.showTreatments;
+      if (updateClinicaDto.showTestimonials !== undefined) dataToUpdate.showTestimonials = updateClinicaDto.showTestimonials;
+      if (updateClinicaDto.showProfessionals !== undefined) dataToUpdate.showProfessionals = updateClinicaDto.showProfessionals;
+      if (updateClinicaDto.showSchedule !== undefined) dataToUpdate.showSchedule = updateClinicaDto.showSchedule;
+      if (updateClinicaDto.showSpecialties !== undefined) dataToUpdate.showSpecialties = updateClinicaDto.showSpecialties;
+      if (updateClinicaDto.showGallery !== undefined) dataToUpdate.showGallery = updateClinicaDto.showGallery;
+      if (updateClinicaDto.showVideo !== undefined) dataToUpdate.showVideo = updateClinicaDto.showVideo;
+      if (updateClinicaDto.showContactForm !== undefined) dataToUpdate.showContactForm = updateClinicaDto.showContactForm;
+      if (updateClinicaDto.showLocation !== undefined) dataToUpdate.showLocation = updateClinicaDto.showLocation;
+
       // Actualizar la clínica
       const clinicaActualizada = await this.prisma.clinica.update({
         where: { id },

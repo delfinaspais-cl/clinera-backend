@@ -1426,6 +1426,148 @@ export class ClinicasService {
     }
   }
 
+  async updateClinicaConfiguracionById(
+    clinicaId: string,
+    dto: UpdateClinicaConfiguracionDto,
+  ) {
+    try {
+      // Buscar la clínica por ID
+      const clinica = await this.prisma.clinica.findUnique({
+        where: { id: clinicaId },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Preparar los datos para actualizar
+      const updateData: any = {};
+
+      if (dto.nombre) {
+        updateData.name = dto.nombre;
+      }
+
+      if (dto.colorPrimario) {
+        updateData.colorPrimario = dto.colorPrimario;
+      }
+
+      if (dto.colorSecundario) {
+        updateData.colorSecundario = dto.colorSecundario;
+      }
+
+      if (dto.descripcion) {
+        updateData.descripcion = dto.descripcion;
+      }
+
+      if (dto.titulo !== undefined) {
+        updateData.titulo = dto.titulo;
+      }
+
+      if (dto.subtitulo !== undefined) {
+        updateData.subtitulo = dto.subtitulo;
+      }
+
+      if (dto.comentariosHTML !== undefined || (dto as any).html !== undefined) {
+        updateData.comentariosHTML = dto.comentariosHTML || (dto as any).html;
+      }
+
+      if (dto.defaultLanguage) {
+        updateData.defaultLanguage = dto.defaultLanguage;
+      }
+
+      if (dto.currencyCode) {
+        updateData.currencyCode = dto.currencyCode;
+      }
+
+      if (dto.contacto) {
+        const contactoActual = clinica.contacto
+          ? JSON.parse(clinica.contacto)
+          : {};
+        const contactoActualizado = { ...contactoActual, ...dto.contacto };
+        updateData.contacto = JSON.stringify(contactoActualizado);
+      }
+
+      if (dto.pixel_id !== undefined) {
+        updateData.pixel_id = dto.pixel_id;
+      }
+
+      if (dto.gtm_id !== undefined) {
+        updateData.gtm_id = dto.gtm_id;
+      }
+
+      if (dto.ga_id !== undefined) {
+        updateData.ga_id = dto.ga_id;
+      }
+
+      if (dto.video_url !== undefined) {
+        updateData.video_url = dto.video_url;
+      }
+
+      if (dto.testimonials !== undefined) {
+        updateData.testimonials = dto.testimonials;
+      }
+
+      if (dto.consentimiento_informado !== undefined) {
+        updateData.consentimiento_informado = dto.consentimiento_informado;
+      }
+
+      // Toggles para mostrar/ocultar secciones
+      if (dto.showTreatments !== undefined) {
+        updateData.showTreatments = dto.showTreatments;
+      }
+
+      if (dto.showTestimonials !== undefined) {
+        updateData.showTestimonials = dto.showTestimonials;
+      }
+
+      if (dto.showProfessionals !== undefined) {
+        updateData.showProfessionals = dto.showProfessionals;
+      }
+
+      if (dto.showSchedule !== undefined) {
+        updateData.showSchedule = dto.showSchedule;
+      }
+
+      if (dto.showSpecialties !== undefined) {
+        updateData.showSpecialties = dto.showSpecialties;
+      }
+
+      if (dto.showGallery !== undefined) {
+        updateData.showGallery = dto.showGallery;
+      }
+
+      if (dto.showVideo !== undefined) {
+        updateData.showVideo = dto.showVideo;
+      }
+
+      if (dto.showContactForm !== undefined) {
+        updateData.showContactForm = dto.showContactForm;
+      }
+
+      if (dto.showLocation !== undefined) {
+        updateData.showLocation = dto.showLocation;
+      }
+
+      // Actualizar la clínica por ID
+      const clinicaActualizada = await this.prisma.clinica.update({
+        where: { id: clinicaId },
+        data: updateData,
+      });
+
+      return {
+        success: true,
+        message: 'Configuración de clínica actualizada exitosamente',
+        data: clinicaActualizada,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error al actualizar configuración de clínica:', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
   async updateClinicaConfiguracion(
     clinicaUrl: string,
     dto: UpdateClinicaConfiguracionDto,

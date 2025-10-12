@@ -658,6 +658,14 @@ export class ClinicasController {
     }
   }
 
+  @Put(':clinicaId')
+  async updateClinicaConfiguracionById(
+    @Param('clinicaId') clinicaId: string,
+    @Body() dto: UpdateClinicaConfiguracionDto,
+  ) {
+    return this.clinicasService.updateClinicaConfiguracionById(clinicaId, dto);
+  }
+
   @Put(':clinicaUrl/configuracion')
   @UseGuards(JwtAuthGuard)
   async updateClinicaConfiguracion(
