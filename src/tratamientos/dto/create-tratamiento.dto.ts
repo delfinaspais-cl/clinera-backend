@@ -13,5 +13,9 @@ export class CreateTratamientoDto {
 
   @IsNumber()
   @IsPositive()
-  sessions: number;
+  duracionPorSesion: number; // Duración de cada sesión en minutos
+
+  @IsNumber()
+  @IsPositive()
+  cantidadSesiones: number; // Cantidad total de sesiones del tratamiento
 }

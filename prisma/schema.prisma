@@ -264,17 +264,18 @@ model ProfessionalEspecialidad {
 }
 
 model Tratamiento {
-  id            String                    @id @default(cuid())
-  name          String
-  descripcion   String?
-  duracionMin   Int                       @default(30)
-  precio        Float?
-  clinicaId     String
-  estado        String                    @default("activo")
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-  profesionales ProfessionalTratamiento[]
-  clinica       Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  id                String                    @id @default(cuid())
+  name              String
+  descripcion       String?
+  duracionPorSesion Int                       @default(30) // Duración de cada sesión en minutos
+  cantidadSesiones  Int                       @default(1)  // Cantidad total de sesiones del tratamiento
+  precio            Float?
+  clinicaId         String
+  estado            String                    @default("activo")
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  profesionales     ProfessionalTratamiento[]
+  clinica           Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
 
   @@index([clinicaId])
   @@index([estado])

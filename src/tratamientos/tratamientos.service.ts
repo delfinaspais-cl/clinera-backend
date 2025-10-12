@@ -21,7 +21,8 @@ export class TratamientosService {
       data: {
         name: createTratamientoDto.name,
         descripcion: createTratamientoDto.description,
-        duracionMin: createTratamientoDto.sessions * 30, // Convertir sesiones a minutos
+        duracionPorSesion: createTratamientoDto.duracionPorSesion,
+        cantidadSesiones: createTratamientoDto.cantidadSesiones,
         precio: createTratamientoDto.price,
         clinicaId: clinica.id,
       },
@@ -145,8 +146,12 @@ export class TratamientosService {
       updateData.descripcion = updateTratamientoDto.description;
     }
     
-    if (updateTratamientoDto.sessions !== undefined) {
-      updateData.duracionMin = updateTratamientoDto.sessions * 30;
+    if (updateTratamientoDto.duracionPorSesion !== undefined) {
+      updateData.duracionPorSesion = updateTratamientoDto.duracionPorSesion;
+    }
+    
+    if (updateTratamientoDto.cantidadSesiones !== undefined) {
+      updateData.cantidadSesiones = updateTratamientoDto.cantidadSesiones;
     }
     
     if (updateTratamientoDto.price !== undefined) {
@@ -233,7 +238,7 @@ export class TratamientosService {
         professionalId,
         tratamientoId: id,
         precio: assignProfessionalsDto.price,
-        duracionMin: assignProfessionalsDto.sessions * 30,
+        duracionMin: assignProfessionalsDto.duracionPorSesion || 30,
       }));
 
       await this.prisma.professionalTratamiento.createMany({

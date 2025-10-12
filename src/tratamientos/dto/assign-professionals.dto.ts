@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsNumber, IsPositive } from 'class-validator';
+import { IsArray, IsString, IsNumber, IsPositive, IsOptional } from 'class-validator';
 
 export class AssignProfessionalsDto {
   @IsArray()
@@ -11,5 +11,11 @@ export class AssignProfessionalsDto {
 
   @IsNumber()
   @IsPositive()
-  sessions: number;
+  @IsOptional()
+  duracionPorSesion?: number; // Duración de cada sesión en minutos
+
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  cantidadSesiones?: number; // Cantidad total de sesiones del tratamiento
 }
