@@ -334,7 +334,7 @@ export class ProfessionalsService {
             professionalId: professional.id,
             tratamientoId: trat.id,
             precio: trat.precio,
-            duracionMin: trat.duracionMin
+            duracionMin: trat.duracionPorSesion
           }));
 
           await this.prisma.professionalTratamiento.createMany({
@@ -722,7 +722,7 @@ export class ProfessionalsService {
                 professionalId: id,
                 tratamientoId: trat.id,
                 precio: trat.precio,
-                duracionMin: trat.duracionMin
+                duracionMin: trat.duracionPorSesion
               }));
 
               await this.prisma.professionalTratamiento.createMany({

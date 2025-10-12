@@ -69,7 +69,8 @@ async function main() {
       data: {
         name: 'Limpieza Dental',
         descripcion: 'Limpieza profesional de dientes y encías',
-        duracionMin: 30,
+        duracionPorSesion: 30,
+        cantidadSesiones: 1,
         precio: 80.00,
         clinicaId: clinica.id,
         estado: 'activo',
@@ -79,7 +80,8 @@ async function main() {
       data: {
         name: 'Ortodoncia',
         descripcion: 'Tratamiento de ortodoncia completo',
-        duracionMin: 60,
+        duracionPorSesion: 60,
+        cantidadSesiones: 1,
         precio: 2500.00,
         clinicaId: clinica.id,
         estado: 'activo',
@@ -89,7 +91,8 @@ async function main() {
       data: {
         name: 'Empaste Dental',
         descripcion: 'Restauración de caries dental',
-        duracionMin: 45,
+        duracionPorSesion: 45,
+        cantidadSesiones: 1,
         precio: 120.00,
         clinicaId: clinica.id,
         estado: 'activo',
@@ -99,7 +102,8 @@ async function main() {
       data: {
         name: 'Endodoncia',
         descripcion: 'Tratamiento de conducto radicular',
-        duracionMin: 90,
+        duracionPorSesion: 90,
+        cantidadSesiones: 1,
         precio: 300.00,
         clinicaId: clinica.id,
         estado: 'activo',
@@ -109,7 +113,8 @@ async function main() {
       data: {
         name: 'Extracción Dental',
         descripcion: 'Extracción de diente dañado',
-        duracionMin: 30,
+        duracionPorSesion: 30,
+        cantidadSesiones: 1,
         precio: 150.00,
         clinicaId: clinica.id,
         estado: 'activo',
@@ -119,7 +124,8 @@ async function main() {
       data: {
         name: 'Blanqueamiento Dental',
         descripcion: 'Tratamiento de blanqueamiento profesional',
-        duracionMin: 60,
+        duracionPorSesion: 60,
+        cantidadSesiones: 1,
         precio: 200.00,
         clinicaId: clinica.id,
         estado: 'activo',

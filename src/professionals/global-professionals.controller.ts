@@ -640,7 +640,8 @@ export class GlobalProfessionalsController {
                 select: {
                   name: true,
                   precio: true,
-                  duracionMin: true
+                  duracionPorSesion: true,
+                  cantidadSesiones: true
                 }
               }
             }
@@ -746,7 +747,9 @@ export class GlobalProfessionalsController {
         const tratamientos = profesional.tratamientos.map(trat => ({
           name: trat.tratamiento.name,
           precio: trat.precio || trat.tratamiento.precio,
-          duracionMin: trat.duracionMin || trat.tratamiento.duracionMin,
+          duracionPorSesion: trat.duracionMin || trat.tratamiento.duracionPorSesion,
+          cantidadSesiones: trat.tratamiento.cantidadSesiones,
+          duracionTotal: (trat.duracionMin || trat.tratamiento.duracionPorSesion) * trat.tratamiento.cantidadSesiones,
         }));
 
         return {
@@ -874,7 +877,8 @@ export class GlobalProfessionalsController {
                 select: {
                   name: true,
                   precio: true,
-                  duracionMin: true
+                  duracionPorSesion: true,
+                  cantidadSesiones: true
                 }
               }
             }
@@ -980,7 +984,9 @@ export class GlobalProfessionalsController {
         const tratamientos = profesional.tratamientos.map(trat => ({
           name: trat.tratamiento.name,
           precio: trat.precio || trat.tratamiento.precio,
-          duracionMin: trat.duracionMin || trat.tratamiento.duracionMin,
+          duracionPorSesion: trat.duracionMin || trat.tratamiento.duracionPorSesion,
+          cantidadSesiones: trat.tratamiento.cantidadSesiones,
+          duracionTotal: (trat.duracionMin || trat.tratamiento.duracionPorSesion) * trat.tratamiento.cantidadSesiones,
         }));
 
         return {
