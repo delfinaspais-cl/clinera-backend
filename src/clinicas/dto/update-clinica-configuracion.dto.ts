@@ -1,4 +1,21 @@
-import { IsString, IsOptional, IsObject, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsObject, IsIn, IsBoolean, IsArray, ValidateNested, IsUrl } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class TestimonialDto {
+  @IsString()
+  nombre: string;
+
+  @IsOptional()
+  @IsString()
+  foto?: string;
+
+  @IsString()
+  texto: string;
+
+  @IsOptional()
+  @IsString()
+  cargo?: string;
+}
 
 export class UpdateClinicaConfiguracionDto {
   @IsOptional()
@@ -48,4 +65,63 @@ export class UpdateClinicaConfiguracionDto {
     instagram?: string;
     facebook?: string;
   };
+
+  @IsOptional()
+  @IsString()
+  pixel_id?: string;
+
+  @IsOptional()
+  @IsString()
+  gtm_id?: string;
+
+  @IsOptional()
+  @IsString()
+  ga_id?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'video_url debe ser una URL válida' })
+  video_url?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TestimonialDto)
+  testimonials?: TestimonialDto[];
+
+  // Toggles para mostrar/ocultar secciones
+  @IsOptional()
+  @IsBoolean()
+  showTreatments?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showTestimonials?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showProfessionals?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showSchedule?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showSpecialties?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showGallery?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showVideo?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showContactForm?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showLocation?: boolean;
 }

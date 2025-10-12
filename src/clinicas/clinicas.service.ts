@@ -1396,6 +1396,20 @@ export class ClinicasService {
         defaultLanguage: clinica.defaultLanguage,
         currencyCode: clinica.currencyCode,
         contacto: clinica.contacto ? JSON.parse(clinica.contacto) : {},
+        pixel_id: clinica.pixel_id,
+        gtm_id: clinica.gtm_id,
+        ga_id: clinica.ga_id,
+        video_url: clinica.video_url,
+        testimonials: clinica.testimonials || [],
+        showTreatments: clinica.showTreatments,
+        showTestimonials: clinica.showTestimonials,
+        showProfessionals: clinica.showProfessionals,
+        showSchedule: clinica.showSchedule,
+        showSpecialties: clinica.showSpecialties,
+        showGallery: clinica.showGallery,
+        showVideo: clinica.showVideo,
+        showContactForm: clinica.showContactForm,
+        showLocation: clinica.showLocation,
       };
 
       return {
@@ -1452,8 +1466,9 @@ export class ClinicasService {
         updateData.subtitulo = dto.subtitulo;
       }
 
-      if (dto.comentariosHTML !== undefined) {
-        updateData.comentariosHTML = dto.comentariosHTML;
+      // Aceptar tanto 'comentariosHTML' como 'html' (alias)
+      if (dto.comentariosHTML !== undefined || (dto as any).html !== undefined) {
+        updateData.comentariosHTML = dto.comentariosHTML || (dto as any).html;
       }
 
       if (dto.defaultLanguage) {
@@ -1471,6 +1486,63 @@ export class ClinicasService {
           : {};
         const contactoActualizado = { ...contactoActual, ...dto.contacto };
         updateData.contacto = JSON.stringify(contactoActualizado);
+      }
+
+      if (dto.pixel_id !== undefined) {
+        updateData.pixel_id = dto.pixel_id;
+      }
+
+      if (dto.gtm_id !== undefined) {
+        updateData.gtm_id = dto.gtm_id;
+      }
+
+      if (dto.ga_id !== undefined) {
+        updateData.ga_id = dto.ga_id;
+      }
+
+      if (dto.video_url !== undefined) {
+        updateData.video_url = dto.video_url;
+      }
+
+      if (dto.testimonials !== undefined) {
+        updateData.testimonials = dto.testimonials;
+      }
+
+      // Toggles para mostrar/ocultar secciones
+      if (dto.showTreatments !== undefined) {
+        updateData.showTreatments = dto.showTreatments;
+      }
+
+      if (dto.showTestimonials !== undefined) {
+        updateData.showTestimonials = dto.showTestimonials;
+      }
+
+      if (dto.showProfessionals !== undefined) {
+        updateData.showProfessionals = dto.showProfessionals;
+      }
+
+      if (dto.showSchedule !== undefined) {
+        updateData.showSchedule = dto.showSchedule;
+      }
+
+      if (dto.showSpecialties !== undefined) {
+        updateData.showSpecialties = dto.showSpecialties;
+      }
+
+      if (dto.showGallery !== undefined) {
+        updateData.showGallery = dto.showGallery;
+      }
+
+      if (dto.showVideo !== undefined) {
+        updateData.showVideo = dto.showVideo;
+      }
+
+      if (dto.showContactForm !== undefined) {
+        updateData.showContactForm = dto.showContactForm;
+      }
+
+      if (dto.showLocation !== undefined) {
+        updateData.showLocation = dto.showLocation;
       }
 
       // Actualizar la clínica
@@ -1587,6 +1659,20 @@ export class ClinicasService {
         especialidades: clinica.especialidades,
         rating: clinica.rating,
         stats: clinica.stats ? JSON.parse(clinica.stats) : {},
+        pixel_id: clinica.pixel_id,
+        gtm_id: clinica.gtm_id,
+        ga_id: clinica.ga_id,
+        video_url: clinica.video_url,
+        testimonials: clinica.testimonials || [],
+        showTreatments: clinica.showTreatments,
+        showTestimonials: clinica.showTestimonials,
+        showProfessionals: clinica.showProfessionals,
+        showSchedule: clinica.showSchedule,
+        showSpecialties: clinica.showSpecialties,
+        showGallery: clinica.showGallery,
+        showVideo: clinica.showVideo,
+        showContactForm: clinica.showContactForm,
+        showLocation: clinica.showLocation,
       };
 
       const turnosFormateados = turnosDisponibles.map((turno) => ({

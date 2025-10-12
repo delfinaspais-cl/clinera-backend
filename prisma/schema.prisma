@@ -30,6 +30,20 @@ model Clinica {
   titulo                 String?
   subtitulo              String?
   comentariosHTML        String?
+  pixel_id               String?
+  gtm_id                 String?
+  ga_id                  String?
+  video_url              String?
+  testimonials           Json?
+  showTreatments         Boolean                @default(true)
+  showTestimonials       Boolean                @default(true)
+  showProfessionals      Boolean                @default(true)
+  showSchedule           Boolean                @default(true)
+  showSpecialties        Boolean                @default(true)
+  showGallery            Boolean                @default(true)
+  showVideo              Boolean                @default(true)
+  showContactForm        Boolean                @default(true)
+  showLocation           Boolean                @default(true)
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
   url                    String                 @unique @map("slug")
