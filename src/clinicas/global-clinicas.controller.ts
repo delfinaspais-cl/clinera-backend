@@ -417,6 +417,15 @@ export class GlobalClinicasController {
       if (updateClinicaDto.estado !== undefined) dataToUpdate.estado = updateClinicaDto.estado;
       if (updateClinicaDto.estadoPago !== undefined) dataToUpdate.estadoPago = updateClinicaDto.estadoPago;
       if (updateClinicaDto.plan !== undefined) dataToUpdate.estadoPago = updateClinicaDto.plan;
+      
+      // ✅ Campos de landing page
+      if (updateClinicaDto.titulo !== undefined) dataToUpdate.titulo = updateClinicaDto.titulo;
+      if (updateClinicaDto.subtitulo !== undefined) dataToUpdate.subtitulo = updateClinicaDto.subtitulo;
+      if (updateClinicaDto.comentariosHTML !== undefined) dataToUpdate.comentariosHTML = updateClinicaDto.comentariosHTML;
+            
+      // ✅ Campos de configuración regional
+      if (updateClinicaDto.defaultLanguage !== undefined) dataToUpdate.defaultLanguage = updateClinicaDto.defaultLanguage;
+      if (updateClinicaDto.currencyCode !== undefined) dataToUpdate.currencyCode = updateClinicaDto.currencyCode;
 
       // Actualizar la clínica
       const clinicaActualizada = await this.prisma.clinica.update({

@@ -406,6 +406,21 @@ export class OwnersService {
       updateData.colorPrimario = dto.colorPrimario || clinica.colorPrimario;
       updateData.colorSecundario =
         dto.colorSecundario || clinica.colorSecundario;
+      
+      // ✅ Agregar campos de landing page (titulo, subtitulo, html)
+      if (dto.titulo !== undefined) {
+        updateData.titulo = dto.titulo;
+      }
+      if (dto.subtitulo !== undefined) {
+        updateData.subtitulo = dto.subtitulo;
+      }
+      // Aceptar tanto 'comentariosHTML' como 'html' (alias)
+      if (dto.comentariosHTML !== undefined || (dto as any).html !== undefined) {
+        updateData.comentariosHTML = dto.comentariosHTML || (dto as any).html;
+      }
+      if (dto.currencyCode !== undefined) {
+        updateData.currencyCode = dto.currencyCode;
+      }
 
       console.log('Datos a actualizar:', JSON.stringify(updateData, null, 2));
 
