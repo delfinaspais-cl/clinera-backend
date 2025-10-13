@@ -79,12 +79,12 @@ export class AppointmentWebhookService {
   private getWebhookUrl(clinicaId: string): string | null {
     // Obtener la URL base del webhook desde variables de entorno
     const baseUrl = this.configService.get<string>('WEBHOOK_BASE_URL') || 
-                    'https://40c5528924a8.ngrok-free.app/webhooks/appointments';
+                    'https://fluentia-api-develop-latest.up.railway.app/webhooks/appointments';
     
     if (!baseUrl) {
       return null;
     }
-
+ 
     return `${baseUrl}/${clinicaId}`;
   }
 
