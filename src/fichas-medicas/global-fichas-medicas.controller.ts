@@ -67,7 +67,6 @@ export class GlobalFichasMedicasController {
         carpetaId: {
           type: 'string',
           description: 'ID de la carpeta donde subir el archivo (opcional)',
-          required: false,
         },
       },
     },
@@ -128,7 +127,6 @@ export class GlobalFichasMedicasController {
         carpetaId: {
           type: 'string',
           description: 'ID de la carpeta donde subir la imagen (opcional)',
-          required: false,
         },
       },
     },
