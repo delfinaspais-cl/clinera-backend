@@ -1312,7 +1312,7 @@ export class FichasMedicasService {
       const historial = await this.prisma.fichaMedicaHistorial.findFirst({
         where: { 
           id: historialId,
-          fichaMedicaId: fichaMedica.id
+          fichaMedica: { id: fichaMedica.id }
         }
       });
 
