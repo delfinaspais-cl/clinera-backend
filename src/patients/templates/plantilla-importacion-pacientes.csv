@@ -1,0 +1,6 @@
+name,email,phone,birthDate,documento,clientNumber,address,city,province,country,gender,preExistingConditions,notes
+Juan Pérez,juan.perez@email.com,+5491112345678,1990-05-15,12345678,CLI-001,Av. Corrientes 1234,Buenos Aires,Buenos Aires,Argentina,Masculino,Hipertensión,Paciente regular
+María González,maria.gonzalez@email.com,+5491198765432,1985-03-20,87654321,CLI-002,Calle Falsa 123,Rosario,Santa Fe,Argentina,Femenino,,Alérgica a penicilina
+Pedro López,pedro.lopez@email.com,+5491156781234,1978-11-10,23456789,,,Córdoba,Córdoba,Argentina,Masculino,Diabetes tipo 2,
+Ana Rodríguez,,+5491165432109,2000-01-05,34567890,CLI-003,,,Mendoza,Argentina,Femenino,,
+
