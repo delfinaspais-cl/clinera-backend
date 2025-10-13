@@ -364,6 +364,7 @@ model FichaMedica {
   paciente                     Patient                @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   fichasMedicasHistorial       FichaMedicaHistorial[] @relation("FichaMedicaHistorial")
   imagenesMedicas              ImagenMedica[]
+  carpetasArchivos             CarpetaArchivo[]       @relation("FichaMedicaCarpetasArchivos")
 
   @@index([pacienteId])
   @@index([clinicaId])
@@ -421,9 +422,28 @@ model FichaMedicaArchivo {
   @@index([tipo])
 }
 
+model CarpetaArchivo {
+  id            String         @id @default(cuid())
+  fichaMedicaId String
+  nombre        String
+  descripcion   String?
+  tipo          String         @default("archivos") // "archivos" o "imagenes"
+  orden         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  fichaMedica   FichaMedica    @relation("FichaMedicaCarpetasArchivos", fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  archivos      ArchivoMedico[]
+  imagenes      ImagenMedica[]
+
+  @@unique([fichaMedicaId, nombre, tipo])
+  @@index([fichaMedicaId])
+  @@index([tipo])
+}
+
 model ArchivoMedico {
   id                 String      @id @default(cuid())
   fichaMedicaId      String
+  carpetaId          String?
   nombre             String
   nombreArchivo      String
   tipo               String
@@ -434,13 +454,16 @@ model ArchivoMedico {
   updatedAt          DateTime    @updatedAt
   microserviceFileId String?
   fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  carpeta            CarpetaArchivo? @relation(fields: [carpetaId], references: [id], onDelete: SetNull)
 
   @@index([fichaMedicaId])
+  @@index([carpetaId])
 }
 
 model ImagenMedica {
   id                 String      @id @default(cuid())
   fichaMedicaId      String
+  carpetaId          String?
   nombre             String
   nombreArchivo      String
   url                String
@@ -451,8 +474,10 @@ model ImagenMedica {
   updatedAt          DateTime    @updatedAt
   microserviceFileId String?
   fichaMedica        FichaMedica @relation(fields: [fichaMedicaId], references: [id], onDelete: Cascade)
+  carpeta            CarpetaArchivo? @relation(fields: [carpetaId], references: [id], onDelete: SetNull)
 
   @@index([fichaMedicaId])
+  @@index([carpetaId])
 }
 
 model MedioPago {

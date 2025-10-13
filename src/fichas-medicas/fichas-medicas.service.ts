@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './services/storage.service';
 import { FileMicroserviceService } from './services/file-microservice.service';
-import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto } from './dto/ficha-medica.dto';
+import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto, CarpetaArchivoDto, CrearCarpetaDto, ActualizarCarpetaDto } from './dto/ficha-medica.dto';
 
 @Injectable()
 export class FichasMedicasService {
@@ -48,6 +48,13 @@ export class FichasMedicasService {
         },
         imagenesMedicas: {
           orderBy: { fechaSubida: 'desc' }
+        },
+        carpetasArchivos: {
+          orderBy: [
+            { tipo: 'asc' },
+            { orden: 'asc' },
+            { createdAt: 'asc' }
+          ]
         }
       }
     });
@@ -61,7 +68,8 @@ export class FichasMedicasService {
         },
         include: {
           archivosMedicos: true,
-          imagenesMedicas: true
+          imagenesMedicas: true,
+          carpetasArchivos: true
         }
       });
 
@@ -81,7 +89,9 @@ export class FichasMedicasService {
         tratamiento: undefined,
         evolucion: undefined,
         archivos: [],
-        imagenes: []
+        imagenes: [],
+        carpetasArchivos: [],
+        carpetasImagenes: []
       };
     }
 
@@ -106,15 +116,41 @@ export class FichasMedicasService {
         nombre: archivo.nombre,
         tipo: archivo.tipo,
         url: await this.storageService.getFileUrl(archivo.url, userToken, archivo.microserviceFileId || undefined),
-        fecha: archivo.fechaSubida.toISOString().split('T')[0]
+        fecha: archivo.fechaSubida.toISOString().split('T')[0],
+        carpetaId: archivo.carpetaId || undefined
       }))),
       imagenes: await Promise.all(fichaMedica.imagenesMedicas.map(async imagen => ({
         id: imagen.id,
         nombre: imagen.nombre,
         url: await this.storageService.getFileUrl(imagen.url, userToken, imagen.microserviceFileId || undefined),
         fecha: imagen.fechaSubida.toISOString().split('T')[0],
-        descripcion: imagen.descripcion || undefined
-      })))
+        descripcion: imagen.descripcion || undefined,
+        carpetaId: imagen.carpetaId || undefined
+      }))),
+      carpetasArchivos: fichaMedica.carpetasArchivos
+        .filter(carpeta => carpeta.tipo === 'archivos')
+        .map(carpeta => ({
+          id: carpeta.id,
+          nombre: carpeta.nombre,
+          descripcion: carpeta.descripcion || undefined,
+          tipo: carpeta.tipo as 'archivos' | 'imagenes',
+          orden: carpeta.orden,
+          fechaCreacion: carpeta.createdAt.toISOString().split('T')[0],
+          archivos: [],
+          imagenes: []
+        })),
+      carpetasImagenes: fichaMedica.carpetasArchivos
+        .filter(carpeta => carpeta.tipo === 'imagenes')
+        .map(carpeta => ({
+          id: carpeta.id,
+          nombre: carpeta.nombre,
+          descripcion: carpeta.descripcion || undefined,
+          tipo: carpeta.tipo as 'archivos' | 'imagenes',
+          orden: carpeta.orden,
+          fechaCreacion: carpeta.createdAt.toISOString().split('T')[0],
+          archivos: [],
+          imagenes: []
+        }))
     };
 
     return response;
@@ -187,9 +223,10 @@ export class FichasMedicasService {
     };
   }
 
-  async uploadFile(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ArchivoMedicoDto> {
+  async uploadFile(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string, carpetaId?: string): Promise<ArchivoMedicoDto> {
     console.log('🔍 DEBUG: uploadFile service - userToken recibido:', userToken ? 'SÍ' : 'NO');
     console.log('🔍 DEBUG: uploadFile service - userToken length:', userToken?.length || 0);
+    console.log('🔍 DEBUG: uploadFile service - carpetaId recibido:', carpetaId || 'NO');
     
     // Verificar que la clínica y paciente existen
     const clinica = await this.prisma.clinica.findFirst({
@@ -235,6 +272,21 @@ export class FichasMedicasService {
           clinicaId: clinica.id
         }
       });
+    }
+
+    // Si se especifica una carpeta, verificar que existe y es del tipo correcto
+    if (carpetaId) {
+      const carpeta = await this.prisma.carpetaArchivo.findFirst({
+        where: { 
+          id: carpetaId,
+          fichaMedicaId: fichaMedica.id,
+          tipo: 'archivos'
+        }
+      });
+
+      if (!carpeta) {
+        throw new NotFoundException('Carpeta no encontrada o no es válida para archivos');
+      }
     }
 
     let uploadResult: any;
@@ -332,6 +384,7 @@ export class FichasMedicasService {
     const archivoMedico = await this.prisma.archivoMedico.create({
       data: {
         fichaMedicaId: fichaMedica.id,
+        carpetaId: carpetaId || null,
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
         tipo: file.mimetype.includes('pdf') ? 'pdf' : 'doc',
@@ -346,11 +399,12 @@ export class FichasMedicasService {
       nombre: archivoMedico.nombre,
       tipo: archivoMedico.tipo,
       url: uploadResult.url,
-      fecha: archivoMedico.fechaSubida.toISOString().split('T')[0]
+      fecha: archivoMedico.fechaSubida.toISOString().split('T')[0],
+      carpetaId: archivoMedico.carpetaId || undefined
     };
   }
 
-  async uploadImage(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string): Promise<ImagenMedicaDto> {
+  async uploadImage(clinicaUrl: string, pacienteId: string, file: Express.Multer.File, userToken?: string, carpetaId?: string): Promise<ImagenMedicaDto> {
     console.log('🖼️ [UPLOAD_IMAGE] Iniciando proceso de subida de imagen');
     console.log('🖼️ [UPLOAD_IMAGE] Parámetros recibidos:', {
       clinicaUrl,
@@ -359,7 +413,8 @@ export class FichasMedicasService {
       fileSize: file?.size,
       mimeType: file?.mimetype,
       hasUserToken: !!userToken,
-      userTokenLength: userToken?.length || 0
+      userTokenLength: userToken?.length || 0,
+      carpetaId: carpetaId || 'NO'
     });
     
     // Verificar que la clínica y paciente existen
@@ -408,6 +463,21 @@ export class FichasMedicasService {
       });
     }
 
+    // Si se especifica una carpeta, verificar que existe y es del tipo correcto
+    if (carpetaId) {
+      const carpeta = await this.prisma.carpetaArchivo.findFirst({
+        where: { 
+          id: carpetaId,
+          fichaMedicaId: fichaMedica.id,
+          tipo: 'imagenes'
+        }
+      });
+
+      if (!carpeta) {
+        throw new NotFoundException('Carpeta no encontrada o no es válida para imágenes');
+      }
+    }
+
     let uploadResult: any;
     let useLocalStorage = true; // Forzar uso de almacenamiento local
 
@@ -440,6 +510,7 @@ export class FichasMedicasService {
     const imagenMedica = await this.prisma.imagenMedica.create({
       data: {
         fichaMedicaId: fichaMedica.id,
+        carpetaId: carpetaId || null,
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
         url: uploadResult.url, // URL relativa que será procesada por getFileUrl
@@ -453,7 +524,8 @@ export class FichasMedicasService {
       nombre: imagenMedica.nombre,
       url: uploadResult.url,
       fecha: imagenMedica.fechaSubida.toISOString().split('T')[0],
-      descripcion: imagenMedica.descripcion || undefined
+      descripcion: imagenMedica.descripcion || undefined,
+      carpetaId: imagenMedica.carpetaId || undefined
     };
   }
 
@@ -657,5 +729,382 @@ export class FichasMedicasService {
       console.log('📁 [SIGNED_URL_SERVICE] Archivo es local, retornando URL directa');
       return { url: archivo.url };
     }
+  }
+
+  // ===== MÉTODOS PARA GESTIÓN DE CARPETAS =====
+
+  async crearCarpeta(clinicaUrl: string, pacienteId: string, crearCarpetaDto: CrearCarpetaDto): Promise<CarpetaArchivoDto> {
+    console.log('📁 [CREAR_CARPETA] Iniciando creación de carpeta');
+    console.log('📁 [CREAR_CARPETA] Parámetros:', { clinicaUrl, pacienteId, crearCarpetaDto });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Obtener o crear ficha médica
+    let fichaMedica = await this.prisma.fichaMedica.findFirst({
+      where: { pacienteId }
+    });
+
+    if (!fichaMedica) {
+      fichaMedica = await this.prisma.fichaMedica.create({
+        data: {
+          pacienteId,
+          clinicaId: clinica.id
+        }
+      });
+    }
+
+    // Verificar que no existe una carpeta con el mismo nombre y tipo
+    const carpetaExistente = await this.prisma.carpetaArchivo.findFirst({
+      where: {
+        fichaMedicaId: fichaMedica.id,
+        nombre: crearCarpetaDto.nombre,
+        tipo: crearCarpetaDto.tipo
+      }
+    });
+
+    if (carpetaExistente) {
+      throw new BadRequestException(`Ya existe una carpeta con el nombre "${crearCarpetaDto.nombre}" para ${crearCarpetaDto.tipo}`);
+    }
+
+    // Obtener el siguiente orden
+    const ultimaCarpeta = await this.prisma.carpetaArchivo.findFirst({
+      where: {
+        fichaMedicaId: fichaMedica.id,
+        tipo: crearCarpetaDto.tipo
+      },
+      orderBy: { orden: 'desc' }
+    });
+
+    const orden = crearCarpetaDto.orden ?? (ultimaCarpeta?.orden ?? 0) + 1;
+
+    // Crear la carpeta
+    const carpeta = await this.prisma.carpetaArchivo.create({
+      data: {
+        fichaMedicaId: fichaMedica.id,
+        nombre: crearCarpetaDto.nombre,
+        descripcion: crearCarpetaDto.descripcion,
+        tipo: crearCarpetaDto.tipo,
+        orden
+      }
+    });
+
+    console.log('✅ [CREAR_CARPETA] Carpeta creada exitosamente:', carpeta.id);
+
+    return {
+      id: carpeta.id,
+      nombre: carpeta.nombre,
+      descripcion: carpeta.descripcion || undefined,
+      tipo: carpeta.tipo as 'archivos' | 'imagenes',
+      orden: carpeta.orden,
+      fechaCreacion: carpeta.createdAt.toISOString().split('T')[0],
+      archivos: [],
+      imagenes: []
+    };
+  }
+
+  async obtenerCarpetas(clinicaUrl: string, pacienteId: string): Promise<CarpetaArchivoDto[]> {
+    console.log('📁 [OBTENER_CARPETAS] Obteniendo carpetas de la ficha médica');
+    console.log('📁 [OBTENER_CARPETAS] Parámetros:', { clinicaUrl, pacienteId });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Obtener ficha médica
+    const fichaMedica = await this.prisma.fichaMedica.findFirst({
+      where: { pacienteId }
+    });
+
+    if (!fichaMedica) {
+      return []; // No hay ficha médica, por lo tanto no hay carpetas
+    }
+
+    // Obtener todas las carpetas ordenadas
+    const carpetas = await this.prisma.carpetaArchivo.findMany({
+      where: { fichaMedicaId: fichaMedica.id },
+      orderBy: [
+        { tipo: 'asc' },
+        { orden: 'asc' },
+        { createdAt: 'asc' }
+      ]
+    });
+
+    console.log('✅ [OBTENER_CARPETAS] Carpetas obtenidas:', carpetas.length);
+
+    return carpetas.map(carpeta => ({
+      id: carpeta.id,
+      nombre: carpeta.nombre,
+      descripcion: carpeta.descripcion || undefined,
+      tipo: carpeta.tipo as 'archivos' | 'imagenes',
+      orden: carpeta.orden,
+      fechaCreacion: carpeta.createdAt.toISOString().split('T')[0],
+      archivos: [],
+      imagenes: []
+    }));
+  }
+
+  async obtenerCarpeta(clinicaUrl: string, pacienteId: string, carpetaId: string): Promise<CarpetaArchivoDto> {
+    console.log('📁 [OBTENER_CARPETA] Obteniendo carpeta específica');
+    console.log('📁 [OBTENER_CARPETA] Parámetros:', { clinicaUrl, pacienteId, carpetaId });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Obtener la carpeta con sus archivos/imágenes
+    const carpeta = await this.prisma.carpetaArchivo.findFirst({
+      where: { 
+        id: carpetaId,
+        fichaMedica: {
+          pacienteId
+        }
+      },
+      include: {
+        archivos: {
+          orderBy: { fechaSubida: 'desc' }
+        },
+        // Note: Las imágenes no están incluidas en la relación actual
+        // Necesitaríamos modificar el modelo para incluir imágenes en carpetas
+      }
+    });
+
+    if (!carpeta) {
+      throw new NotFoundException('Carpeta no encontrada');
+    }
+
+    console.log('✅ [OBTENER_CARPETA] Carpeta obtenida:', carpeta.id);
+
+    // Obtener imágenes de la carpeta (si las hay)
+    const imagenes = await this.prisma.imagenMedica.findMany({
+      where: { 
+        carpetaId: carpetaId,
+        fichaMedica: {
+          pacienteId
+        }
+      },
+      orderBy: { fechaSubida: 'desc' }
+    });
+
+    return {
+      id: carpeta.id,
+      nombre: carpeta.nombre,
+      descripcion: carpeta.descripcion || undefined,
+      tipo: carpeta.tipo as 'archivos' | 'imagenes',
+      orden: carpeta.orden,
+      fechaCreacion: carpeta.createdAt.toISOString().split('T')[0],
+      archivos: carpeta.archivos.map(archivo => ({
+        id: archivo.id,
+        nombre: archivo.nombre,
+        tipo: archivo.tipo,
+        url: archivo.url,
+        fecha: archivo.fechaSubida.toISOString().split('T')[0],
+        carpetaId: archivo.carpetaId || undefined
+      })),
+      imagenes: imagenes.map(imagen => ({
+        id: imagen.id,
+        nombre: imagen.nombre,
+        url: imagen.url,
+        fecha: imagen.fechaSubida.toISOString().split('T')[0],
+        descripcion: imagen.descripcion || undefined,
+        carpetaId: imagen.carpetaId || undefined
+      }))
+    };
+  }
+
+  async actualizarCarpeta(clinicaUrl: string, pacienteId: string, carpetaId: string, actualizarCarpetaDto: ActualizarCarpetaDto): Promise<CarpetaArchivoDto> {
+    console.log('📁 [ACTUALIZAR_CARPETA] Actualizando carpeta');
+    console.log('📁 [ACTUALIZAR_CARPETA] Parámetros:', { clinicaUrl, pacienteId, carpetaId, actualizarCarpetaDto });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Verificar que la carpeta existe
+    const carpetaExistente = await this.prisma.carpetaArchivo.findFirst({
+      where: { 
+        id: carpetaId,
+        fichaMedica: {
+          pacienteId
+        }
+      }
+    });
+
+    if (!carpetaExistente) {
+      throw new NotFoundException('Carpeta no encontrada');
+    }
+
+    // Si se está cambiando el nombre, verificar que no exista otra carpeta con el mismo nombre
+    if (actualizarCarpetaDto.nombre && actualizarCarpetaDto.nombre !== carpetaExistente.nombre) {
+      const carpetaConMismoNombre = await this.prisma.carpetaArchivo.findFirst({
+        where: {
+          fichaMedicaId: carpetaExistente.fichaMedicaId,
+          nombre: actualizarCarpetaDto.nombre,
+          tipo: carpetaExistente.tipo,
+          id: { not: carpetaId }
+        }
+      });
+
+      if (carpetaConMismoNombre) {
+        throw new BadRequestException(`Ya existe una carpeta con el nombre "${actualizarCarpetaDto.nombre}" para ${carpetaExistente.tipo}`);
+      }
+    }
+
+    // Actualizar la carpeta
+    const carpetaActualizada = await this.prisma.carpetaArchivo.update({
+      where: { id: carpetaId },
+      data: {
+        nombre: actualizarCarpetaDto.nombre,
+        descripcion: actualizarCarpetaDto.descripcion,
+        orden: actualizarCarpetaDto.orden,
+        updatedAt: new Date()
+      }
+    });
+
+    console.log('✅ [ACTUALIZAR_CARPETA] Carpeta actualizada:', carpetaActualizada.id);
+
+    return {
+      id: carpetaActualizada.id,
+      nombre: carpetaActualizada.nombre,
+      descripcion: carpetaActualizada.descripcion || undefined,
+      tipo: carpetaActualizada.tipo as 'archivos' | 'imagenes',
+      orden: carpetaActualizada.orden,
+      fechaCreacion: carpetaActualizada.createdAt.toISOString().split('T')[0],
+      archivos: [],
+      imagenes: []
+    };
+  }
+
+  async eliminarCarpeta(clinicaUrl: string, pacienteId: string, carpetaId: string): Promise<{ success: boolean; message: string }> {
+    console.log('📁 [ELIMINAR_CARPETA] Eliminando carpeta');
+    console.log('📁 [ELIMINAR_CARPETA] Parámetros:', { clinicaUrl, pacienteId, carpetaId });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Verificar que la carpeta existe
+    const carpeta = await this.prisma.carpetaArchivo.findFirst({
+      where: { 
+        id: carpetaId,
+        fichaMedica: {
+          pacienteId
+        }
+      }
+    });
+
+    if (!carpeta) {
+      throw new NotFoundException('Carpeta no encontrada');
+    }
+
+    // Mover archivos de la carpeta a la raíz (carpetaId = null)
+    await this.prisma.archivoMedico.updateMany({
+      where: { carpetaId: carpetaId },
+      data: { carpetaId: null }
+    });
+
+    // Mover imágenes de la carpeta a la raíz (carpetaId = null)
+    await this.prisma.imagenMedica.updateMany({
+      where: { carpetaId: carpetaId },
+      data: { carpetaId: null }
+    });
+
+    // Eliminar la carpeta
+    await this.prisma.carpetaArchivo.delete({
+      where: { id: carpetaId }
+    });
+
+    console.log('✅ [ELIMINAR_CARPETA] Carpeta eliminada:', carpetaId);
+
+    return { 
+      success: true, 
+      message: 'Carpeta eliminada correctamente. Los archivos e imágenes se movieron a la raíz.' 
+    };
   }
 }
