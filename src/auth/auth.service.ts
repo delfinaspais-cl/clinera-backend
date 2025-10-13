@@ -84,19 +84,19 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     
     console.log('✅ Token JWT generado exitosamente');
-      
-    } catch (externalApiError) {
-      console.log('❌ Error en Fluentia API login:', externalApiError.response?.data?.message || externalApiError.message);
-      console.log('⚠️ Login local continúa normalmente');
-    }
     
-    console.log('🔄 Llamando al método login con userWithClinica:', {
-      id: userWithClinica.id,
-      email: userWithClinica.email,
-      preferredLanguage: userWithClinica.preferredLanguage
-    });
-    
-    return this.login(userWithClinica);
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        clinicaId: user.clinicaId,
+        clinicaUrl: clinicaUrl,
+        preferredLanguage: user.preferredLanguage
+      }
+    };
   }
 
   async login(user: any) {
