@@ -25,8 +25,9 @@ async function bootstrap() {
         'http://localhost:8080',
         'https://clinera-backend-production.up.railway.app',
         'https://clinera-backend-develop.up.railway.app',
-        // Agregar aquí el dominio de tu frontend
-        'https://tu-frontend-domain.com'
+        'https://app.clinera.io',  // ← DOMINIO DEL FRONTEND
+        'https://clinera.io',      // ← DOMINIO PRINCIPAL
+        'https://www.clinera.io'   // ← DOMINIO CON WWW
       ],
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
