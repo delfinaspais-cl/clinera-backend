@@ -171,8 +171,12 @@ export class UsersService {
 
   async login(dto: UserLoginDto) {
     try {
+      console.log('🔥 USERS SERVICE - Login iniciado');
+      console.log('📋 Datos recibidos:', dto);
+      
       // Normalizar username a minúsculas para búsqueda case-insensitive
       const normalizedUsername = dto.username.toLowerCase();
+      console.log('🔍 Username normalizado:', normalizedUsername);
       
       // Buscar usuario por username o email con información de la clínica
       const user = await this.prisma.user.findFirst({

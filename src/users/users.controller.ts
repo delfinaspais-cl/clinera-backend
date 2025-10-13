@@ -53,6 +53,8 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   async login(@Body() dto: UserLoginDto) {
+    console.log('🔥 USERS CONTROLLER - Login endpoint llamado');
+    console.log('📋 Datos recibidos:', dto);
     return this.usersService.login(dto);
   }
 
