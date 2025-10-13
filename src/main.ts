@@ -16,19 +16,9 @@ async function bootstrap() {
     });
     console.log('✅ Aplicación creada exitosamente');
 
-    // Configuración mejorada de CORS
+    // Configuración CORS más permisiva
     app.enableCors({
-      origin: [
-        'http://localhost:3000',
-        'http://localhost:3001', 
-        'http://localhost:5173',
-        'http://localhost:8080',
-        'https://clinera-backend-production.up.railway.app',
-        'https://clinera-backend-develop.up.railway.app',
-        'https://app.clinera.io',  // ← DOMINIO DEL FRONTEND
-        'https://clinera.io',      // ← DOMINIO PRINCIPAL
-        'https://www.clinera.io'   // ← DOMINIO CON WWW
-      ],
+      origin: true, // Permitir cualquier origen temporalmente
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [
         'Origin',
@@ -36,12 +26,31 @@ async function bootstrap() {
         'Content-Type',
         'Accept',
         'Authorization',
-        'Cache-Control'
+        'Cache-Control',
+        'Access-Control-Allow-Origin',
+        'Access-Control-Allow-Headers',
+        'Access-Control-Allow-Methods'
       ],
       credentials: true,
       optionsSuccessStatus: 200,
+      preflightContinue: false,
     });
     console.log('✅ CORS habilitado con configuración mejorada');
+    
+    // Middleware adicional para CORS
+    app.use((req, res, next) => {
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      
+      if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+      } else {
+        next();
+      }
+    });
+    console.log('✅ Middleware CORS adicional agregado');
 
     // Configuración de Swagger/OpenAPI
     const config = new DocumentBuilder()
