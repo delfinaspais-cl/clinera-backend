@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -20,6 +21,7 @@ import {
 
 import { FichasMedicasService } from './fichas-medicas.service';
 import { FichaMedicaDto, FichaMedicaResponseDto, ArchivoMedicoDto, ImagenMedicaDto, CarpetaArchivoDto, CrearCarpetaDto, ActualizarCarpetaDto } from './dto/ficha-medica.dto';
+import { AdminGuard } from '../auth/guards/admin.guard';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -230,8 +232,10 @@ export class GlobalFichasMedicasController {
   }
 
   @Post('carpetas/:carpetaId')
-  @ApiOperation({ summary: 'Actualizar una carpeta' })
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Actualizar una carpeta (Solo ADMIN)' })
   @ApiResponse({ status: 200, description: 'Carpeta actualizada exitosamente', type: CarpetaArchivoDto })
+  @ApiResponse({ status: 403, description: 'Acceso denegado. Solo administradores.' })
   @ApiResponse({ status: 404, description: 'Carpeta no encontrada' })
   async actualizarCarpeta(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -243,8 +247,10 @@ export class GlobalFichasMedicasController {
   }
 
   @Delete('carpetas/:carpetaId')
-  @ApiOperation({ summary: 'Eliminar una carpeta y mover sus archivos a la raíz' })
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Eliminar una carpeta y mover sus archivos a la raíz (Solo ADMIN)' })
   @ApiResponse({ status: 200, description: 'Carpeta eliminada exitosamente' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado. Solo administradores.' })
   @ApiResponse({ status: 404, description: 'Carpeta no encontrada' })
   async eliminarCarpeta(
     @Param('clinicaUrl') clinicaUrl: string,
@@ -252,5 +258,20 @@ export class GlobalFichasMedicasController {
     @Param('carpetaId') carpetaId: string,
   ): Promise<{ success: boolean; message: string }> {
     return this.fichasMedicasService.eliminarCarpeta(clinicaUrl, pacienteId, carpetaId);
+  }
+
+  // ===== ENDPOINT PARA ELIMINAR FICHA MÉDICA COMPLETA =====
+
+  @Delete()
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Eliminar ficha médica completa de un paciente (Solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Ficha médica eliminada exitosamente' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado. Solo administradores.' })
+  @ApiResponse({ status: 404, description: 'Clínica, paciente o ficha médica no encontrado' })
+  async eliminarFichaMedica(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+  ): Promise<{ success: boolean; message: string; archivosEliminados: number; imagenesEliminadas: number; carpetasEliminadas: number }> {
+    return this.fichasMedicasService.eliminarFichaMedica(clinicaUrl, pacienteId);
   }
 }

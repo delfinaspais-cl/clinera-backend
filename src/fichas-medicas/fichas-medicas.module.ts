@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { FichasMedicasController } from './fichas-medicas.controller';
 import { FichasMedicasService } from './fichas-medicas.service';
 import { FichasMedicasHistorialController, FichasMedicasGlobalController } from './fichas-medicas-historial.controller';
@@ -8,7 +9,13 @@ import { FileMicroserviceService } from './services/file-microservice.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    PrismaModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'default-secret',
+      signOptions: { expiresIn: '24h' },
+    }),
+  ],
   controllers: [
     FichasMedicasController,
     FichasMedicasHistorialController,

@@ -1107,4 +1107,170 @@ export class FichasMedicasService {
       message: 'Carpeta eliminada correctamente. Los archivos e imágenes se movieron a la raíz.' 
     };
   }
+
+  // ===== MÉTODO PARA ELIMINAR FICHA MÉDICA COMPLETA =====
+
+  async eliminarFichaMedica(clinicaUrl: string, pacienteId: string): Promise<{ 
+    success: boolean; 
+    message: string; 
+    archivosEliminados: number; 
+    imagenesEliminadas: number; 
+    carpetasEliminadas: number 
+  }> {
+    console.log('🗑️ [ELIMINAR_FICHA_MEDICA] Iniciando eliminación completa de ficha médica');
+    console.log('🗑️ [ELIMINAR_FICHA_MEDICA] Parámetros:', { clinicaUrl, pacienteId });
+
+    // Verificar que la clínica existe
+    const clinica = await this.prisma.clinica.findFirst({
+      where: { url: clinicaUrl }
+    });
+
+    if (!clinica) {
+      throw new NotFoundException('Clínica no encontrada');
+    }
+
+    // Verificar que el paciente existe y pertenece a la clínica
+    const paciente = await this.prisma.patient.findFirst({
+      where: { 
+        id: pacienteId,
+        clinicaId: clinica.id
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundException('Paciente no encontrado');
+    }
+
+    // Obtener la ficha médica
+    const fichaMedica = await this.prisma.fichaMedica.findFirst({
+      where: { pacienteId },
+      include: {
+        archivosMedicos: true,
+        imagenesMedicas: true,
+        carpetasArchivos: true
+      }
+    });
+
+    if (!fichaMedica) {
+      throw new NotFoundException('Ficha médica no encontrada');
+    }
+
+    console.log('📊 [ELIMINAR_FICHA_MEDICA] Estadísticas de la ficha:', {
+      archivos: fichaMedica.archivosMedicos.length,
+      imagenes: fichaMedica.imagenesMedicas.length,
+      carpetas: fichaMedica.carpetasArchivos.length
+    });
+
+    let archivosEliminados = 0;
+    let imagenesEliminadas = 0;
+    let carpetasEliminadas = 0;
+
+    try {
+      // 1. Eliminar archivos físicos y registros de base de datos
+      console.log('🗂️ [ELIMINAR_FICHA_MEDICA] Eliminando archivos médicos...');
+      for (const archivo of fichaMedica.archivosMedicos) {
+        try {
+          // Eliminar del microservicio si tiene microserviceFileId
+          if (archivo.microserviceFileId) {
+            try {
+              await this.fileMicroserviceService.deleteFile(archivo.microserviceFileId);
+              console.log('🌐 [ELIMINAR_FICHA_MEDICA] Archivo eliminado del microservicio:', archivo.id);
+            } catch (error) {
+              console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error eliminando archivo del microservicio:', error.message);
+            }
+          } else {
+            // Eliminar del almacenamiento local
+            try {
+              await this.storageService.deleteFile(archivo.url);
+              console.log('📁 [ELIMINAR_FICHA_MEDICA] Archivo eliminado del almacenamiento local:', archivo.id);
+            } catch (error) {
+              console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error eliminando archivo local:', error.message);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error procesando archivo:', archivo.id, error.message);
+        }
+        archivosEliminados++;
+      }
+
+      // 2. Eliminar imágenes físicas y registros de base de datos
+      console.log('🖼️ [ELIMINAR_FICHA_MEDICA] Eliminando imágenes médicas...');
+      for (const imagen of fichaMedica.imagenesMedicas) {
+        try {
+          // Eliminar del microservicio si tiene microserviceFileId
+          if (imagen.microserviceFileId) {
+            try {
+              await this.fileMicroserviceService.deleteFile(imagen.microserviceFileId);
+              console.log('🌐 [ELIMINAR_FICHA_MEDICA] Imagen eliminada del microservicio:', imagen.id);
+            } catch (error) {
+              console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error eliminando imagen del microservicio:', error.message);
+            }
+          } else {
+            // Eliminar del almacenamiento local
+            try {
+              await this.storageService.deleteFile(imagen.url);
+              console.log('📁 [ELIMINAR_FICHA_MEDICA] Imagen eliminada del almacenamiento local:', imagen.id);
+            } catch (error) {
+              console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error eliminando imagen local:', error.message);
+            }
+          }
+        } catch (error) {
+          console.warn('⚠️ [ELIMINAR_FICHA_MEDICA] Error procesando imagen:', imagen.id, error.message);
+        }
+        imagenesEliminadas++;
+      }
+
+      // 3. Eliminar registros de base de datos (en orden correcto debido a foreign keys)
+      console.log('🗃️ [ELIMINAR_FICHA_MEDICA] Eliminando registros de base de datos...');
+      
+      // Eliminar archivos médicos
+      await this.prisma.archivoMedico.deleteMany({
+        where: { fichaMedicaId: fichaMedica.id }
+      });
+      console.log('✅ [ELIMINAR_FICHA_MEDICA] Archivos médicos eliminados de BD');
+
+      // Eliminar imágenes médicas
+      await this.prisma.imagenMedica.deleteMany({
+        where: { fichaMedicaId: fichaMedica.id }
+      });
+      console.log('✅ [ELIMINAR_FICHA_MEDICA] Imágenes médicas eliminadas de BD');
+
+      // Eliminar carpetas
+      await this.prisma.carpetaArchivo.deleteMany({
+        where: { fichaMedicaId: fichaMedica.id }
+      });
+      carpetasEliminadas = fichaMedica.carpetasArchivos.length;
+      console.log('✅ [ELIMINAR_FICHA_MEDICA] Carpetas eliminadas de BD');
+
+      // Eliminar historial de fichas médicas
+      await this.prisma.fichaMedicaHistorial.deleteMany({
+        where: { fichaMedica: { id: fichaMedica.id } }
+      });
+      console.log('✅ [ELIMINAR_FICHA_MEDICA] Historial eliminado de BD');
+
+      // Finalmente, eliminar la ficha médica
+      await this.prisma.fichaMedica.delete({
+        where: { id: fichaMedica.id }
+      });
+      console.log('✅ [ELIMINAR_FICHA_MEDICA] Ficha médica eliminada de BD');
+
+      console.log('🎉 [ELIMINAR_FICHA_MEDICA] Ficha médica eliminada completamente:', {
+        archivosEliminados,
+        imagenesEliminadas,
+        carpetasEliminadas
+      });
+
+      return {
+        success: true,
+        message: `Ficha médica eliminada completamente. Se eliminaron ${archivosEliminados} archivos, ${imagenesEliminadas} imágenes y ${carpetasEliminadas} carpetas.`,
+        archivosEliminados,
+        imagenesEliminadas,
+        carpetasEliminadas
+      };
+
+    } catch (error) {
+      console.error('❌ [ELIMINAR_FICHA_MEDICA] Error eliminando ficha médica:', error);
+      throw new Error('Error al eliminar la ficha médica. Algunos archivos pueden no haberse eliminado correctamente.');
+    }
+  }
 }
