@@ -44,7 +44,7 @@ export class AuthService {
   }
 
   async loginWithDto(dto: LoginAuthDto) {
-    console.log('🔥 SERVICE LOGIN - VERSIÓN ACTUALIZADA');
+    console.log('🔥 SERVICE LOGIN - VERSIÓN SIMPLIFICADA');
     console.log('🚀 ===== INICIO DE LOGIN =====');
     console.log('📋 Datos recibidos:', dto);
     
@@ -57,6 +57,7 @@ export class AuthService {
     console.log('✅ Usuario encontrado en login:', { 
       id: user.id, 
       email: user.email, 
+      role: user.role,
       preferredLanguage: user.preferredLanguage 
     });
     
@@ -70,28 +71,19 @@ export class AuthService {
       clinicaUrl = clinica?.url || null;
     }
     
-    // Crear objeto de usuario con información de clínica
-    const userWithClinica = {
-      ...user,
-      clinicaUrl
+    // Generar token JWT
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      clinicaId: user.clinicaId,
+      clinicaUrl: clinicaUrl
     };
+
+    const token = this.jwtService.sign(payload);
     
-    // Hacer POST a la API externa de Fluentia para login
-    try {
-      const externalApiUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
-      const externalApiData = {
-        email: userWithClinica.email, // Usar el email del usuario encontrado
-        password: dto.password, // Contraseña en texto plano
-      };
-      
-      await axios.post(externalApiUrl, externalApiData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 10000, // 10 segundos de timeout
-      });
-      
-      console.log('✅ Usuario logueado en Fluentia API');
+    console.log('✅ Token JWT generado exitosamente');
       
     } catch (externalApiError) {
       console.log('❌ Error en Fluentia API login:', externalApiError.response?.data?.message || externalApiError.message);
