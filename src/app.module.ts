@@ -41,6 +41,7 @@ import { GlobalFichasMedicasController } from './fichas-medicas/global-fichas-me
 import { GlobalVentasController } from './ventas/global-ventas.controller';
 import { GlobalMediosPagoController } from './medios-pago/global-medios-pago.controller';
 import { ClinicPatientsController } from './patients/clinic-patients.controller';
+import { AdminGuard } from './auth/guards/admin.guard';
 
 @Module({
   imports: [
@@ -88,6 +89,6 @@ import { ClinicPatientsController } from './patients/clinic-patients.controller'
     GlobalMediosPagoController,
     ClinicPatientsController,
   ],
-  providers: [AppService, OwnersService],
+  providers: [AppService, OwnersService, AdminGuard],
 })
 export class AppModule {}
