@@ -318,4 +318,7 @@ export class PatientsController {
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() searchDto: SearchPatientsDto,
   ) {
-  
+    return this.patientsService.searchPatients(clinicaUrl, searchDto);
+  }
+}
+
