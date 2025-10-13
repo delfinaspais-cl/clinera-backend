@@ -1273,4 +1273,73 @@ export class FichasMedicasService {
       throw new Error('Error al eliminar la ficha médica. Algunos archivos pueden no haberse eliminado correctamente.');
     }
   }
+
+  async eliminarFichaMedicaHistorial(clinicaUrl: string, pacienteId: string, historialId: string): Promise<{ success: boolean; message: string }> {
+    console.log('🗑️ [ELIMINAR_HISTORIAL] Iniciando eliminación de registro de historial:', { clinicaUrl, pacienteId, historialId });
+
+    try {
+      // 1. Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // 2. Verificar que el paciente existe y pertenece a la clínica
+      const paciente = await this.prisma.patient.findFirst({
+        where: { 
+          id: pacienteId,
+          clinicaId: clinica.id
+        }
+      });
+
+      if (!paciente) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+
+      // 3. Verificar que la ficha médica existe
+      const fichaMedica = await this.prisma.fichaMedica.findFirst({
+        where: { pacienteId }
+      });
+
+      if (!fichaMedica) {
+        throw new NotFoundException('Ficha médica no encontrada');
+      }
+
+      // 4. Verificar que el registro de historial existe y pertenece a la ficha médica
+      const historial = await this.prisma.fichaMedicaHistorial.findFirst({
+        where: { 
+          id: historialId,
+          fichaMedicaId: fichaMedica.id
+        }
+      });
+
+      if (!historial) {
+        throw new NotFoundException('Registro de historial no encontrado');
+      }
+
+      // 5. Eliminar el registro de historial
+      await this.prisma.fichaMedicaHistorial.delete({
+        where: { id: historialId }
+      });
+
+      console.log('✅ [ELIMINAR_HISTORIAL] Registro de historial eliminado exitosamente:', historialId);
+
+      return {
+        success: true,
+        message: 'Registro de historial eliminado exitosamente'
+      };
+
+    } catch (error) {
+      console.error('❌ [ELIMINAR_HISTORIAL] Error eliminando registro de historial:', error);
+      
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      
+      throw new Error('Error al eliminar el registro de historial');
+    }
+  }
 }

@@ -274,4 +274,20 @@ export class GlobalFichasMedicasController {
   ): Promise<{ success: boolean; message: string; archivosEliminados: number; imagenesEliminadas: number; carpetasEliminadas: number }> {
     return this.fichasMedicasService.eliminarFichaMedica(clinicaUrl, pacienteId);
   }
+
+  // ===== ENDPOINT PARA ELIMINAR REGISTRO DE HISTORIAL =====
+
+  @Delete('historial/:historialId')
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Eliminar registro específico del historial de ficha médica (Solo ADMIN)' })
+  @ApiResponse({ status: 200, description: 'Registro de historial eliminado exitosamente' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado. Solo administradores.' })
+  @ApiResponse({ status: 404, description: 'Registro de historial no encontrado' })
+  async eliminarFichaMedicaHistorial(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('pacienteId') pacienteId: string,
+    @Param('historialId') historialId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.fichasMedicasService.eliminarFichaMedicaHistorial(clinicaUrl, pacienteId, historialId);
+  }
 }
