@@ -27,7 +27,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PatientsService } from './patients.service';
 import { PatientsImportService } from './patients-import.service';

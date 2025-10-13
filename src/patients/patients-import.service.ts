@@ -232,9 +232,8 @@ export class PatientsImportService {
         .pipe(
           fastcsv.parse({
             headers: true,
-            skipEmptyLines: true,
             trim: true,
-            encoding: 'utf8',
+            ignoreEmpty: true,
           }),
         )
         .on('error', (error) => {
@@ -578,23 +577,14 @@ export class PatientsImportService {
 
   /**
    * Sincroniza el contacto con el sistema de mensajería
+   * Por ahora solo registra que el paciente está listo para mensajería
    */
   private async syncContact(patient: any, clinicaId: string): Promise<void> {
     try {
-      // Buscar si ya existe un contacto en la tabla Conversation
-      if (patient.email) {
-        const existingConversation = await this.prisma.conversation.findFirst({
-          where: {
-            patientEmail: patient.email,
-            clinicaId: clinicaId,
-          },
-        });
-
-        // Si no existe, podríamos crear una conversación vacía para tenerlo registrado
-        // Pero por ahora solo lo dejamos preparado para cuando envíen el primer mensaje
-        if (!existingConversation) {
-          this.logger.debug(`Paciente ${patient.email} listo para mensajería`);
-        }
+      // El paciente ya está creado en la BD y listo para mensajería
+      // Cuando se envíe el primer mensaje, se creará la conversación automáticamente
+      if (patient.email || patient.phone) {
+        this.logger.debug(`Paciente ${patient.id} listo para mensajería`);
       }
     } catch (error) {
       // No fallar la importación si falla la sincronización
