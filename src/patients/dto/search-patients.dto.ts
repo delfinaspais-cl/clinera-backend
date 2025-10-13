@@ -21,6 +21,30 @@ export class SearchPatientsDto {
 
   @IsOptional()
   @IsString()
+  documento?: string;
+
+  @IsOptional()
+  @IsString()
+  clientNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
   ubicacion?: string;
 
   @IsOptional()

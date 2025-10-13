@@ -30,12 +30,18 @@ export class PatientsService {
         clinicaId: clinica.id,
       };
 
-      // Si hay un término de búsqueda, agregar condiciones OR para buscar en nombre, email y teléfono
+      // Si hay un término de búsqueda, agregar condiciones OR para buscar en múltiples campos
       if (search) {
         whereCondition.OR = [
           { name: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { phone: { contains: search, mode: 'insensitive' } },
+          { documento: { contains: search, mode: 'insensitive' } },
+          { clientNumber: { contains: search, mode: 'insensitive' } },
+          { address: { contains: search, mode: 'insensitive' } },
+          { city: { contains: search, mode: 'insensitive' } },
+          { province: { contains: search, mode: 'insensitive' } },
+          { country: { contains: search, mode: 'insensitive' } },
         ];
       }
 
@@ -149,14 +155,6 @@ export class PatientsService {
 
       console.log('🔍 Datos procesados - Nombre:', patientName, 'Teléfono:', phoneNumber, 'Email:', patientEmail, 'Fecha nacimiento:', birthDate);
       
-      // Combinar notas existentes con documento si está presente
-      let combinedNotes = dto.notes || '';
-      if (dto.documento) {
-        combinedNotes = combinedNotes ? 
-          `${combinedNotes}\nDocumento: ${dto.documento}` : 
-          `Documento: ${dto.documento}`;
-      }
-      
       console.log('🔍 Creando paciente directamente en la tabla patients...');
       
       const patient = await this.prisma.patient.create({
@@ -165,7 +163,15 @@ export class PatientsService {
           email: patientEmail,
           birthDate: birthDate ? new Date(birthDate) : null,
           phone: phoneNumber,
-          notes: combinedNotes,
+          notes: dto.notes || null,
+          documento: dto.documento || null,
+          clientNumber: dto.clientNumber || null,
+          address: dto.address || null,
+          city: dto.city || null,
+          province: dto.province || null,
+          country: dto.country || null,
+          gender: dto.gender || null,
+          preExistingConditions: dto.preExistingConditions || null,
           clinicaId: clinica.id,
         },
         include: { clinica: true },
@@ -299,18 +305,15 @@ export class PatientsService {
       if (patientEmail !== null) patientUpdateData.email = patientEmail;
       if (birthDate) patientUpdateData.birthDate = new Date(birthDate);
       if (phoneNumber) patientUpdateData.phone = phoneNumber;
-      
-      // Manejar notas y documento
-      let combinedNotes = dto.notes || existingPatient.notes || '';
-      if (dto.documento) {
-        // Remover documento anterior si existe
-        combinedNotes = combinedNotes.replace(/Documento: \d+/g, '').trim();
-        // Agregar nuevo documento
-        combinedNotes = combinedNotes ? 
-          `${combinedNotes}\nDocumento: ${dto.documento}` : 
-          `Documento: ${dto.documento}`;
-      }
-      if (combinedNotes) patientUpdateData.notes = combinedNotes;
+      if (dto.notes !== undefined) patientUpdateData.notes = dto.notes;
+      if (dto.documento !== undefined) patientUpdateData.documento = dto.documento;
+      if (dto.clientNumber !== undefined) patientUpdateData.clientNumber = dto.clientNumber;
+      if (dto.address !== undefined) patientUpdateData.address = dto.address;
+      if (dto.city !== undefined) patientUpdateData.city = dto.city;
+      if (dto.province !== undefined) patientUpdateData.province = dto.province;
+      if (dto.country !== undefined) patientUpdateData.country = dto.country;
+      if (dto.gender !== undefined) patientUpdateData.gender = dto.gender;
+      if (dto.preExistingConditions !== undefined) patientUpdateData.preExistingConditions = dto.preExistingConditions;
 
       // Actualizar paciente si hay datos para actualizar
       if (Object.keys(patientUpdateData).length > 0) {
@@ -425,6 +428,36 @@ export class PatientsService {
         where.phone = { contains: searchDto.telefono, mode: 'insensitive' };
       }
 
+      // Filtro por documento
+      if (searchDto.documento) {
+        where.documento = { contains: searchDto.documento, mode: 'insensitive' };
+      }
+
+      // Filtro por número de cliente
+      if (searchDto.clientNumber) {
+        where.clientNumber = { contains: searchDto.clientNumber, mode: 'insensitive' };
+      }
+
+      // Filtro por ciudad
+      if (searchDto.city) {
+        where.city = { contains: searchDto.city, mode: 'insensitive' };
+      }
+
+      // Filtro por provincia
+      if (searchDto.province) {
+        where.province = { contains: searchDto.province, mode: 'insensitive' };
+      }
+
+      // Filtro por país
+      if (searchDto.country) {
+        where.country = { contains: searchDto.country, mode: 'insensitive' };
+      }
+
+      // Filtro por género
+      if (searchDto.gender) {
+        where.gender = { contains: searchDto.gender, mode: 'insensitive' };
+      }
+
       // Filtro por fecha de nacimiento
       if (searchDto.fechaNacimientoDesde || searchDto.fechaNacimientoHasta) {
         where.birthDate = {};
@@ -486,6 +519,14 @@ export class PatientsService {
         nombre: paciente.name,
         email: paciente.email,
         telefono: paciente.phone,
+        documento: paciente.documento,
+        clientNumber: paciente.clientNumber,
+        address: paciente.address,
+        city: paciente.city,
+        province: paciente.province,
+        country: paciente.country,
+        gender: paciente.gender,
+        preExistingConditions: paciente.preExistingConditions,
         fechaNacimiento: paciente.birthDate
           ? paciente.birthDate.toISOString().split('T')[0]
           : null,

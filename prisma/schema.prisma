@@ -258,6 +258,14 @@ model Patient {
   birthDate              DateTime?
   phone                  String?
   notes                  String?
+  documento              String?
+  clientNumber           String?
+  address                String?
+  city                   String?
+  province               String?
+  country                String?
+  gender                 String?
+  preExistingConditions  String?
   clinicaId              String
   createdAt              DateTime               @default(now())
   clinica                Clinica                @relation(fields: [clinicaId], references: [id])

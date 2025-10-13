@@ -45,5 +45,33 @@ export class CreatePatientDto {
 
   @IsOptional()
   @IsString()
+  clientNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  preExistingConditions?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
 }
