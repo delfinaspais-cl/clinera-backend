@@ -76,76 +76,103 @@ export class PatientsController {
     return this.patientsService.create(clinicaUrl, dto);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
-    return this.patientsService.findOne(clinicaUrl, id);
-  }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // IMPORTACIÓN Y EXPORTACIÓN (antes de :id para evitar conflictos de rutas)
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  @Patch(':id')
+  @Get('export')
   @UseGuards(JwtAuthGuard)
-  update(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-    @Body() dto: UpdatePatientDto,
-  ) {
-    return this.patientsService.update(clinicaUrl, id, dto);
-  }
-
-  @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Actualizar paciente completo' })
-  @ApiResponse({ status: 200, description: 'Paciente actualizado exitosamente' })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
-  async updatePatient(
-    @Param('clinicaUrl') clinicaUrl: string,
-    @Param('id') id: string,
-    @Body() dto: any, // Usar any para evitar validación
-  ) {
-    return this.patientsService.updatePatient(clinicaUrl, id, dto);
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
-    return this.patientsService.remove(clinicaUrl, id);
-  }
-
-  @Get('mis-turnos')
-  @UseGuards(JwtAuthGuard)
-  async getMisTurnos(@Request() req) {
-    return this.patientsService.getMisTurnos(req.user.email);
-  }
-
-  @ApiOperation({ summary: 'Búsqueda avanzada de pacientes con filtros' })
-  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de pacientes filtrados con paginación',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        pacientes: { type: 'array' },
-        pagination: { type: 'object' },
-        filters: { type: 'object' },
+  @ApiOperation({ 
+    summary: 'Exportar pacientes a CSV',
+    description: 'Descarga todos los pacientes de la clínica en formato CSV' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Archivo CSV generado exitosamente',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
       },
     },
   })
+  @ApiResponse({ status: 400, description: 'Error al generar CSV' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiBearerAuth()
-  @Get('search')
-  @UseGuards(JwtAuthGuard)
-  async searchPatients(
+  async exportPatients(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Query() searchDto: SearchPatientsDto,
+    @Res() res: Response,
   ) {
-    return this.patientsService.searchPatients(clinicaUrl, searchDto);
+    // Obtener la clínica
+    const clinica = await this.patientsService['prisma'].clinica.findFirst({
+      where: { url: clinicaUrl },
+    });
+
+    if (!clinica) {
+      throw new Error('Clínica no encontrada');
+    }
+
+    const csv = await this.patientsImportService.exportToCSV(clinica.id);
+    
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `pacientes-${clinicaUrl}-${timestamp}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(csv);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // IMPORTACIÓN Y EXPORTACIÓN DE PACIENTES
-  // ═══════════════════════════════════════════════════════════════════════════
+  @Get('import/template')
+  @ApiOperation({ 
+    summary: 'Descargar plantilla CSV de ejemplo',
+    description: 'Descarga una plantilla CSV flexible que acepta múltiples nombres de columna en español, portugués e inglés' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Plantilla CSV descargada exitosamente',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Plantilla no encontrada' })
+  async downloadTemplate(@Res() res: Response) {
+    // En producción, el archivo está en dist/src/patients/templates
+    // En desarrollo, está en src/patients/templates
+    let templatePath = path.join(
+      __dirname,
+      'templates',
+      'plantilla-importacion-pacientes.csv',
+    );
+
+    // Si no existe, intentar la ruta de desarrollo
+    if (!fs.existsSync(templatePath)) {
+      templatePath = path.join(
+        process.cwd(),
+        'src',
+        'patients',
+        'templates',
+        'plantilla-importacion-pacientes.csv',
+      );
+    }
+
+    // Verificar si el archivo existe
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`Plantilla no encontrada en: ${templatePath}`);
+    }
+
+    const filename = 'plantilla-importacion-pacientes.csv';
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.sendFile(templatePath);
+  }
 
   @Post('import')
   @UseGuards(JwtAuthGuard)
@@ -223,88 +250,72 @@ export class PatientsController {
     return this.patientsImportService.importFromCSV(file, clinica.id, options);
   }
 
-  @Get('export')
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ENDPOINTS CON PARÁMETROS DINÁMICOS (al final)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  @Get(':id')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ 
-    summary: 'Exportar pacientes a CSV',
-    description: 'Descarga todos los pacientes de la clínica en formato CSV' 
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Archivo CSV generado exitosamente',
-    content: {
-      'text/csv': {
-        schema: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Error al generar CSV' })
-  @ApiResponse({ status: 401, description: 'No autorizado' })
-  @ApiBearerAuth()
-  async exportPatients(
+  findOne(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
+    return this.patientsService.findOne(clinicaUrl, id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  update(
     @Param('clinicaUrl') clinicaUrl: string,
-    @Res() res: Response,
+    @Param('id') id: string,
+    @Body() dto: UpdatePatientDto,
   ) {
-    // Obtener la clínica
-    const clinica = await this.patientsService['prisma'].clinica.findFirst({
-      where: { url: clinicaUrl },
-    });
-
-    if (!clinica) {
-      throw new Error('Clínica no encontrada');
-    }
-
-    const csv = await this.patientsImportService.exportToCSV(clinica.id);
-    
-    const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `pacientes-${clinicaUrl}-${timestamp}.csv`;
-
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(csv);
+    return this.patientsService.update(clinicaUrl, id, dto);
   }
 
-  @Get('import/template')
-  @ApiOperation({ 
-    summary: 'Descargar plantilla CSV de ejemplo',
-    description: 'Descarga una plantilla CSV flexible que acepta múltiples nombres de columna en español, portugués e inglés' 
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Plantilla CSV descargada exitosamente',
-    content: {
-      'text/csv': {
-        schema: {
-          type: 'string',
-          format: 'binary',
-        },
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Actualizar paciente completo' })
+  @ApiResponse({ status: 200, description: 'Paciente actualizado exitosamente' })
+  @ApiResponse({ status: 400, description: 'Datos inválidos' })
+  @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
+  async updatePatient(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('id') id: string,
+    @Body() dto: any, // Usar any para evitar validación
+  ) {
+    return this.patientsService.updatePatient(clinicaUrl, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  remove(@Param('clinicaUrl') clinicaUrl: string, @Param('id') id: string) {
+    return this.patientsService.remove(clinicaUrl, id);
+  }
+
+  @Get('mis-turnos')
+  @UseGuards(JwtAuthGuard)
+  async getMisTurnos(@Request() req) {
+    return this.patientsService.getMisTurnos(req.user.email);
+  }
+
+  @ApiOperation({ summary: 'Búsqueda avanzada de pacientes con filtros' })
+  @ApiParam({ name: 'clinicaUrl', description: 'URL de la clínica' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de pacientes filtrados con paginación',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        pacientes: { type: 'array' },
+        pagination: { type: 'object' },
+        filters: { type: 'object' },
       },
     },
   })
-  @ApiResponse({ status: 404, description: 'Plantilla no encontrada' })
-  async downloadTemplate(@Res() res: Response) {
-    const templatePath = path.join(
-      __dirname,
-      '..',
-      '..',
-      'src',
-      'patients',
-      'templates',
-      'plantilla-importacion-pacientes.csv',
-    );
-
-    // Verificar si el archivo existe
-    if (!fs.existsSync(templatePath)) {
-      throw new Error('Plantilla no encontrada');
-    }
-
-    const filename = 'plantilla-importacion-pacientes.csv';
-
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.sendFile(templatePath);
-  }
-}
+  @ApiBearerAuth()
+  @Get('search')
+  @UseGuards(JwtAuthGuard)
+  async searchPatients(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query() searchDto: SearchPatientsDto,
+  ) {
+  
