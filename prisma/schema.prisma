@@ -295,6 +295,7 @@ model Tratamiento {
   precio            Float?
   clinicaId         String
   estado            String                    @default("activo")
+  allowSobreturno   Boolean?                  @default(false)
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   profesionales     ProfessionalTratamiento[]
