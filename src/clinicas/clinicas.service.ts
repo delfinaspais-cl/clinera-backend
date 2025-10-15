@@ -1898,6 +1898,8 @@ export class ClinicasService {
           hora: dto.hora,
           estado: 'pendiente', // Estado inicial pendiente para que confirme desde email
           motivo: dto.motivo || 'Consulta',
+          servicio: dto.tratamiento,
+          sucursal: dto.sucursal,
           clinicaId: clinica.id,
           confirmationToken: confirmationToken,
         },
@@ -1980,6 +1982,8 @@ export class ClinicasService {
           hora: turnoCreado.hora,
           estado: turnoCreado.estado,
           motivo: turnoCreado.motivo,
+          tratamiento: turnoCreado.servicio,
+          sucursal: turnoCreado.sucursal,
         },
         mensaje: `Turno creado para ${fechaFormateada} a las ${dto.hora} con ${dto.doctor}. Por favor revisa tu email para confirmar la cita.`,
       };

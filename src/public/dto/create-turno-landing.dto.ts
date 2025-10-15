@@ -28,4 +28,12 @@ export class CreateTurnoLandingDto {
   @IsString()
   @IsOptional()
   motivo?: string;
+
+  @IsString()
+  @IsOptional()
+  tratamiento?: string;
+
+  @IsString()
+  @IsOptional()
+  sucursal?: string;
 }
