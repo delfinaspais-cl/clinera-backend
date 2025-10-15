@@ -1865,24 +1865,13 @@ export class ClinicasService {
         );
       }
 
-      // Verificar si ya existe un turno para la misma fecha, hora y doctor
-      const turnoExistente = await this.prisma.turno.findFirst({
-        where: {
-          clinicaId: clinica.id,
-          fecha: fechaTurno,
-          hora: dto.hora,
-          doctor: dto.doctor,
-          estado: {
-            in: ['confirmado', 'pendiente'],
-          },
-        },
+      // NOTA: Se permite crear múltiples turnos en el mismo horario para el mismo doctor
+      // Esta funcionalidad permite que un profesional pueda tener varias citas simultáneas
+      console.log('✅ Permitir múltiples turnos en mismo horario para:', {
+        doctor: dto.doctor,
+        fecha: fechaTurno,
+        hora: dto.hora
       });
-
-      if (turnoExistente) {
-        throw new BadRequestException(
-          'Ya existe un turno para esta fecha, hora y doctor',
-        );
-      }
 
       // Generar token único de confirmación
       const confirmationToken = this.generateConfirmationToken();
