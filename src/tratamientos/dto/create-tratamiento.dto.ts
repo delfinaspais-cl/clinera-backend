@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsPositive } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsPositive, IsBoolean } from 'class-validator';
 
 export class CreateTratamientoDto {
   @IsString()
@@ -18,4 +18,8 @@ export class CreateTratamientoDto {
   @IsNumber()
   @IsPositive()
   cantidadSesiones: number; // Cantidad total de sesiones del tratamiento
+
+  @IsBoolean()
+  @IsOptional()
+  allowSobreturno?: boolean;
 }
