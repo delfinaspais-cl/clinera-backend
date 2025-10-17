@@ -19,6 +19,7 @@ import { CreatePatientDto } from '../patients/dto/create-patient.dto';
 import { EmailService } from '../email/email.service';
 import { PasswordGenerator } from '../common/utils/password-generator';
 import { AppointmentWebhookService } from '../webhooks/appointment-webhook.service';
+import axios from 'axios';
 
 @Injectable()
 export class ClinicasService {
@@ -434,6 +435,62 @@ export class ClinicasService {
           permisos: permisosUsuario as any, // Cast para compatibilidad con Prisma
         },
       });
+
+      // Hacer POST a la API externa de Fluentia
+      console.log('🌐 ===== INICIANDO LLAMADA A API EXTERNA (USUARIO CLÍNICA) =====');
+      const startTime = Date.now();
+      try {
+        const externalApiUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/register';
+        const externalApiData = {
+          name: username, // Usar el username generado
+          email: emailToUse,
+          password: password, // Contraseña en texto plano
+        };
+        
+        console.log('📤 Datos que se enviarán a la API externa (USUARIO CLÍNICA):', JSON.stringify(externalApiData, null, 2));
+        console.log('🔗 URL de la API externa:', externalApiUrl);
+        console.log('⏱️ Iniciando petición HTTP...');
+        
+        const externalApiResponse = await axios.post(externalApiUrl, externalApiData, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 segundos de timeout
+        });
+        
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('✅ ===== LLAMADA A API EXTERNA EXITOSA (USUARIO CLÍNICA) =====');
+        console.log('⏱️ Duración de la petición:', `${duration}ms`);
+        console.log('📊 Status Code:', externalApiResponse.status);
+        console.log('📋 Headers de respuesta:', JSON.stringify(externalApiResponse.headers, null, 2));
+        console.log('📄 Datos de respuesta:', JSON.stringify(externalApiResponse.data, null, 2));
+        console.log('✅ Usuario registrado exitosamente en Fluentia API (USUARIO CLÍNICA)');
+        
+      } catch (externalApiError) {
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('❌ ===== ERROR EN LLAMADA A API EXTERNA (USUARIO CLÍNICA) =====');
+        console.log('⏱️ Duración antes del error:', `${duration}ms`);
+        console.log('🚨 Tipo de error:', externalApiError.name || 'Unknown');
+        console.log('📝 Mensaje de error:', externalApiError.message);
+        
+        if (externalApiError.response) {
+          console.log('📊 Status Code de error:', externalApiError.response.status);
+          console.log('📋 Headers de error:', JSON.stringify(externalApiError.response.headers, null, 2));
+          console.log('📄 Datos de error:', JSON.stringify(externalApiError.response.data, null, 2));
+        } else if (externalApiError.request) {
+          console.log('🔌 Error de conexión - No se recibió respuesta');
+          console.log('📋 Request config:', JSON.stringify(externalApiError.config, null, 2));
+        } else {
+          console.log('⚙️ Error de configuración:', externalApiError.message);
+        }
+        
+        console.log('⚠️ IMPORTANTE: El registro local continúa normalmente');
+        console.log('⚠️ El usuario se registra en el sistema local aunque falle la API externa');
+      }
 
       // SIEMPRE enviar email de bienvenida con credenciales
       try {
