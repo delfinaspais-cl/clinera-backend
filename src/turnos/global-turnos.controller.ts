@@ -273,6 +273,7 @@ export class GlobalTurnosController {
           // Nuevos campos adicionales
           origen: createTurnoDto.origen,
           ate: createTurnoDto.ate,
+          isVideocall: createTurnoDto.isVideocall,
         },
         include: {
           clinica: {
@@ -367,6 +368,7 @@ export class GlobalTurnosController {
           // Nuevos campos adicionales
           origen: updateTurnoDto.origen,
           ate: updateTurnoDto.ate,
+          isVideocall: updateTurnoDto.isVideocall,
         },
         include: {
           clinica: {
@@ -754,6 +756,7 @@ export class GlobalTurnosController {
           clinicaId: clinica.id,
           estado: 'pendiente',
           confirmationToken: confirmationToken,
+          isVideocall: createTurnoDto.isVideocall,
         },
         include: {
           clinica: {
