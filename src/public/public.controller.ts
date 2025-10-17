@@ -11,6 +11,7 @@ import {
   HttpStatus,
   NotFoundException,
   Query,
+  Delete,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import * as fs from 'fs';
@@ -1084,6 +1085,28 @@ export class PublicController {
         },
       });
 
+      // Obtener bloqueos temporales del profesional en el rango de fechas
+      const bloqueosTemporales = await this.prisma.professionalBlock.findMany({
+        where: {
+          professionalId: professionalId,
+          fecha: {
+            gte: startDate,
+            lte: endDate,
+          },
+          isActive: true,
+        },
+        select: {
+          id: true,
+          fecha: true,
+          horaInicio: true,
+          horaFin: true,
+          motivo: true,
+        },
+        orderBy: {
+          fecha: 'asc',
+        },
+      });
+
       // Obtener horarios de atención del profesional
       const horariosAtencion = (professional as any).agendas?.map((agenda: any) => ({
         dia: agenda.dia,
@@ -1097,6 +1120,7 @@ export class PublicController {
         endDate,
         horariosAtencion,
         turnosOcupados,
+        bloqueosTemporales,
         professional.defaultDurationMin,
         professional.bufferMin,
       );
@@ -1112,6 +1136,7 @@ export class PublicController {
           },
           horariosAtencion,
           turnosOcupados,
+          bloqueosTemporales,
           disponibilidad,
           rangoFechas: {
             inicio: startDate.toISOString(),
@@ -1135,6 +1160,7 @@ export class PublicController {
     endDate: Date,
     horariosAtencion: any[],
     turnosOcupados: any[],
+    bloqueosTemporales: any[],
     duracionMin: number,
     bufferMin: number,
   ) {
@@ -1150,6 +1176,9 @@ export class PublicController {
         const turnosDelDia = turnosOcupados.filter(t => 
           t.fecha.toISOString().split('T')[0] === fechaStr
         );
+        const bloqueosDelDia = bloqueosTemporales.filter(b => 
+          b.fecha.toISOString().split('T')[0] === fechaStr
+        );
 
         const slotsDisponibles = this.generateSlotsForDay(
           fechaStr,
@@ -1158,6 +1187,7 @@ export class PublicController {
           duracionMin,
           bufferMin,
           turnosDelDia,
+          bloqueosDelDia,
         );
 
         if (slotsDisponibles.length > 0) {
@@ -1182,6 +1212,7 @@ export class PublicController {
     duracionMin: number,
     bufferMin: number,
     turnosOcupados: any[],
+    bloqueosDelDia: any[],
   ) {
     const slots: any[] = [];
     const [horaIni, minIni] = horaInicio.split(':').map(Number);
@@ -1197,8 +1228,8 @@ export class PublicController {
       const slotStart = new Date(currentTime);
       const slotEnd = new Date(currentTime.getTime() + duracionMin * 60000);
 
-      // Verificar si este slot está ocupado
-      const isOccupied = turnosOcupados.some(turno => {
+      // Verificar si este slot está ocupado por turnos
+      const isOccupiedByTurno = turnosOcupados.some(turno => {
         const [turnoHora, turnoMin] = turno.hora.split(':').map(Number);
         const turnoStart = new Date();
         turnoStart.setHours(turnoHora, turnoMin, 0, 0);
@@ -1208,7 +1239,21 @@ export class PublicController {
         return (slotStart < turnoEnd && slotEnd > turnoStart);
       });
 
-      if (!isOccupied && slotEnd <= endTime) {
+      // Verificar si este slot está bloqueado temporalmente
+      const isBlocked = bloqueosDelDia.some(bloqueo => {
+        const [bloqueoHoraIni, bloqueoMinIni] = bloqueo.horaInicio.split(':').map(Number);
+        const [bloqueoHoraFin, bloqueoMinFin] = bloqueo.horaFin.split(':').map(Number);
+        
+        const bloqueoStart = new Date();
+        bloqueoStart.setHours(bloqueoHoraIni, bloqueoMinIni, 0, 0);
+        const bloqueoEnd = new Date();
+        bloqueoEnd.setHours(bloqueoHoraFin, bloqueoMinFin, 0, 0);
+
+        // Verificar solapamiento con bloqueo
+        return (slotStart < bloqueoEnd && slotEnd > bloqueoStart);
+      });
+
+      if (!isOccupiedByTurno && !isBlocked && slotEnd <= endTime) {
         slots.push({
           horaInicio: slotStart.toTimeString().slice(0, 5),
           horaFin: slotEnd.toTimeString().slice(0, 5),
@@ -1227,6 +1272,242 @@ export class PublicController {
   private getDayOfWeek(date: Date): string {
     const days = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
     return days[date.getDay()];
+  }
+
+  // ===== ENDPOINTS PARA GESTIONAR BLOQUEOS TEMPORALES =====
+  
+  @Get('clinica/:clinicaUrl/profesionales/:professionalId/bloqueos')
+  async getProfessionalBlocks(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('professionalId') professionalId: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+  ) {
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Verificar que el profesional existe y pertenece a la clínica
+      const professional = await this.prisma.professional.findFirst({
+        where: {
+          id: professionalId,
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+      });
+
+      if (!professional) {
+        throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
+      }
+
+      // Construir filtros de fecha
+      const where: any = {
+        professionalId,
+        isActive: true,
+      };
+
+      if (fechaInicio && fechaFin) {
+        where.fecha = {
+          gte: new Date(fechaInicio),
+          lte: new Date(fechaFin),
+        };
+      }
+
+      const bloqueos = await this.prisma.professionalBlock.findMany({
+        where,
+        orderBy: [
+          { fecha: 'asc' },
+          { horaInicio: 'asc' }
+        ]
+      });
+
+      return {
+        success: true,
+        data: bloqueos,
+        message: 'Bloqueos obtenidos exitosamente'
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error obteniendo bloqueos:', error);
+      throw new BadRequestException('Error al obtener los bloqueos');
+    }
+  }
+
+  @Post('clinica/:clinicaUrl/profesionales/:professionalId/bloqueos')
+  async createProfessionalBlock(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('professionalId') professionalId: string,
+    @Body() createBlockDto: {
+      fecha: string;
+      horaInicio: string;
+      horaFin: string;
+      motivo?: string;
+    },
+  ) {
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Verificar que el profesional existe y pertenece a la clínica
+      const professional = await this.prisma.professional.findFirst({
+        where: {
+          id: professionalId,
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+      });
+
+      if (!professional) {
+        throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
+      }
+
+      // Validar que la fecha no sea en el pasado
+      const fechaBloqueo = new Date(createBlockDto.fecha);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      
+      if (fechaBloqueo < hoy) {
+        throw new BadRequestException('No se puede bloquear un horario en el pasado');
+      }
+
+      // Validar que horaInicio < horaFin
+      if (createBlockDto.horaInicio >= createBlockDto.horaFin) {
+        throw new BadRequestException('La hora de inicio debe ser menor que la hora de fin');
+      }
+
+      // Verificar si ya existe un bloqueo que se superponga
+      const bloqueoExistente = await this.prisma.professionalBlock.findFirst({
+        where: {
+          professionalId,
+          fecha: fechaBloqueo,
+          isActive: true,
+          OR: [
+            {
+              AND: [
+                { horaInicio: { lte: createBlockDto.horaInicio } },
+                { horaFin: { gt: createBlockDto.horaInicio } }
+              ]
+            },
+            {
+              AND: [
+                { horaInicio: { lt: createBlockDto.horaFin } },
+                { horaFin: { gte: createBlockDto.horaFin } }
+              ]
+            },
+            {
+              AND: [
+                { horaInicio: { gte: createBlockDto.horaInicio } },
+                { horaFin: { lte: createBlockDto.horaFin } }
+              ]
+            }
+          ]
+        }
+      });
+
+      if (bloqueoExistente) {
+        throw new BadRequestException('Ya existe un bloqueo que se superpone con este horario');
+      }
+
+      // Crear el bloqueo
+      const bloqueo = await this.prisma.professionalBlock.create({
+        data: {
+          professionalId,
+          fecha: fechaBloqueo,
+          horaInicio: createBlockDto.horaInicio,
+          horaFin: createBlockDto.horaFin,
+          motivo: createBlockDto.motivo,
+        },
+      });
+
+      return {
+        success: true,
+        data: bloqueo,
+        message: 'Bloqueo creado exitosamente'
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error creando bloqueo:', error);
+      throw new BadRequestException('Error al crear el bloqueo');
+    }
+  }
+
+  @Delete('clinica/:clinicaUrl/profesionales/:professionalId/bloqueos/:blockId')
+  async deleteProfessionalBlock(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Param('professionalId') professionalId: string,
+    @Param('blockId') blockId: string,
+  ) {
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl },
+      });
+
+      if (!clinica) {
+        throw new BadRequestException('Clínica no encontrada');
+      }
+
+      // Verificar que el profesional existe y pertenece a la clínica
+      const professional = await this.prisma.professional.findFirst({
+        where: {
+          id: professionalId,
+          user: {
+            clinicaId: clinica.id,
+          },
+        },
+      });
+
+      if (!professional) {
+        throw new BadRequestException('Profesional no encontrado o no pertenece a esta clínica');
+      }
+
+      // Verificar que el bloqueo existe y pertenece al profesional
+      const bloqueo = await this.prisma.professionalBlock.findFirst({
+        where: {
+          id: blockId,
+          professionalId,
+        },
+      });
+
+      if (!bloqueo) {
+        throw new BadRequestException('Bloqueo no encontrado');
+      }
+
+      // Eliminar el bloqueo (soft delete)
+      await this.prisma.professionalBlock.update({
+        where: { id: blockId },
+        data: { isActive: false }
+      });
+
+      return {
+        success: true,
+        message: 'Bloqueo eliminado exitosamente'
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error eliminando bloqueo:', error);
+      throw new BadRequestException('Error al eliminar el bloqueo');
+    }
   }
 
   // ===== ENDPOINT PARA ARCHIVOS DEL MICROSERVICIO (S3) =====

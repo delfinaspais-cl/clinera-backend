@@ -173,6 +173,7 @@ model Professional {
   createdAt          DateTime                   @default(now())
   sucursalId         String?
   agendas            Agenda[]
+  blocks             ProfessionalBlock[]
   sucursal           Sucursal?                  @relation(fields: [sucursalId], references: [id])
   user               User                       @relation(fields: [userId], references: [id])
   especialidades     ProfessionalEspecialidad[]
@@ -189,6 +190,22 @@ model Agenda {
   duracionMin    Int
   createdAt      DateTime     @default(now())
   professional   Professional @relation(fields: [professionalId], references: [id])
+}
+
+model ProfessionalBlock {
+  id             String       @id @default(uuid())
+  professionalId String
+  fecha          DateTime     // Fecha específica del bloqueo
+  horaInicio     String       // Hora de inicio del bloqueo (HH:MM)
+  horaFin        String       // Hora de fin del bloqueo (HH:MM)
+  motivo         String?      // Motivo del bloqueo (opcional)
+  isActive       Boolean      @default(true) // Para activar/desactivar bloqueos
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, fecha])
+  @@index([fecha, isActive])
 }
 
 model Conversation {
