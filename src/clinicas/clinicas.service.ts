@@ -1785,6 +1785,34 @@ export class ClinicasService {
         take: 10, // Limitar a 10 turnos
       });
 
+      // Obtener tratamientos que se muestran en el landing
+      const tratamientosLanding = await this.prisma.tratamiento.findMany({
+        where: {
+          clinicaId: clinica.id,
+          estado: 'activo',
+          showInLanding: true,
+        },
+        include: {
+          profesionales: {
+            include: {
+              professional: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          name: 'asc',
+        },
+      });
+
       // Transformar los datos para el formato requerido
       const clinicaFormateada = {
         id: clinica.id,
@@ -1829,10 +1857,29 @@ export class ClinicasService {
         doctor: turno.doctor,
       }));
 
+      const tratamientosFormateados = tratamientosLanding.map((tratamiento) => ({
+        id: tratamiento.id,
+        name: tratamiento.name,
+        descripcion: tratamiento.descripcion,
+        duracionPorSesion: tratamiento.duracionPorSesion,
+        cantidadSesiones: tratamiento.cantidadSesiones,
+        precio: tratamiento.precio,
+        allowSobreturno: tratamiento.allowSobreturno,
+        allowVideocall: tratamiento.allowVideocall,
+        profesionales: tratamiento.profesionales.map((pt) => ({
+          id: pt.professional.id,
+          name: pt.professional.name,
+          precio: pt.precio,
+          duracionMin: pt.duracionMin,
+          user: pt.professional.user,
+        })),
+      }));
+
       return {
         success: true,
         clinica: clinicaFormateada,
         turnosDisponibles: turnosFormateados,
+        tratamientos: tratamientosFormateados,
       };
     } catch (error) {
       if (error instanceof BadRequestException) {

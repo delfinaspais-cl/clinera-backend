@@ -27,6 +27,7 @@ export class TratamientosService {
         clinicaId: clinica.id,
         allowSobreturno: createTratamientoDto.allowSobreturno,
         allowVideocall: createTratamientoDto.allowVideocall,
+        showInLanding: createTratamientoDto.showInLanding,
       },
       include: {
         profesionales: {
@@ -166,6 +167,10 @@ export class TratamientosService {
 
     if (updateTratamientoDto.allowVideocall !== undefined) {
       updateData.allowVideocall = updateTratamientoDto.allowVideocall;
+    }
+
+    if (updateTratamientoDto.showInLanding !== undefined) {
+      updateData.showInLanding = updateTratamientoDto.showInLanding;
     }
 
     return this.prisma.tratamiento.update({

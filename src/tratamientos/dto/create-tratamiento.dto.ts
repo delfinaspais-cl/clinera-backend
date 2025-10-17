@@ -26,4 +26,8 @@ export class CreateTratamientoDto {
   @IsBoolean()
   @IsOptional()
   allowVideocall?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  showInLanding?: boolean;
 }
