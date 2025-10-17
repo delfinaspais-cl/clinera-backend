@@ -12,6 +12,7 @@ import {
   IsEnum,
   IsIn,
   ValidateIf,
+  IsBoolean,
 } from 'class-validator';
 import { TurnoEstado } from './get-turnos-filters.dto';
 
@@ -132,4 +133,8 @@ export class UpdateTurnoDto {
   @IsString()
   @IsNotEmpty({ message: 'El monto pendiente es requerido cuando el estado es parcial' })
   montoPendiente?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isVideocall?: boolean;
 }

@@ -1891,6 +1891,7 @@ export class ClinicasService {
           sucursal: dto.sucursal,
           clinicaId: clinica.id,
           confirmationToken: confirmationToken,
+          isVideocall: dto.isVideocall,
         },
         include: {
           clinica: {
@@ -2266,6 +2267,7 @@ export class ClinicasService {
         // Nuevos campos adicionales
         origen: dto.origen,
         ate: dto.ate,
+        isVideocall: dto.isVideocall,
         sucursal: dto.sucursal,
         updatedAt: new Date(),
       };
@@ -2456,6 +2458,7 @@ export class ClinicasService {
           origen: dto.origen,
           ate: dto.ate,
           sucursal: dto.sucursal,
+          isVideocall: dto.isVideocall,
           updatedAt: new Date(),
         },
       });

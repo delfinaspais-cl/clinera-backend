@@ -226,6 +226,14 @@ export class PatientsImportService {
   private async parseCSV(file: Express.Multer.File): Promise<RawPatientRow[]> {
     return new Promise((resolve, reject) => {
       const rows: RawPatientRow[] = [];
+      
+      // Convertir buffer a string con encoding UTF-8
+      const fileContent = file.buffer.toString('utf-8');
+      
+      // Detectar el delimitador automáticamente
+      const delimiter = this.detectDelimiter(fileContent);
+      this.logger.log(`Delimitador detectado: "${delimiter}"`);
+      
       const stream = Readable.from(file.buffer);
 
       stream
@@ -234,6 +242,8 @@ export class PatientsImportService {
             headers: true,
             trim: true,
             ignoreEmpty: true,
+            delimiter: delimiter,
+            encoding: 'utf8',
           }),
         )
         .on('error', (error) => {
@@ -247,9 +257,42 @@ export class PatientsImportService {
           if (rows.length === 0) {
             reject(new BadRequestException('El archivo CSV está vacío'));
           }
+          this.logger.log(`CSV parseado exitosamente: ${rows.length} filas encontradas`);
           resolve(rows);
         });
     });
+  }
+
+  /**
+   * Detecta automáticamente el delimitador del CSV
+   */
+  private detectDelimiter(content: string): string {
+    // Obtener las primeras líneas para analizar
+    const lines = content.split('\n').slice(0, 5);
+    
+    // Contar ocurrencias de diferentes delimitadores
+    const delimiterCounts = {
+      ',': 0,
+      ';': 0,
+      '\t': 0,
+      '|': 0,
+    };
+
+    lines.forEach(line => {
+      Object.keys(delimiterCounts).forEach(delimiter => {
+        const matches = line.split(delimiter).length - 1;
+        delimiterCounts[delimiter] += matches;
+      });
+    });
+
+    // Encontrar el delimitador más común
+    const maxCount = Math.max(...Object.values(delimiterCounts));
+    const detectedDelimiter = Object.keys(delimiterCounts).find(
+      delimiter => delimiterCounts[delimiter] === maxCount
+    );
+
+    // Si no hay delimitadores detectados, usar coma por defecto
+    return detectedDelimiter && maxCount > 0 ? detectedDelimiter : ',';
   }
 
   /**
@@ -260,20 +303,33 @@ export class PatientsImportService {
   private async mapFlexibleColumns(row: RawPatientRow, clinicaId: string): Promise<any> {
     const mapped: any = { clinicaId };
 
+    // Función auxiliar para buscar columnas con variaciones de caracteres especiales
+    const findColumn = (variations: string[]): string | null => {
+      for (const variation of variations) {
+        if (row[variation] && row[variation].toString().trim()) {
+          return row[variation].toString().trim();
+        }
+      }
+      return null;
+    };
+
     // 1. NAME: Combinar nombre + apellido si existen separados
-    // Español: nombre + apellido
+    // Español: nombre + apellido (con y sin tildes)
     // Portugués: nome + sobrenome
     // Inglés: first_name/firstname + last_name/lastname
-    if (row['nombre'] && row['apellido']) {
-      mapped.name = `${row['nombre']} ${row['apellido']}`.trim();
+    const nombre = findColumn(['nombre', 'Nombre', 'NOMBRE']);
+    const apellido = findColumn(['apellido', 'apellidos', 'Apellidos', 'APELLIDOS']);
+    
+    if (nombre && apellido) {
+      mapped.name = `${nombre} ${apellido}`.trim();
     } else if (row['nome'] && row['sobrenome']) {
       mapped.name = `${row['nome']} ${row['sobrenome']}`.trim();
     } else if (row['first_name'] && row['last_name']) {
       mapped.name = `${row['first_name']} ${row['last_name']}`.trim();
     } else if (row['firstname'] && row['lastname']) {
       mapped.name = `${row['firstname']} ${row['lastname']}`.trim();
-    } else if (row['nombre']) {
-      mapped.name = row['nombre'];
+    } else if (nombre) {
+      mapped.name = nombre;
     } else if (row['nome']) {
       mapped.name = row['nome'];
     } else if (row['name']) {
@@ -319,36 +375,33 @@ export class PatientsImportService {
     // Español: email, correo, correo_electronico, mail
     // Portugués: email, e-mail, correio
     // Inglés: email, e-mail, mail
-    mapped.email =
-      row['email'] ||
-      row['e-mail'] ||
-      row['correo'] ||
-      row['correo_electronico'] ||
-      row['mail'] ||
-      row['Email'] ||
-      row['correio'] ||
-      null;
+    mapped.email = findColumn([
+      'email', 'Email', 'EMAIL',
+      'e-mail', 'E-mail', 'E-MAIL',
+      'correo', 'Correo', 'CORREO',
+      'correo_electronico', 'correo electrónico',
+      'mail', 'Mail', 'MAIL',
+      'correio'
+    ]);
 
     if (mapped.email) {
       mapped.email = mapped.email.toLowerCase().trim();
     }
 
-    // 4. PHONE: Soportar telefono/celular/movil
+    // 4. PHONE: Soportar telefono/celular/movil (con y sin tildes)
     // Español: telefono, celular, movil
     // Portugués: telefone, celular
     // Inglés: phone, mobile, cell, cellphone
-    mapped.phone =
-      row['phone'] ||
-      row['telefono'] ||
-      row['Telefono'] ||
-      row['telefone'] ||
-      row['celular'] ||
-      row['Celular'] ||
-      row['movil'] ||
-      row['mobile'] ||
-      row['cell'] ||
-      row['cellphone'] ||
-      null;
+    mapped.phone = findColumn([
+      'phone', 
+      'telefono', 'Telefono', 'TELFONO', 'teléfono', 'Teléfono', 'TELÉFONO',
+      'telefone', 
+      'celular', 'Celular', 'CELULAR',
+      'movil', 'Movil', 'MOVIL', 'móvil', 'Móvil', 'MÓVIL',
+      'mobile', 
+      'cell', 
+      'cellphone'
+    ]);
 
     if (mapped.phone) {
       mapped.phone = mapped.phone.toString().trim();
@@ -405,16 +458,14 @@ export class PatientsImportService {
       null;
     
     // ADDRESS
-    // Español: direccion
+    // Español: direccion (con y sin tildes)
     // Portugués: endereco, endereço
     // Inglés: address
-    mapped.address = 
-      row['address'] || 
-      row['direccion'] || 
-      row['Direccion'] || 
-      row['endereco'] ||
-      row['endereço'] ||
-      null;
+    mapped.address = findColumn([
+      'address', 
+      'direccion', 'Direccion', 'DIRECCION', 'dirección', 'Dirección', 'DIRECCIÓN',
+      'endereco', 'endereço'
+    ]);
     
     // CITY
     // Español: ciudad

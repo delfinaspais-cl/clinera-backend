@@ -26,6 +26,7 @@ export class TratamientosService {
         precio: createTratamientoDto.price,
         clinicaId: clinica.id,
         allowSobreturno: createTratamientoDto.allowSobreturno,
+        allowVideocall: createTratamientoDto.allowVideocall,
       },
       include: {
         profesionales: {
@@ -161,6 +162,10 @@ export class TratamientosService {
     
     if (updateTratamientoDto.allowSobreturno !== undefined) {
       updateData.allowSobreturno = updateTratamientoDto.allowSobreturno;
+    }
+
+    if (updateTratamientoDto.allowVideocall !== undefined) {
+      updateData.allowVideocall = updateTratamientoDto.allowVideocall;
     }
 
     return this.prisma.tratamiento.update({

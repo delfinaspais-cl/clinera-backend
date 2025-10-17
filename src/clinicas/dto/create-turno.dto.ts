@@ -11,6 +11,7 @@ import {
   Max,
   IsIn,
   ValidateIf,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateTurnoDto {
@@ -117,4 +118,8 @@ export class CreateTurnoDto {
   @IsString()
   @IsNotEmpty({ message: 'El monto pendiente es requerido cuando el estado es parcial' })
   montoPendiente?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isVideocall?: boolean;
 }

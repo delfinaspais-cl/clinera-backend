@@ -775,7 +775,10 @@ export class PublicController {
   // ===== ENDPOINTS PÚBLICOS PARA TRATAMIENTOS =====
   
   @Get('clinica/:clinicaUrl/tratamientos')
-  async getTreatmentsPublic(@Param('clinicaUrl') clinicaUrl: string) {
+  async getTreatmentsPublic(
+    @Param('clinicaUrl') clinicaUrl: string,
+    @Query('allowVideocall') allowVideocall?: string,
+  ) {
     try {
       // Verificar que la clínica existe y está activa
       const clinica = await this.prisma.clinica.findFirst({
@@ -790,21 +793,41 @@ export class PublicController {
         throw new BadRequestException('La clínica no está activa');
       }
 
+      // Construir filtros de consulta
+      const whereClause: any = {
+        clinicaId: clinica.id,
+        estado: 'activo', // Solo tratamientos activos
+      };
+
+      // Filtro por allowVideocall si se proporciona
+      if (allowVideocall !== undefined) {
+        const allowVideocallBool = allowVideocall.toLowerCase() === 'true';
+        whereClause.allowVideocall = allowVideocallBool;
+      }
+
       // Obtener tratamientos de la clínica
       const tratamientos = await this.prisma.tratamiento.findMany({
-        where: {
-          clinicaId: clinica.id,
-        },
+        where: whereClause,
         orderBy: {
           name: 'asc',
         },
       });
 
+      // Construir mensaje de respuesta
+      let message = 'Tratamientos obtenidos exitosamente';
+      if (allowVideocall !== undefined) {
+        const filterText = allowVideocall.toLowerCase() === 'true' ? 'con videollamada' : 'sin videollamada';
+        message = `Tratamientos ${filterText} obtenidos exitosamente`;
+      }
+
       return {
         success: true,
         data: tratamientos,
-        message: 'Tratamientos obtenidos exitosamente',
+        message,
         total: tratamientos.length,
+        filters: {
+          allowVideocall: allowVideocall !== undefined ? allowVideocall.toLowerCase() === 'true' : null,
+        },
       };
     } catch (error) {
       if (error instanceof BadRequestException) {

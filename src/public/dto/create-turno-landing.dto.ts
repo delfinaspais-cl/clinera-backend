@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEmail, IsDateString, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail, IsDateString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateTurnoLandingDto {
   @IsString()
@@ -36,4 +36,8 @@ export class CreateTurnoLandingDto {
   @IsString()
   @IsOptional()
   sucursal?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isVideocall?: boolean;
 }

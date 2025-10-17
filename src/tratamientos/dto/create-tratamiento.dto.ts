@@ -22,4 +22,8 @@ export class CreateTratamientoDto {
   @IsBoolean()
   @IsOptional()
   allowSobreturno?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  allowVideocall?: boolean;
 }
