@@ -140,6 +140,7 @@ model Turno {
   montoAbonado       String?
   montoPendiente     String?
   confirmationToken  String?       @unique
+  isVideocall        Boolean?      @default(false)
   clinica            Clinica       @relation(fields: [clinicaId], references: [id])
   conversation       Conversation? @relation(fields: [conversationId], references: [id])
   professional       Professional? @relation(fields: [professionalId], references: [id])
@@ -296,6 +297,7 @@ model Tratamiento {
   clinicaId         String
   estado            String                    @default("activo")
   allowSobreturno   Boolean?                  @default(false)
+  allowVideocall    Boolean?                  @default(false)
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   profesionales     ProfessionalTratamiento[]
