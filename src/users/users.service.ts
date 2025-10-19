@@ -1025,7 +1025,12 @@ export class UsersService {
 
   async resetPassword(dto: ResetPasswordDto) {
     try {
-      console.log('🔑 USERS SERVICE - Intentando restablecer contraseña con token:', dto.token.substring(0, 10) + '...');
+      console.log('🔑 USERS SERVICE - Intentando restablecer contraseña con token:', dto.token ? dto.token.substring(0, 10) + '...' : 'undefined');
+      
+      // Validar que el token esté presente
+      if (!dto.token || !dto.newPassword) {
+        throw new BadRequestException('Token y nueva contraseña son requeridos');
+      }
       
       // Buscar token válido
       const resetToken = await this.prisma.passwordResetToken.findFirst({

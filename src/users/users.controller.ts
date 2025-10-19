@@ -207,7 +207,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 400, description: 'Token inválido, expirado o contraseña inválida' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    console.log('🔑 USERS CONTROLLER - Restableciendo contraseña con token:', dto.token.substring(0, 10) + '...');
+    console.log('🔑 USERS CONTROLLER - Restableciendo contraseña con token:', dto.token ? dto.token.substring(0, 10) + '...' : 'undefined');
     return this.usersService.resetPassword(dto);
   }
 }
