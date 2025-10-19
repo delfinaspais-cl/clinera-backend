@@ -13,6 +13,9 @@ import { UserLoginDto } from '../auth/dto/user-login.dto';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
 import { EmailService } from '../email/email.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { ForgotPasswordDto } from '../auth/dto/forgot-password.dto';
+import { ResetPasswordDto } from '../auth/dto/reset-password.dto';
+import { randomBytes } from 'crypto';
 import axios from 'axios';
 
 @Injectable()
@@ -944,6 +947,153 @@ export class UsersService {
     } catch (error) {
       console.error('Error validando username:', error);
       throw new BadRequestException('Error al validar username');
+    }
+  }
+
+  // ===== MÉTODOS DE RECUPERACIÓN DE CONTRASEÑA =====
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    try {
+      console.log('🔑 USERS SERVICE - Solicitud de recuperación de contraseña para:', dto.email);
+      
+      // Buscar usuario por email
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = dto.email.toLowerCase();
+      const user = await this.prisma.user.findFirst({
+          where: { 
+            email: normalizedEmail
+          },
+      });
+
+      if (!user) {
+        console.log('⚠️ Usuario no encontrado para email:', dto.email);
+        // Por seguridad, no revelamos si el email existe o no
+        return {
+          success: true,
+          message:
+            'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+        };
+      }
+
+      console.log('✅ Usuario encontrado:', user.id);
+
+      // Generar token único
+      const resetToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+      // Guardar token en base de datos
+      await this.prisma.passwordResetToken.create({
+        data: {
+          email: dto.email,
+          token: resetToken,
+          expiresAt,
+          used: false,
+        },
+      });
+
+      console.log('✅ Token de recuperación creado:', resetToken.substring(0, 10) + '...');
+
+      // Enviar email
+      const emailSent = await this.emailService.sendPasswordResetEmail(
+        dto.email,
+        resetToken,
+        user.name || 'Usuario',
+      );
+
+      if (!emailSent) {
+        console.error('❌ Error al enviar email de recuperación');
+        throw new BadRequestException(
+          'Error al enviar el email de recuperación',
+        );
+      }
+
+      console.log('✅ Email de recuperación enviado exitosamente');
+
+      return {
+        success: true,
+        message:
+          'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en forgotPassword (Users Service):', error);
+      throw new BadRequestException('Error interno del servidor');
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    try {
+      console.log('🔑 USERS SERVICE - Intentando restablecer contraseña con token:', dto.token.substring(0, 10) + '...');
+      
+      // Buscar token válido
+      const resetToken = await this.prisma.passwordResetToken.findFirst({
+        where: {
+          token: dto.token,
+          used: false,
+          expiresAt: {
+            gt: new Date(),
+          },
+        },
+      });
+
+      if (!resetToken) {
+        console.log('❌ Token inválido o expirado');
+        throw new BadRequestException('Token inválido o expirado');
+      }
+
+      console.log('✅ Token válido encontrado, buscando usuario...');
+
+      // Buscar usuario
+      // Normalizar email a minúsculas para búsqueda case-insensitive
+      const normalizedEmail = resetToken.email.toLowerCase();
+      const user = await this.prisma.user.findFirst({
+          where: { 
+            email: normalizedEmail
+          },
+      });
+
+      if (!user) {
+        console.log('❌ Usuario no encontrado para email:', resetToken.email);
+        throw new BadRequestException('Usuario no encontrado');
+      }
+
+      console.log('✅ Usuario encontrado, actualizando contraseña...');
+
+      // Actualizar contraseña
+      const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      // Marcar token como usado
+      await this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      });
+
+      console.log('✅ Contraseña actualizada, enviando email de confirmación...');
+
+      // Enviar email de confirmación
+      await this.emailService.sendPasswordChangedEmail(
+        user.email,
+        user.name || 'Usuario',
+      );
+
+      console.log('✅ Proceso de restablecimiento completado exitosamente');
+
+      return {
+        success: true,
+        message: 'Contraseña actualizada exitosamente',
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error en resetPassword (Users Service):', error);
+      throw new BadRequestException('Error interno del servidor');
     }
   }
 }

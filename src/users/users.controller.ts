@@ -17,6 +17,8 @@ import {
 } from '@nestjs/swagger';
 import { UserRegisterDto } from '../auth/dto/user-register.dto';
 import { UserLoginDto } from '../auth/dto/user-login.dto';
+import { ForgotPasswordDto } from '../auth/dto/forgot-password.dto';
+import { ResetPasswordDto } from '../auth/dto/reset-password.dto';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { CreateClinicaDto } from '../owners/dto/create-clinica.dto';
@@ -164,5 +166,48 @@ export class UsersController {
   })
   async validateUsername(@Param('username') username: string, @Query('clinicaId') clinicaId?: string) {
     return this.usersService.validateUsername(username, clinicaId);
+  }
+
+  // ===== ENDPOINTS DE RECUPERACIÓN DE CONTRASEÑA =====
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Solicitar recuperación de contraseña por email' })
+  @ApiResponse({
+    status: 200,
+    description: 'Solicitud de recuperación procesada exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { 
+          type: 'string', 
+          example: 'Si el email está registrado, recibirás un enlace para restablecer tu contraseña' 
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o error interno' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    console.log('🔑 USERS CONTROLLER - Solicitud de recuperación de contraseña para:', dto.email);
+    return this.usersService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Restablecer contraseña con token de recuperación' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña restablecida exitosamente',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Contraseña actualizada exitosamente' }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Token inválido, expirado o contraseña inválida' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    console.log('🔑 USERS CONTROLLER - Restableciendo contraseña con token:', dto.token.substring(0, 10) + '...');
+    return this.usersService.resetPassword(dto);
   }
 }

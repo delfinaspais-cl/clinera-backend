@@ -173,7 +173,15 @@ export class TratamientosService {
       updateData.showInLanding = updateTratamientoDto.showInLanding;
     }
 
-    return this.prisma.tratamiento.update({
+    // Verificar que hay datos para actualizar
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('No se proporcionaron datos para actualizar');
+    }
+
+    console.log('🔍 [UPDATE_TRATAMIENTO] Datos a actualizar:', updateData);
+    console.log('🔍 [UPDATE_TRATAMIENTO] showInLanding recibido:', updateTratamientoDto.showInLanding);
+
+    const updatedTratamiento = await this.prisma.tratamiento.update({
       where: { id },
       data: updateData,
       include: {
@@ -193,6 +201,9 @@ export class TratamientosService {
         },
       },
     });
+
+    console.log('✅ [UPDATE_TRATAMIENTO] Tratamiento actualizado:', updatedTratamiento.showInLanding);
+    return updatedTratamiento;
   }
 
   async removeTratamiento(clinicaUrl: string, id: string) {
