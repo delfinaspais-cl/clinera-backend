@@ -1371,11 +1371,20 @@ export class FichasMedicasService {
         throw new NotFoundException('Paciente no encontrado');
       }
 
-      // Verificar que la carpeta existe
+      // Obtener ficha médica del paciente primero
+      const fichaMedica = await this.prisma.fichaMedica.findFirst({
+        where: { pacienteId }
+      });
+
+      if (!fichaMedica) {
+        throw new NotFoundException('Ficha médica no encontrada');
+      }
+
+      // Verificar que la carpeta existe y pertenece a la ficha médica
       const carpeta = await this.prisma.carpetaArchivo.findFirst({
         where: {
           id: carpetaId,
-          pacienteId: pacienteId
+          fichaMedicaId: fichaMedica.id
         }
       });
 
@@ -1468,7 +1477,7 @@ export class FichasMedicasService {
 
       // Ocultar carpetas
       const carpetasOcultadas = await this.prisma.carpetaArchivo.updateMany({
-        where: { pacienteId: pacienteId },
+        where: { fichaMedicaId: fichaMedica.id },
         data: { 
           oculta: true,
           fechaOcultacion: new Date()
