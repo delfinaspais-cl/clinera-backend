@@ -218,7 +218,7 @@ export class EmailService {
   }
 
   private getPasswordResetTemplate(data: any): string {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${data.resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'https://app.clinera.io'}/reset-password?token=${data.resetToken}`;
     
     return `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px;">

@@ -25,7 +25,7 @@ export class EmailService {
     userName: string,
   ): Promise<boolean> {
     try {
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      const resetUrl = `${process.env.FRONTEND_URL || 'https://app.clinera.io'}/reset-password?token=${resetToken}`;
 
       const mailOptions = {
         from: process.env.SMTP_FROM || '"Clinera" <noreply@clinera.com>',
