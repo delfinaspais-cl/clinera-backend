@@ -377,6 +377,8 @@ model FichaMedica {
   diagnostico                  String?
   tratamiento                  String?
   evolucion                    String?
+  oculta                       Boolean                @default(false)
+  fechaOcultacion              DateTime?
   createdAt                    DateTime               @default(now())
   updatedAt                    DateTime               @updatedAt
   tratamientosEsteticosPrevios String?
@@ -413,6 +415,8 @@ model FichaMedicaHistorial {
   evolucion                    String?
   notasCambio                  String?
   esVersionActual              Boolean              @default(false)
+  oculto                       Boolean              @default(false)
+  fechaOcultacion              DateTime?
   createdAt                    DateTime             @default(now())
   tratamientosEsteticosPrevios String?
   archivos                     FichaMedicaArchivo[]
@@ -436,6 +440,8 @@ model FichaMedicaArchivo {
   url                String
   descripcion        String?
   fechaSubida        DateTime             @default(now())
+  oculto             Boolean              @default(false)
+  fechaOcultacion    DateTime?
   microserviceFileId String?
   fichaHistorial     FichaMedicaHistorial @relation(fields: [fichaHistorialId], references: [id], onDelete: Cascade)
 
@@ -450,6 +456,8 @@ model CarpetaArchivo {
   descripcion   String?
   tipo          String         @default("archivos") // "archivos" o "imagenes"
   orden         Int            @default(0)
+  oculta        Boolean        @default(false)
+  fechaOcultacion DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   fichaMedica   FichaMedica    @relation("FichaMedicaCarpetasArchivos", fields: [fichaMedicaId], references: [id], onDelete: Cascade)
@@ -471,6 +479,8 @@ model ArchivoMedico {
   url                String
   tamañoBytes       BigInt?
   fechaSubida        DateTime    @default(now())
+  oculto             Boolean     @default(false)
+  fechaOcultacion    DateTime?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   microserviceFileId String?
@@ -491,6 +501,8 @@ model ImagenMedica {
   descripcion        String?
   tamañoBytes       BigInt?
   fechaSubida        DateTime    @default(now())
+  oculta             Boolean     @default(false)
+  fechaOcultacion    DateTime?
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
   microserviceFileId String?

@@ -26,7 +26,7 @@ import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 @ApiTags('Fichas Médicas Globales')
-@Controller('api/clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
+@Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
 export class GlobalFichasMedicasController {
   constructor(private readonly fichasMedicasService: FichasMedicasService) {}
 
@@ -243,42 +243,42 @@ export class GlobalFichasMedicasController {
     return this.fichasMedicasService.actualizarCarpeta(clinicaUrl, pacienteId, carpetaId, actualizarCarpetaDto);
   }
 
-  @Delete('carpetas/:carpetaId')
-  @ApiOperation({ summary: 'Eliminar una carpeta y mover sus archivos a la raíz' })
-  @ApiResponse({ status: 200, description: 'Carpeta eliminada exitosamente' })
+  @Post('carpetas/:carpetaId/ocultar')
+  @ApiOperation({ summary: 'Ocultar una carpeta (eliminación lógica - no se elimina de la BD)' })
+  @ApiResponse({ status: 200, description: 'Carpeta ocultada exitosamente' })
   @ApiResponse({ status: 404, description: 'Carpeta no encontrada' })
-  async eliminarCarpeta(
+  async ocultarCarpeta(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Param('carpetaId') carpetaId: string,
   ): Promise<{ success: boolean; message: string }> {
-    return this.fichasMedicasService.eliminarCarpeta(clinicaUrl, pacienteId, carpetaId);
+    return this.fichasMedicasService.ocultarCarpeta(clinicaUrl, pacienteId, carpetaId);
   }
 
   // ===== ENDPOINT PARA ELIMINAR FICHA MÉDICA COMPLETA =====
 
-  @Delete()
-  @ApiOperation({ summary: 'Eliminar ficha médica completa de un paciente' })
-  @ApiResponse({ status: 200, description: 'Ficha médica eliminada exitosamente' })
+  @Post('ocultar')
+  @ApiOperation({ summary: 'Ocultar ficha médica completa (eliminación lógica - no se elimina de la BD)' })
+  @ApiResponse({ status: 200, description: 'Ficha médica ocultada exitosamente' })
   @ApiResponse({ status: 404, description: 'Clínica, paciente o ficha médica no encontrado' })
-  async eliminarFichaMedica(
+  async ocultarFichaMedica(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
-  ): Promise<{ success: boolean; message: string; archivosEliminados: number; imagenesEliminadas: number; carpetasEliminadas: number }> {
-    return this.fichasMedicasService.eliminarFichaMedica(clinicaUrl, pacienteId);
+  ): Promise<{ success: boolean; message: string; archivosOcultados: number; imagenesOcultadas: number; carpetasOcultadas: number }> {
+    return this.fichasMedicasService.ocultarFichaMedica(clinicaUrl, pacienteId);
   }
 
   // ===== ENDPOINT PARA ELIMINAR REGISTRO DE HISTORIAL =====
 
-  @Delete('historial/:historialId')
-  @ApiOperation({ summary: 'Eliminar registro específico del historial de ficha médica' })
-  @ApiResponse({ status: 200, description: 'Registro de historial eliminado exitosamente' })
+  @Post('historial/:historialId/ocultar')
+  @ApiOperation({ summary: 'Ocultar registro específico del historial (eliminación lógica - no se elimina de la BD)' })
+  @ApiResponse({ status: 200, description: 'Registro de historial ocultado exitosamente' })
   @ApiResponse({ status: 404, description: 'Registro de historial no encontrado' })
-  async eliminarFichaMedicaHistorial(
+  async ocultarFichaMedicaHistorial(
     @Param('clinicaUrl') clinicaUrl: string,
     @Param('pacienteId') pacienteId: string,
     @Param('historialId') historialId: string,
   ): Promise<{ success: boolean; message: string }> {
-    return this.fichasMedicasService.eliminarFichaMedicaHistorial(clinicaUrl, pacienteId, historialId);
+    return this.fichasMedicasService.ocultarFichaMedicaHistorial(clinicaUrl, pacienteId, historialId);
   }
 }

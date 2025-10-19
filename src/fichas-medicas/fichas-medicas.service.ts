@@ -1342,4 +1342,234 @@ export class FichasMedicasService {
       throw new Error('Error al eliminar el registro de historial');
     }
   }
+
+  // ===== MÉTODOS DE ELIMINACIÓN LÓGICA (SOFT DELETE) =====
+
+  async ocultarCarpeta(clinicaUrl: string, pacienteId: string, carpetaId: string): Promise<{ success: boolean; message: string }> {
+    console.log('👁️ [OCULTAR_CARPETA] Ocultando carpeta (eliminación lógica)');
+    console.log('👁️ [OCULTAR_CARPETA] Parámetros:', { clinicaUrl, pacienteId, carpetaId });
+
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // Verificar que el paciente existe y pertenece a la clínica
+      const paciente = await this.prisma.patient.findFirst({
+        where: { 
+          id: pacienteId,
+          clinicaId: clinica.id
+        }
+      });
+
+      if (!paciente) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+
+      // Verificar que la carpeta existe
+      const carpeta = await this.prisma.carpetaArchivo.findFirst({
+        where: {
+          id: carpetaId,
+          pacienteId: pacienteId
+        }
+      });
+
+      if (!carpeta) {
+        throw new NotFoundException('Carpeta no encontrada');
+      }
+
+      // Marcar carpeta como oculta (soft delete)
+      await this.prisma.carpetaArchivo.update({
+        where: { id: carpetaId },
+        data: { 
+          oculta: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      console.log('✅ [OCULTAR_CARPETA] Carpeta ocultada exitosamente');
+      return {
+        success: true,
+        message: 'Carpeta ocultada exitosamente'
+      };
+
+    } catch (error) {
+      console.error('❌ [OCULTAR_CARPETA] Error:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error('Error al ocultar la carpeta');
+    }
+  }
+
+  async ocultarFichaMedica(clinicaUrl: string, pacienteId: string): Promise<{ 
+    success: boolean; 
+    message: string; 
+    archivosOcultados: number; 
+    imagenesOcultadas: number; 
+    carpetasOcultadas: number 
+  }> {
+    console.log('👁️ [OCULTAR_FICHA_MEDICA] Ocultando ficha médica completa (eliminación lógica)');
+    console.log('👁️ [OCULTAR_FICHA_MEDICA] Parámetros:', { clinicaUrl, pacienteId });
+
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // Verificar que el paciente existe y pertenece a la clínica
+      const paciente = await this.prisma.patient.findFirst({
+        where: { 
+          id: pacienteId,
+          clinicaId: clinica.id
+        }
+      });
+
+      if (!paciente) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+
+      // Obtener ficha médica
+      const fichaMedica = await this.prisma.fichaMedica.findFirst({
+        where: { pacienteId }
+      });
+
+      if (!fichaMedica) {
+        throw new NotFoundException('Ficha médica no encontrada');
+      }
+
+      // Ocultar archivos médicos
+      const archivosOcultados = await this.prisma.archivoMedico.updateMany({
+        where: { fichaMedicaId: fichaMedica.id },
+        data: { 
+          oculto: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      // Ocultar imágenes médicas
+      const imagenesOcultadas = await this.prisma.imagenMedica.updateMany({
+        where: { fichaMedicaId: fichaMedica.id },
+        data: { 
+          oculta: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      // Ocultar carpetas
+      const carpetasOcultadas = await this.prisma.carpetaArchivo.updateMany({
+        where: { pacienteId: pacienteId },
+        data: { 
+          oculta: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      // Ocultar ficha médica
+      await this.prisma.fichaMedica.update({
+        where: { id: fichaMedica.id },
+        data: { 
+          oculta: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      console.log('✅ [OCULTAR_FICHA_MEDICA] Ficha médica ocultada exitosamente');
+      return {
+        success: true,
+        message: 'Ficha médica ocultada exitosamente',
+        archivosOcultados: archivosOcultados.count,
+        imagenesOcultadas: imagenesOcultadas.count,
+        carpetasOcultadas: carpetasOcultadas.count
+      };
+
+    } catch (error) {
+      console.error('❌ [OCULTAR_FICHA_MEDICA] Error:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error('Error al ocultar la ficha médica');
+    }
+  }
+
+  async ocultarFichaMedicaHistorial(clinicaUrl: string, pacienteId: string, historialId: string): Promise<{ success: boolean; message: string }> {
+    console.log('👁️ [OCULTAR_HISTORIAL] Ocultando registro de historial (eliminación lógica)');
+    console.log('👁️ [OCULTAR_HISTORIAL] Parámetros:', { clinicaUrl, pacienteId, historialId });
+
+    try {
+      // Verificar que la clínica existe
+      const clinica = await this.prisma.clinica.findFirst({
+        where: { url: clinicaUrl }
+      });
+
+      if (!clinica) {
+        throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // Verificar que el paciente existe y pertenece a la clínica
+      const paciente = await this.prisma.patient.findFirst({
+        where: { 
+          id: pacienteId,
+          clinicaId: clinica.id
+        }
+      });
+
+      if (!paciente) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+
+      // Verificar que el registro de historial existe
+      const historial = await this.prisma.fichaMedicaHistorial.findFirst({
+        where: {
+          id: historialId,
+          pacienteId: pacienteId
+        }
+      });
+
+      if (!historial) {
+        throw new NotFoundException('Registro de historial no encontrado');
+      }
+
+      // Ocultar archivos del historial
+      await this.prisma.fichaMedicaArchivo.updateMany({
+        where: { fichaHistorialId: historialId },
+        data: { 
+          oculto: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      // Ocultar registro de historial
+      await this.prisma.fichaMedicaHistorial.update({
+        where: { id: historialId },
+        data: { 
+          oculto: true,
+          fechaOcultacion: new Date()
+        }
+      });
+
+      console.log('✅ [OCULTAR_HISTORIAL] Registro de historial ocultado exitosamente');
+      return {
+        success: true,
+        message: 'Registro de historial ocultado exitosamente'
+      };
+
+    } catch (error) {
+      console.error('❌ [OCULTAR_HISTORIAL] Error:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error('Error al ocultar el registro de historial');
+    }
+  }
 }
