@@ -219,6 +219,12 @@ export class UsersService {
       }
 
       // Verificar contraseña
+      console.log('🔍 LOGIN: Usuario encontrado para login:', {
+        id: user.id,
+        email: user.email,
+        username: user.username
+      });
+      console.log('🔍 LOGIN: Hash leído de la BD:', user.password ? user.password.substring(0, 20) + '...' : 'null');
       console.log('🔍 Verificando contraseña para usuario:', user.email);
       console.log('🔍 Contraseña ingresada length:', dto.password ? dto.password.length : 'undefined');
       console.log('🔍 Contraseña ingresada (primeros 3 chars):', dto.password ? dto.password.substring(0, 3) + '***' : 'undefined');
@@ -1092,10 +1098,19 @@ export class UsersService {
       const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
       console.log('🔑 Nueva contraseña hasheada generada:', hashedPassword.substring(0, 20) + '...');
       
-      const updatedUser = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { password: hashedPassword },
-        select: { id: true, email: true, password: true }
+      // Usar transacción para asegurar que la actualización se complete correctamente
+      const updatedUser = await this.prisma.$transaction(async (prisma) => {
+        const updated = await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword },
+          select: { id: true, email: true, password: true }
+        });
+        
+        // Verificar inmediatamente después del update
+        const verification = await bcrypt.compare(dto.newPassword, updated.password);
+        console.log('🔍 Verificación inmediata en transacción:', verification);
+        
+        return updated;
       });
       
       console.log('✅ Contraseña actualizada en BD. Usuario actualizado:', {
@@ -1107,6 +1122,20 @@ export class UsersService {
       // Verificar que la contraseña se guardó correctamente
       const verificationPassword = await bcrypt.compare(dto.newPassword, updatedUser.password);
       console.log('🔍 Verificación: nueva contraseña coincide con hash guardado:', verificationPassword);
+      
+      // Verificación adicional: leer directamente de la BD
+      const userFromBD = await this.prisma.user.findUnique({
+        where: { id: user.id },
+        select: { id: true, email: true, password: true }
+      });
+      console.log('🔍 Verificación BD: usuario leído directamente:', {
+        id: userFromBD?.id,
+        email: userFromBD?.email,
+        passwordHash: userFromBD?.password ? userFromBD.password.substring(0, 20) + '...' : 'null'
+      });
+      
+      const verificationFromBD = await bcrypt.compare(dto.newPassword, userFromBD?.password || '');
+      console.log('🔍 Verificación desde BD directa:', verificationFromBD);
       
       if (!verificationPassword) {
         console.error('❌ ERROR: La nueva contraseña no coincide con el hash guardado');
