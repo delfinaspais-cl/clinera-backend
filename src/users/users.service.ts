@@ -219,8 +219,15 @@ export class UsersService {
       }
 
       // Verificar contraseña
+      console.log('🔍 Verificando contraseña para usuario:', user.email);
+      console.log('🔍 Contraseña ingresada length:', dto.password ? dto.password.length : 'undefined');
+      console.log('🔍 Hash en BD length:', user.password ? user.password.length : 'undefined');
+      
       const isValidPassword = await bcrypt.compare(dto.password, user.password);
+      console.log('🔍 Resultado comparación de contraseña:', isValidPassword);
+      
       if (!isValidPassword) {
+        console.log('❌ Contraseña inválida para usuario:', user.email);
         throw new UnauthorizedException('Credenciales inválidas');
       }
 
@@ -1065,13 +1072,33 @@ export class UsersService {
       }
 
       console.log('✅ Usuario encontrado, actualizando contraseña...');
+      console.log('🔍 Usuario ID:', user.id);
+      console.log('🔍 Usuario email:', user.email);
 
       // Actualizar contraseña
       const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
-      await this.prisma.user.update({
+      console.log('🔑 Nueva contraseña hasheada generada:', hashedPassword.substring(0, 20) + '...');
+      
+      const updatedUser = await this.prisma.user.update({
         where: { id: user.id },
         data: { password: hashedPassword },
+        select: { id: true, email: true, password: true }
       });
+      
+      console.log('✅ Contraseña actualizada en BD. Usuario actualizado:', {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        passwordHash: updatedUser.password.substring(0, 20) + '...'
+      });
+
+      // Verificar que la contraseña se guardó correctamente
+      const verificationPassword = await bcrypt.compare(dto.newPassword, updatedUser.password);
+      console.log('🔍 Verificación: nueva contraseña coincide con hash guardado:', verificationPassword);
+      
+      if (!verificationPassword) {
+        console.error('❌ ERROR: La nueva contraseña no coincide con el hash guardado');
+        throw new BadRequestException('Error al guardar la nueva contraseña');
+      }
 
       // Marcar token como usado
       await this.prisma.passwordResetToken.update({
