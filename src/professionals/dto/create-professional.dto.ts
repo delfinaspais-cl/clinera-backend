@@ -34,6 +34,29 @@ class HorarioMultiRangoDto {
   rangos: HorarioRangoDto[]; // Array de rangos horarios para el mismo día
 }
 
+export class ProfessionalSucursalDto {
+  @IsString()
+  sucursalId: string;
+
+  @IsOptional()
+  @IsString()
+  fechaInicio?: string;
+
+  @IsOptional()
+  @IsString()
+  fechaFin?: string;
+
+  @IsOptional()
+  @IsString()
+  notas?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioDiaDto)
+  horariosDetallados?: HorarioDiaDto[]; // Horarios específicos para esta sucursal
+}
+
 export class CreateProfessionalDto {
   // Campos para User
   @IsString()
@@ -61,7 +84,13 @@ export class CreateProfessionalDto {
 
   @IsOptional()
   @IsString()
-  sucursal?: string; // ID de la sucursal seleccionada
+  sucursal?: string; // ID de la sucursal seleccionada (compatibilidad hacia atrás)
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfessionalSucursalDto)
+  sucursales?: ProfessionalSucursalDto[]; // Nueva funcionalidad: múltiples sucursales
 
   @IsOptional()
   @IsString()

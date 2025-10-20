@@ -1,5 +1,28 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class VentaTratamientoDto {
+  @ApiProperty({ description: 'ID del tratamiento' })
+  tratamientoId: string;
+
+  @ApiProperty({ description: 'Cantidad de tratamientos vendidos', default: 1 })
+  cantidad?: number;
+
+  @ApiProperty({ description: 'Precio unitario del tratamiento' })
+  precioUnitario?: number;
+
+  @ApiProperty({ description: 'Precio total para este tratamiento' })
+  precioTotal?: number;
+
+  @ApiProperty({ description: 'Sesiones incluidas para este tratamiento', default: 1 })
+  sesionesIncluidas?: number;
+
+  @ApiProperty({ description: 'Sesiones ya utilizadas para este tratamiento', default: 0 })
+  sesionesUsadas?: number;
+
+  @ApiProperty({ description: 'Notas específicas para este tratamiento' })
+  notas?: string;
+}
+
 export class CreateVentaDto {
   @ApiProperty({ description: 'Nombre del comprador' })
   comprador: string;
@@ -13,8 +36,15 @@ export class CreateVentaDto {
   @ApiProperty({ description: 'Teléfono del comprador' })
   telefono: string;
 
-  @ApiProperty({ description: 'Tratamiento vendido' })
+  @ApiProperty({ description: 'Tratamiento vendido (compatibilidad hacia atrás)' })
   tratamiento: string;
+
+  @ApiProperty({ 
+    description: 'Lista de tratamientos asociados a la venta (nueva funcionalidad)', 
+    type: [VentaTratamientoDto],
+    required: false 
+  })
+  tratamientos?: VentaTratamientoDto[];
 
   @ApiProperty({ description: 'Nombre del profesional' })
   profesional: string;

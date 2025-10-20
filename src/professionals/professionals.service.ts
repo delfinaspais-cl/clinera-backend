@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProfessionalDto } from './dto/create-professional.dto';
+import { CreateProfessionalDto, ProfessionalSucursalDto } from './dto/create-professional.dto';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 import { EmailService } from '../email/email.service';
 import { PasswordGenerator } from '../common/utils/password-generator';
@@ -64,7 +64,7 @@ export class ProfessionalsService {
       console.log(`🔍 [${new Date().toISOString()}] IDs de profesionales: ${professionalIds.length}`);
 
       // 4. Consultas paralelas optimizadas
-      const [agendas, especialidades, tratamientos] = await Promise.all([
+      const [agendas, especialidades, tratamientos, professionalSucursales] = await Promise.all([
         // Agendas - consulta optimizada
         this.prisma.agenda.findMany({
           where: { professionalId: { in: professionalIds } },
@@ -104,10 +104,36 @@ export class ProfessionalsService {
               }
             }
           }
+        }),
+
+        // Sucursales - consulta optimizada
+        this.prisma.professionalSucursal.findMany({
+          where: { 
+            professionalId: { in: professionalIds },
+            activo: true 
+          },
+          select: {
+            professionalId: true,
+            sucursalId: true,
+            activo: true,
+            fechaInicio: true,
+            fechaFin: true,
+            notas: true,
+            sucursal: {
+              select: {
+                id: true,
+                nombre: true,
+                direccion: true,
+                telefono: true,
+                email: true,
+                estado: true,
+              }
+            }
+          }
         })
       ]);
 
-      console.log(`✅ [${new Date().toISOString()}] Datos relacionados obtenidos - Agendas: ${agendas.length}, Especialidades: ${especialidades.length}, Tratamientos: ${tratamientos.length}`);
+      console.log(`✅ [${new Date().toISOString()}] Datos relacionados obtenidos - Agendas: ${agendas.length}, Especialidades: ${especialidades.length}, Tratamientos: ${tratamientos.length}, Sucursales: ${professionalSucursales.length}`);
 
       // 5. Formatear datos de manera eficiente
       const profesionalesTransformados = professionals.map(prof => {
@@ -141,12 +167,29 @@ export class ProfessionalsService {
           .filter(trat => trat.professionalId === prof.id)
           .map(trat => trat.tratamiento.name);
 
+        // Filtrar y mapear sucursales
+        const sucursalesProf = professionalSucursales
+          .filter(ps => ps.professionalId === prof.id)
+          .map(ps => ({
+            id: ps.sucursal.id,
+            nombre: ps.sucursal.nombre,
+            direccion: ps.sucursal.direccion,
+            telefono: ps.sucursal.telefono,
+            email: ps.sucursal.email,
+            estado: ps.sucursal.estado,
+            activo: ps.activo,
+            fechaInicio: ps.fechaInicio,
+            fechaFin: ps.fechaFin,
+            notas: ps.notas,
+          }));
+
         return {
           ...prof,
           horariosDetallados,
           specialties,
           tratamientos: tratamientosProf,
-          sucursal: (prof as any).sucursalId || null,
+          sucursal: (prof as any).sucursalId || null, // Compatibilidad hacia atrás
+          sucursales: sucursalesProf, // Nueva funcionalidad
         };
       });
 
@@ -346,17 +389,81 @@ export class ProfessionalsService {
         }
       }
 
-      // Actualizar sucursal si se proporciona
-      if (dto.sucursal) {
-        console.log('🔍 Actualizando sucursal con ID:', dto.sucursal);
-        await this.prisma.$executeRaw`
-          UPDATE "Professional" 
-          SET "sucursalId" = ${dto.sucursal} 
-          WHERE id = ${professional.id}
-        `;
-        console.log('✅ Sucursal actualizada exitosamente');
+      // Manejar sucursales (compatibilidad hacia atrás + nueva funcionalidad)
+      if (dto.sucursales && dto.sucursales.length > 0) {
+        console.log('🔍 Creando relaciones con múltiples sucursales:', dto.sucursales.length);
+        
+        // Crear relaciones ProfessionalSucursal
+        for (const sucursalData of dto.sucursales) {
+          // Validar que la sucursal existe
+          const sucursal = await this.prisma.sucursal.findUnique({
+            where: { id: sucursalData.sucursalId }
+          });
+
+          if (!sucursal) {
+            console.log(`⚠️ Sucursal con ID ${sucursalData.sucursalId} no encontrada, saltando...`);
+            continue;
+          }
+
+          // Crear la relación ProfessionalSucursal
+          const professionalSucursal = await this.prisma.professionalSucursal.create({
+            data: {
+              professionalId: professional.id,
+              sucursalId: sucursalData.sucursalId,
+              fechaInicio: sucursalData.fechaInicio ? new Date(sucursalData.fechaInicio) : null,
+              fechaFin: sucursalData.fechaFin ? new Date(sucursalData.fechaFin) : null,
+              notas: sucursalData.notas,
+            }
+          });
+
+          // Crear horarios específicos para esta sucursal si se proporcionan
+          if (sucursalData.horariosDetallados && sucursalData.horariosDetallados.length > 0) {
+            console.log(`🔍 Creando horarios específicos para sucursal ${sucursalData.sucursalId}`);
+            
+            const horariosPorSucursal = sucursalData.horariosDetallados.map(horario => ({
+              professionalId: professional.id,
+              professionalSucursalId: professionalSucursal.id,
+              dia: horario.dia.toUpperCase(),
+              horaInicio: horario.horaInicio,
+              horaFin: horario.horaFin,
+              duracionMin: dto.defaultDurationMin ?? 30,
+            }));
+
+            await this.prisma.agenda.createMany({
+              data: horariosPorSucursal,
+            });
+            console.log(`✅ Horarios específicos creados para sucursal ${sucursalData.sucursalId}`);
+          }
+        }
+      } else if (dto.sucursal) {
+        // Compatibilidad hacia atrás: manejar campo sucursal único
+        console.log('🔍 Actualizando sucursal única con ID:', dto.sucursal);
+        
+        // Validar que la sucursal existe
+        const sucursal = await this.prisma.sucursal.findUnique({
+          where: { id: dto.sucursal }
+        });
+
+        if (sucursal) {
+          // Actualizar el campo sucursalId para compatibilidad
+          await this.prisma.professional.update({
+            where: { id: professional.id },
+            data: { sucursalId: dto.sucursal }
+          });
+
+          // También crear la relación ProfessionalSucursal para la nueva funcionalidad
+          await this.prisma.professionalSucursal.create({
+            data: {
+              professionalId: professional.id,
+              sucursalId: dto.sucursal,
+            }
+          });
+          console.log('✅ Sucursal única actualizada exitosamente');
+        } else {
+          console.log('⚠️ Sucursal con ID proporcionado no encontrada');
+        }
       } else {
-        console.log('⚠️ No se proporcionó sucursal en el DTO');
+        console.log('⚠️ No se proporcionaron sucursales en el DTO');
       }
 
       // Crear horarios de atención si se proporcionan
@@ -498,6 +605,18 @@ export class ProfessionalsService {
       include: { 
         user: true,
         agendas: {
+          include: {
+            professionalSucursal: {
+              include: {
+                sucursal: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                  }
+                }
+              }
+            }
+          },
           orderBy: {
             dia: 'asc',
           },
@@ -510,6 +629,38 @@ export class ProfessionalsService {
         tratamientos: {
           include: {
             tratamiento: true
+          }
+        },
+        professionalSucursales: {
+          include: {
+            sucursal: {
+              select: {
+                id: true,
+                nombre: true,
+                direccion: true,
+                telefono: true,
+                email: true,
+                estado: true,
+              }
+            },
+            agendas: {
+              orderBy: {
+                dia: 'asc',
+              }
+            }
+          },
+          where: {
+            activo: true
+          }
+        },
+        sucursal: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+            telefono: true,
+            email: true,
+            estado: true,
           }
         }
       },
@@ -525,10 +676,22 @@ export class ProfessionalsService {
       if (!horariosAgrupados[agenda.dia]) {
         horariosAgrupados[agenda.dia] = [];
       }
-      horariosAgrupados[agenda.dia].push({
+      
+      // Agregar información de la sucursal si existe
+      const rango = {
         horaInicio: agenda.horaInicio,
         horaFin: agenda.horaFin,
-      });
+      };
+
+      // Si la agenda está asociada a una sucursal específica, incluir esa información
+      if (agenda.professionalSucursal) {
+        (rango as any).sucursal = {
+          id: agenda.professionalSucursal.sucursal.id,
+          nombre: agenda.professionalSucursal.sucursal.nombre
+        };
+      }
+
+      horariosAgrupados[agenda.dia].push(rango);
     });
 
     // Convertir a formato esperado por el frontend
@@ -543,13 +706,33 @@ export class ProfessionalsService {
     // Transformar tratamientos al formato esperado
     const tratamientos = (prof as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
 
+    // Transformar sucursales múltiples
+    const sucursales = (prof as any).professionalSucursales?.map((ps: any) => ({
+      id: ps.sucursal.id,
+      nombre: ps.sucursal.nombre,
+      direccion: ps.sucursal.direccion,
+      telefono: ps.sucursal.telefono,
+      email: ps.sucursal.email,
+      estado: ps.sucursal.estado,
+      activo: ps.activo,
+      fechaInicio: ps.fechaInicio,
+      fechaFin: ps.fechaFin,
+      notas: ps.notas,
+      horarios: ps.agendas?.map((agenda: any) => ({
+        dia: agenda.dia,
+        horaInicio: agenda.horaInicio,
+        horaFin: agenda.horaFin
+      })) || []
+    })) || [];
+
     // Construir la respuesta con el formato unificado
     const response = {
       ...prof,
       horariosDetallados,
       specialties,
       tratamientos,
-      sucursal: (prof as any).sucursalId || null,
+      sucursal: (prof as any).sucursalId || null, // Mantener compatibilidad
+      sucursales: sucursales, // Nueva funcionalidad
     };
 
     return {
@@ -998,5 +1181,179 @@ export class ProfessionalsService {
       success: true,
       message: 'Profesional eliminado correctamente',
     };
+  }
+
+  // ===== NUEVOS MÉTODOS PARA GESTIONAR SUCURSALES =====
+
+  /**
+   * Agregar una sucursal a un profesional
+   */
+  async addSucursalToProfessional(
+    professionalId: string, 
+    sucursalId: string, 
+    fechaInicio?: string, 
+    notas?: string
+  ) {
+    try {
+      // Verificar que el profesional existe
+      const professional = await this.prisma.professional.findUnique({
+        where: { id: professionalId }
+      });
+
+      if (!professional) {
+        throw new NotFoundException('Profesional no encontrado');
+      }
+
+      // Verificar que la sucursal existe
+      const sucursal = await this.prisma.sucursal.findUnique({
+        where: { id: sucursalId }
+      });
+
+      if (!sucursal) {
+        throw new NotFoundException('Sucursal no encontrada');
+      }
+
+      // Crear la relación
+      const professionalSucursal = await this.prisma.professionalSucursal.create({
+        data: {
+          professionalId,
+          sucursalId,
+          fechaInicio: fechaInicio ? new Date(fechaInicio) : new Date(),
+          notas,
+        },
+        include: {
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+            }
+          }
+        }
+      });
+
+      return {
+        success: true,
+        data: professionalSucursal,
+        message: 'Sucursal agregada al profesional exitosamente',
+      };
+    } catch (error) {
+      console.error('Error agregando sucursal al profesional:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remover una sucursal de un profesional (desactivar relación)
+   */
+  async removeSucursalFromProfessional(
+    professionalId: string, 
+    sucursalId: string,
+    fechaFin?: string,
+    notas?: string
+  ) {
+    try {
+      const professionalSucursal = await this.prisma.professionalSucursal.findFirst({
+        where: {
+          professionalId,
+          sucursalId,
+          activo: true
+        }
+      });
+
+      if (!professionalSucursal) {
+        throw new NotFoundException('Relación profesional-sucursal no encontrada');
+      }
+
+      // Desactivar la relación y agregar fecha fin
+      const updated = await this.prisma.professionalSucursal.update({
+        where: { id: professionalSucursal.id },
+        data: {
+          activo: false,
+          fechaFin: fechaFin ? new Date(fechaFin) : new Date(),
+          notas: notas || professionalSucursal.notas,
+        },
+        include: {
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+            }
+          }
+        }
+      });
+
+      return {
+        success: true,
+        data: updated,
+        message: 'Sucursal removida del profesional exitosamente',
+      };
+    } catch (error) {
+      console.error('Error removiendo sucursal del profesional:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener sucursales de un profesional
+   */
+  async getProfessionalSucursales(professionalId: string) {
+    try {
+      const professionalSucursales = await this.prisma.professionalSucursal.findMany({
+        where: { 
+          professionalId,
+          activo: true 
+        },
+        include: {
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
+            }
+          },
+          agendas: {
+            orderBy: {
+              dia: 'asc',
+            }
+          }
+        },
+        orderBy: {
+          fechaInicio: 'desc'
+        }
+      });
+
+      const sucursales = professionalSucursales.map(ps => ({
+        id: ps.sucursal.id,
+        nombre: ps.sucursal.nombre,
+        direccion: ps.sucursal.direccion,
+        telefono: ps.sucursal.telefono,
+        email: ps.sucursal.email,
+        estado: ps.sucursal.estado,
+        activo: ps.activo,
+        fechaInicio: ps.fechaInicio,
+        fechaFin: ps.fechaFin,
+        notas: ps.notas,
+        horarios: ps.agendas?.map(agenda => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin
+        })) || []
+      }));
+
+      return {
+        success: true,
+        data: sucursales,
+        message: 'Sucursales del profesional obtenidas exitosamente',
+      };
+    } catch (error) {
+      console.error('Error obteniendo sucursales del profesional:', error);
+      throw error;
+    }
   }
 }

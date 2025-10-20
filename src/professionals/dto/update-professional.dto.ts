@@ -1,6 +1,7 @@
 // src/professionals/dto/update-professional.dto.ts
 import { IsArray, IsInt, IsOptional, IsString, IsEmail, IsObject, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProfessionalSucursalDto } from './create-professional.dto';
 
 class HorarioDiaDto {
   @IsString()
@@ -59,7 +60,13 @@ export class UpdateProfessionalDto {
 
   @IsOptional()
   @IsString()
-  sucursal?: string; // ID de la sucursal seleccionada
+  sucursal?: string; // ID de la sucursal seleccionada (compatibilidad hacia atrás)
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProfessionalSucursalDto)
+  sucursales?: ProfessionalSucursalDto[]; // Nueva funcionalidad: múltiples sucursales
 
   @IsOptional()
   @IsString()

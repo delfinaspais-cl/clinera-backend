@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateVentaDto } from './dto/create-venta.dto';
+import { CreateVentaDto, VentaTratamientoDto } from './dto/create-venta.dto';
 import { UpdateVentaDto } from './dto/update-venta.dto';
 import PDFDocument from 'pdfkit';
 import type { Response } from 'express';
@@ -31,10 +31,13 @@ export class VentasService {
       // Generar ID personalizado
       const ventaId = this.generateVentaId();
 
-      // Crear la venta
+      // Extraer tratamientos si vienen en el DTO
+      const { tratamientos, ...ventaData } = createVentaDto;
+
+      // Crear la venta (mantener compatibilidad hacia atrás)
       const venta = await this.prisma.venta.create({
         data: {
-          ...createVentaDto,
+          ...ventaData,
           ventaId,
           fechaCreacion: new Date(),
           fechaVencimiento: createVentaDto.fechaVencimiento 
@@ -61,8 +64,88 @@ export class VentasService {
               activo: true,
             },
           },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
+            },
+          },
         },
       });
+
+      // Si se proporcionaron tratamientos específicos, crearlos
+      if (tratamientos && tratamientos.length > 0) {
+        for (const tratamientoData of tratamientos) {
+          // Validar que el tratamiento existe
+          const tratamiento = await this.prisma.tratamiento.findUnique({
+            where: { id: tratamientoData.tratamientoId },
+          });
+
+          if (!tratamiento) {
+            throw new BadRequestException(`Tratamiento con ID ${tratamientoData.tratamientoId} no encontrado`);
+          }
+
+          // Crear la relación venta-tratamiento
+          await this.prisma.ventaTratamiento.create({
+            data: {
+              ventaId: venta.id,
+              tratamientoId: tratamientoData.tratamientoId,
+              cantidad: tratamientoData.cantidad || 1,
+              precioUnitario: tratamientoData.precioUnitario || tratamiento.precio,
+              precioTotal: tratamientoData.precioTotal || (tratamientoData.precioUnitario || tratamiento.precio || 0) * (tratamientoData.cantidad || 1),
+              sesionesIncluidas: tratamientoData.sesionesIncluidas || 1,
+              sesionesUsadas: tratamientoData.sesionesUsadas || 0,
+              notas: tratamientoData.notas,
+            },
+          });
+        }
+
+        // Obtener la venta actualizada con los tratamientos
+        const ventaActualizada = await this.prisma.venta.findUnique({
+          where: { id: venta.id },
+          include: {
+            clinica: {
+              select: {
+                id: true,
+                name: true,
+                url: true,
+              },
+            },
+            medioPagoRel: {
+              select: {
+                id: true,
+                nombre: true,
+                descripcion: true,
+                activo: true,
+              },
+            },
+            tratamientos: {
+              include: {
+                tratamiento: {
+                  select: {
+                    id: true,
+                    name: true,
+                    descripcion: true,
+                    precio: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        return {
+          success: true,
+          data: ventaActualizada,
+          message: 'Venta creada exitosamente con tratamientos asociados',
+        };
+      }
 
       return {
         success: true,
@@ -112,6 +195,18 @@ export class VentasService {
               activo: true,
             },
           },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
           fechaCreacion: 'desc',
@@ -155,6 +250,18 @@ export class VentasService {
               activo: true,
             },
           },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -195,6 +302,18 @@ export class VentasService {
               nombre: true,
               descripcion: true,
               activo: true,
+            },
+          },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
             },
           },
         },
@@ -334,6 +453,18 @@ export class VentasService {
               activo: true,
             },
           },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
           fechaCreacion: 'desc',
@@ -443,6 +574,18 @@ export class VentasService {
               id: true,
               nombre: true,
               descripcion: true,
+            },
+          },
+          tratamientos: {
+            include: {
+              tratamiento: {
+                select: {
+                  id: true,
+                  name: true,
+                  descripcion: true,
+                  precio: true,
+                },
+              },
             },
           },
         },
