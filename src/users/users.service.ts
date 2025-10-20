@@ -221,10 +221,20 @@ export class UsersService {
       // Verificar contraseña
       console.log('🔍 Verificando contraseña para usuario:', user.email);
       console.log('🔍 Contraseña ingresada length:', dto.password ? dto.password.length : 'undefined');
+      console.log('🔍 Contraseña ingresada (primeros 3 chars):', dto.password ? dto.password.substring(0, 3) + '***' : 'undefined');
       console.log('🔍 Hash en BD length:', user.password ? user.password.length : 'undefined');
+      console.log('🔍 Hash en BD (primeros 10 chars):', user.password ? user.password.substring(0, 10) + '***' : 'undefined');
       
       const isValidPassword = await bcrypt.compare(dto.password, user.password);
       console.log('🔍 Resultado comparación de contraseña:', isValidPassword);
+      
+      // Debug adicional: probar con algunos caracteres diferentes
+      if (!isValidPassword && dto.password) {
+        console.log('🔍 DEBUG: Probando variantes de la contraseña...');
+        const trimmedPassword = dto.password.trim();
+        const isValidTrimmed = await bcrypt.compare(trimmedPassword, user.password);
+        console.log('🔍 Resultado con password.trim():', isValidTrimmed);
+      }
       
       if (!isValidPassword) {
         console.log('❌ Contraseña inválida para usuario:', user.email);
@@ -1076,6 +1086,9 @@ export class UsersService {
       console.log('🔍 Usuario email:', user.email);
 
       // Actualizar contraseña
+      console.log('🔍 Nueva contraseña recibida length:', dto.newPassword ? dto.newPassword.length : 'undefined');
+      console.log('🔍 Nueva contraseña recibida (primeros 3 chars):', dto.newPassword ? dto.newPassword.substring(0, 3) + '***' : 'undefined');
+      
       const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
       console.log('🔑 Nueva contraseña hasheada generada:', hashedPassword.substring(0, 20) + '...');
       
