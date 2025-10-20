@@ -23,6 +23,31 @@ import { ConfirmarCitaDto } from './dto/confirmar-cita.dto';
 export class PublicTurnosController {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Obtiene el nombre de la sucursal por su ID
+   */
+  private async getSucursalNombre(sucursalId: string | null, clinicaId: string): Promise<string | null> {
+    if (!sucursalId) return null;
+    
+    try {
+      const sucursal = await this.prisma.sucursal.findFirst({
+        where: {
+          id: sucursalId,
+          clinicaId: clinicaId,
+          estado: 'activa'
+        },
+        select: {
+          nombre: true
+        }
+      });
+      
+      return sucursal?.nombre || null;
+    } catch (error) {
+      console.error('Error obteniendo nombre de sucursal:', error);
+      return null;
+    }
+  }
+
   @Get('estado/:token')
   @ApiOperation({ 
     summary: 'Obtener estado de cita mediante token',
@@ -51,6 +76,7 @@ export class PublicTurnosController {
             hora: { type: 'string' },
             estado: { type: 'string', example: 'pendiente' },
             motivo: { type: 'string' },
+            sucursal: { type: 'string', description: 'Nombre de la sucursal' },
             clinica: {
               type: 'object',
               properties: {
@@ -102,6 +128,9 @@ export class PublicTurnosController {
 
       console.log(`✅ Estado de cita obtenido: ${cita.estado}`);
 
+      // Obtener nombre de la sucursal si existe
+      const sucursalNombre = await this.getSucursalNombre(cita.sucursal, cita.clinicaId);
+
       return {
         success: true,
         message: 'Estado de la cita obtenido exitosamente',
@@ -113,6 +142,7 @@ export class PublicTurnosController {
           hora: cita.hora,
           estado: cita.estado,
           motivo: cita.motivo,
+          sucursal: sucursalNombre || cita.sucursal, // Mostrar nombre si está disponible, sino el ID
           clinica: {
             nombre: cita.clinica.name,
             telefono: cita.clinica.phone,
@@ -255,6 +285,9 @@ export class PublicTurnosController {
 
       console.log(`✅ Cita confirmada exitosamente: ${cita.id}`);
 
+      // Obtener nombre de la sucursal si existe
+      const sucursalNombre = await this.getSucursalNombre(citaActualizada.sucursal, citaActualizada.clinicaId);
+
       return {
         success: true,
         message: 'Cita confirmada exitosamente',
@@ -265,6 +298,7 @@ export class PublicTurnosController {
           fecha: citaActualizada.fecha,
           hora: citaActualizada.hora,
           estado: citaActualizada.estado,
+          sucursal: sucursalNombre || citaActualizada.sucursal, // Mostrar nombre si está disponible, sino el ID
           clinica: {
             nombre: citaActualizada.clinica.name,
             telefono: citaActualizada.clinica.phone,
@@ -367,6 +401,9 @@ export class PublicTurnosController {
 
       console.log(`✅ Cita cancelada exitosamente: ${cita.id}`);
 
+      // Obtener nombre de la sucursal si existe
+      const sucursalNombre = await this.getSucursalNombre(citaActualizada.sucursal, citaActualizada.clinicaId);
+
       return {
         success: true,
         message: 'Cita cancelada exitosamente',
@@ -378,6 +415,7 @@ export class PublicTurnosController {
           hora: citaActualizada.hora,
           estado: citaActualizada.estado,
           motivo: citaActualizada.motivo,
+          sucursal: sucursalNombre || citaActualizada.sucursal, // Mostrar nombre si está disponible, sino el ID
           clinica: {
             nombre: citaActualizada.clinica.name,
             telefono: citaActualizada.clinica.phone,
