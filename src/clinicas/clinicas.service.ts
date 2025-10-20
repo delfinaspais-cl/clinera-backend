@@ -2584,7 +2584,7 @@ export class ClinicasService {
         throw new BadRequestException('Turno no encontrado');
       }
 
-      // Actualizar el turno
+      // Actualizar el turno incluyendo información del profesional
       const turnoActualizado = await this.prisma.turno.update({
         where: { id: turnoId },
         data: {
@@ -2614,6 +2614,23 @@ export class ClinicasService {
           isVideocall: dto.isVideocall,
           updatedAt: new Date(),
         },
+        include: {
+          professional: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                }
+              },
+              especialidades: {
+                include: {
+                  especialidad: true
+                }
+              }
+            }
+          }
+        },
       });
 
       return {
@@ -2633,6 +2650,12 @@ export class ClinicasService {
           notas: turnoActualizado.notas,
           servicio: turnoActualizado.servicio,
           professionalId: turnoActualizado.professionalId,
+          professional: turnoActualizado.professional ? {
+            id: turnoActualizado.professional.id,
+            name: turnoActualizado.professional.name,
+            specialties: turnoActualizado.professional.especialidades?.map(pe => pe.especialidad.name) || [],
+            user: turnoActualizado.professional.user,
+          } : null,
           // Campos de pago
           montoTotal: turnoActualizado.montoTotal,
           estadoPago: turnoActualizado.estadoPago,
@@ -2673,13 +2696,30 @@ export class ClinicasService {
         throw new BadRequestException('Turno no encontrado');
       }
 
-      // Actualizar solo fecha y hora del turno
+      // Actualizar solo fecha y hora del turno incluyendo información del profesional
       const turnoActualizado = await this.prisma.turno.update({
         where: { id: turnoId },
         data: {
           fecha: new Date(dto.fecha),
           hora: dto.hora,
           updatedAt: new Date(),
+        },
+        include: {
+          professional: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true,
+                }
+              },
+              especialidades: {
+                include: {
+                  especialidad: true
+                }
+              }
+            }
+          }
         },
       });
 
@@ -2699,6 +2739,12 @@ export class ClinicasService {
           notas: turnoActualizado.notas,
           servicio: turnoActualizado.servicio,
           professionalId: turnoActualizado.professionalId,
+          professional: turnoActualizado.professional ? {
+            id: turnoActualizado.professional.id,
+            name: turnoActualizado.professional.name,
+            specialties: turnoActualizado.professional.especialidades?.map(pe => pe.especialidad.name) || [],
+            user: turnoActualizado.professional.user,
+          } : null,
           // Campos de pago
           montoTotal: turnoActualizado.montoTotal,
           estadoPago: turnoActualizado.estadoPago,
