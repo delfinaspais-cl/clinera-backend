@@ -46,6 +46,31 @@ export class ClinicasService {
     return `${timestamp}_${random}`;
   }
 
+  /**
+   * Obtiene el nombre de la sucursal por su ID
+   */
+  private async getSucursalNombre(sucursalId: string | null, clinicaId: string): Promise<string | null> {
+    if (!sucursalId) return null;
+    
+    try {
+      const sucursal = await this.prisma.sucursal.findFirst({
+        where: {
+          id: sucursalId,
+          clinicaId: clinicaId,
+          estado: 'activa'
+        },
+        select: {
+          nombre: true
+        }
+      });
+      
+      return sucursal?.nombre || null;
+    } catch (error) {
+      console.error('Error obteniendo nombre de sucursal:', error);
+      return null;
+    }
+  }
+
   // Método para confirmar turno manualmente desde el frontend
   async confirmarTurnoManual(clinicaUrl: string, turnoId: string) {
     try {
@@ -999,6 +1024,26 @@ export class ClinicasService {
         completados: completados,
       };
 
+      // Obtener IDs únicos de sucursales de los turnos
+      const sucursalIdsRaw = turnos.map(turno => turno.sucursal).filter((id): id is string => typeof id === 'string');
+      const sucursalIds = Array.from(new Set(sucursalIdsRaw));
+      
+      // Obtener información de sucursales de una sola vez
+      const sucursales = await this.prisma.sucursal.findMany({
+        where: {
+          id: { in: sucursalIds as string[] },
+          clinicaId: clinica.id,
+          estado: 'activa'
+        },
+        select: {
+          id: true,
+          nombre: true
+        }
+      });
+      
+      // Crear un map para acceso rápido
+      const sucursalesMap = new Map(sucursales.map(s => [s.id, s.nombre]));
+
       // Transformar los datos para el formato requerido
       console.log('Transformando datos de turnos...');
       let turnosFormateados;
@@ -1030,7 +1075,7 @@ export class ClinicasService {
             medioPago: turno.medioPago,
             origen: turno.origen,
             ate: turno.ate,
-            sucursal: turno.sucursal,
+            sucursal: turno.sucursal ? (sucursalesMap.get(turno.sucursal) || turno.sucursal) : turno.sucursal, // Mostrar nombre si está disponible, sino el ID
             createdAt: turno.createdAt,
             updatedAt: turno.updatedAt,
             professional: turno.professional ? {
@@ -2277,6 +2322,9 @@ export class ClinicasService {
         }
       }
 
+      // Obtener nombre de la sucursal si existe
+      const sucursalNombre = await this.getSucursalNombre(turno.sucursal, clinica.id);
+
       // Transformar los datos para el formato requerido
       const turnoFormateado = {
         id: turno.id,
@@ -2300,6 +2348,7 @@ export class ClinicasService {
           user: turno.professional.user,
         } : null,
         clinicaId: turno.clinicaId,
+        sucursal: sucursalNombre || turno.sucursal, // Mostrar nombre si está disponible, sino el ID
         createdAt: turno.createdAt,
         updatedAt: turno.updatedAt,
         // Datos de pago procesados
@@ -3269,6 +3318,26 @@ export class ClinicasService {
       console.log('Consulta completada. Turnos encontrados:', turnos.length);
       console.log('Total de turnos:', total);
 
+      // Obtener IDs únicos de sucursales de los turnos
+      const sucursalIdsRaw = turnos.map(turno => turno.sucursal).filter((id): id is string => typeof id === 'string');
+      const sucursalIds = Array.from(new Set(sucursalIdsRaw));
+      
+      // Obtener información de sucursales de una sola vez
+      const sucursales = await this.prisma.sucursal.findMany({
+        where: {
+          id: { in: sucursalIds as string[] },
+          clinicaId: clinica.id,
+          estado: 'activa'
+        },
+        select: {
+          id: true,
+          nombre: true
+        }
+      });
+      
+      // Crear un map para acceso rápido
+      const sucursalesMap = new Map(sucursales.map(s => [s.id, s.nombre]));
+
       // Procesar datos de pago para cada turno
       const turnosProcesados = turnos.map(turno => {
         const montoTotal = turno.montoTotal ? parseFloat(turno.montoTotal) : 0;
@@ -3312,7 +3381,7 @@ export class ClinicasService {
           porcentajePendiente: montoTotal > 0 ? Math.round((montoPendiente / montoTotal) * 100) : 0,
           origen: turno.origen,
           ate: turno.ate,
-          sucursal: turno.sucursal,
+          sucursal: turno.sucursal ? (sucursalesMap.get(turno.sucursal) || turno.sucursal) : turno.sucursal, // Mostrar nombre si está disponible, sino el ID
           createdAt: turno.createdAt,
           updatedAt: turno.updatedAt,
         };
