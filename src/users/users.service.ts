@@ -468,12 +468,42 @@ export class UsersService {
         throw new ConflictException('La URL de la clínica ya está en uso');
       }
 
+      // Verificar que el usuario existe y obtener su información
+      const existingUser = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          clinicaId: true
+        }
+      });
+
+      if (!existingUser) {
+        console.log('❌ CREATE CLINICA - Usuario no encontrado con ID:', userId);
+        throw new NotFoundException('Usuario no encontrado');
+      }
+
+      console.log('🔍 CREATE CLINICA - Usuario existente encontrado:', {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name,
+        currentRole: existingUser.role,
+        currentClinicaId: existingUser.clinicaId
+      });
+
+      // Verificar si este usuario ya tiene una clínica asignada
+      if (existingUser.clinicaId) {
+        console.log('⚠️ CREATE CLINICA - ADVERTENCIA: El usuario ya tiene una clínica asignada:', existingUser.clinicaId);
+      }
+
       // Crear la clínica
       const clinica = await this.prisma.clinica.create({
         data: {
           name: dto.nombre,
           url: urlNormalizada,
-          email: dto.email,
+          email: existingUser.email, // Usar el email del usuario logueado
           address: dto.direccion,
           phone: dto.telefono,
           descripcion: dto.descripcion,
@@ -482,36 +512,42 @@ export class UsersService {
           estado: dto.estado,
           administradorId: userId,
           defaultLanguage: dto.defaultLanguage || 'es',
-      },
-    });
+        },
+      });
 
-      // Crear un usuario ADMIN para la clínica
-      const adminPassword = Math.random().toString(36).slice(-8); // Contraseña temporal
-      const hashedAdminPassword = await bcrypt.hash(adminPassword, 10);
+      console.log('✅ CREATE CLINICA - Clínica creada:', {
+        id: clinica.id,
+        name: clinica.name,
+        url: clinica.url,
+        administradorId: clinica.administradorId
+      });
 
-      const adminUser = await this.prisma.user.create({
+      // En lugar de crear un nuevo usuario, actualizar el usuario existente
+      // para asociarlo con la clínica y hacerlo ADMIN
+      const updatedUser = await this.prisma.user.update({
+        where: { id: userId },
         data: {
-          email: dto.email,
-          password: hashedAdminPassword,
-          name: `Admin ${dto.nombre}`,
-          role: 'ADMIN',
-        clinicaId: clinica.id,
-      },
-    });
+          clinicaId: clinica.id,
+          role: 'ADMIN', // Asegurar que sea ADMIN de la clínica
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          clinicaId: true
+        }
+      });
 
-      // Enviar email con credenciales del admin
-      try {
-        await this.emailService.sendAdminCredentialsEmail(
-          dto.email,
-          adminPassword,
-          `Admin ${dto.nombre}`,
-          dto.nombre,
-          dto.url,
-        );
-      } catch (emailError) {
-        console.error('Error al enviar email de credenciales:', emailError);
-        // No lanzamos error para no interrumpir la creación
-      }
+      console.log('✅ CREATE CLINICA - Usuario actualizado:', {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        name: updatedUser.name,
+        newRole: updatedUser.role,
+        newClinicaId: updatedUser.clinicaId
+      });
+
+      // NO enviar email de credenciales porque ya es el usuario existente
 
       // Crear suscripción automática si se proporciona planId
       console.log('🔍 VERIFICANDO SUSCRIPCIÓN AUTOMÁTICA EN USERS SERVICE');
@@ -544,10 +580,10 @@ export class UsersService {
       try {
         // PASO 1: Hacer login en Fluentia para obtener el token
         console.log('🔑 PASO 1: Obteniendo token de Fluentia...');
-        console.log('🔍 Usuario logueado:', JSON.stringify({ id: user.id, email: user.email }, null, 2));
+        console.log('🔍 Usuario logueado:', JSON.stringify({ id: existingUser.id, email: existingUser.email }, null, 2));
         console.log('🔍 DTO recibido para login:', JSON.stringify({ 
           userPassword: dto.userPassword ? '***' : 'UNDEFINED',
-          adminPassword: dto.password ? '***' : 'UNDEFINED'
+          password: dto.password ? '***' : 'UNDEFINED'
         }, null, 2));
         
         console.log('🔍 TODOS LOS CAMPOS DEL DTO:', JSON.stringify({
@@ -562,25 +598,22 @@ export class UsersService {
           planId: dto.planId
         }, null, 2));
         
-        // Intentar primero con userPassword, si no está disponible usar adminPassword
+        // Intentar primero con userPassword, si no está disponible usar password del DTO
         let loginEmail, loginPassword;
         
         if (dto.userPassword) {
           console.log('🔑 Usando contraseña del usuario logueado');
-          loginEmail = user.email;
+          loginEmail = existingUser.email;
           loginPassword = dto.userPassword;
         } else {
-          console.log('🔑 userPassword no disponible, usando contraseña del admin de la clínica');
-          loginEmail = dto.email; // Email del admin de la clínica
-          loginPassword = dto.password; // Contraseña del admin de la clínica
+          console.log('🔑 userPassword no disponible, usando email del usuario existente');
+          loginEmail = existingUser.email; // Usar email del usuario existente
+          loginPassword = dto.userPassword || dto.password; // Intentar usar contraseñas disponibles
         }
         
         if (!loginPassword) {
-          console.log('⚠️ No se encontró contraseña en DTO, usando contraseña generada para admin');
-          // Usar la contraseña generada automáticamente para el admin
-          loginEmail = dto.email; // Email del admin de la clínica
-          loginPassword = adminPassword; // Contraseña generada automáticamente (disponible en este scope)
-          console.log('🔑 Usando credenciales del admin generado:', { email: loginEmail, password: '***' });
+          console.log('⚠️ No se encontró contraseña en DTO para la API externa');
+          throw new BadRequestException('Se requiere contraseña para la integración con API externa');
         }
         
         const loginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
@@ -743,10 +776,13 @@ export class UsersService {
           url: clinica.url,
           estado: clinica.estado,
         },
-        adminCredentials: {
-          email: dto.email,
-          password: adminPassword,
-          note: 'Guarda estas credenciales para acceder a la clínica',
+        // Ya no necesitamos adminCredentials porque estamos usando el usuario existente
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          role: updatedUser.role,
+          clinicaId: updatedUser.clinicaId,
         },
         subscription: subscription ? {
           id: subscription.id,
@@ -1073,13 +1109,30 @@ export class UsersService {
 
       console.log('✅ Token válido encontrado, buscando usuario...');
 
-      // Buscar usuario
+      // Buscar usuario usando la misma lógica que el login
       // Normalizar email a minúsculas para búsqueda case-insensitive
       const normalizedEmail = resetToken.email.toLowerCase();
+      
+      // Primero buscar TODOS los usuarios con ese email para ver si hay duplicados
+      const allUsersWithEmail = await this.prisma.user.findMany({
+        where: { email: normalizedEmail },
+        select: { id: true, email: true, username: true, name: true, password: true }
+      });
+      
+      console.log('🔍 RESET: Usuarios encontrados con email', normalizedEmail, ':', allUsersWithEmail.length);
+      allUsersWithEmail.forEach((u, index) => {
+        console.log(`  Usuario ${index + 1}: ID=${u.id}, username=${u.username}, email=${u.email}`);
+      });
+      
+      // Usar la misma lógica de búsqueda que el login
       const user = await this.prisma.user.findFirst({
-          where: { 
-            email: normalizedEmail
-          },
+        where: { 
+          OR: [
+            { email: normalizedEmail },
+            { username: normalizedEmail }
+          ],
+        },
+        select: { id: true, email: true, username: true, name: true, password: true }
       });
 
       if (!user) {
@@ -1087,9 +1140,10 @@ export class UsersService {
         throw new BadRequestException('Usuario no encontrado');
       }
 
-      console.log('✅ Usuario encontrado, actualizando contraseña...');
+      console.log('✅ RESET: Usuario encontrado para actualización:');
       console.log('🔍 Usuario ID:', user.id);
       console.log('🔍 Usuario email:', user.email);
+      console.log('🔍 Usuario username:', user.username);
 
       // Actualizar contraseña
       console.log('🔍 Nueva contraseña recibida length:', dto.newPassword ? dto.newPassword.length : 'undefined');
@@ -1098,29 +1152,38 @@ export class UsersService {
       const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
       console.log('🔑 Nueva contraseña hasheada generada:', hashedPassword.substring(0, 20) + '...');
       
-      // Usar transacción para asegurar que la actualización se complete correctamente
-      const updatedUser = await this.prisma.$transaction(async (prisma) => {
-        const updated = await prisma.user.update({
+      // IMPORTANTE: Actualizar TODOS los usuarios con ese email para evitar problemas de duplicados
+      const updatedUsers = await this.prisma.$transaction(async (prisma) => {
+        // Actualizar todos los usuarios con ese email
+        const updateResult = await prisma.user.updateMany({
+          where: { email: normalizedEmail },
+          data: { password: hashedPassword }
+        });
+        
+        console.log(`✅ RESET: Actualizados ${updateResult.count} usuarios con email ${normalizedEmail}`);
+        
+        // Leer el usuario específico que encontramos para verificación
+        const updated = await prisma.user.findUnique({
           where: { id: user.id },
-          data: { password: hashedPassword },
           select: { id: true, email: true, password: true }
         });
         
-        // Verificar inmediatamente después del update
-        const verification = await bcrypt.compare(dto.newPassword, updated.password);
-        console.log('🔍 Verificación inmediata en transacción:', verification);
+        if (updated) {
+          const verification = await bcrypt.compare(dto.newPassword, updated.password);
+          console.log('🔍 Verificación inmediata en transacción:', verification);
+        }
         
         return updated;
       });
       
       console.log('✅ Contraseña actualizada en BD. Usuario actualizado:', {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        passwordHash: updatedUser.password.substring(0, 20) + '...'
+        id: updatedUsers?.id,
+        email: updatedUsers?.email,
+        passwordHash: updatedUsers?.password ? updatedUsers.password.substring(0, 20) + '...' : 'null'
       });
 
       // Verificar que la contraseña se guardó correctamente
-      const verificationPassword = await bcrypt.compare(dto.newPassword, updatedUser.password);
+      const verificationPassword = updatedUsers ? await bcrypt.compare(dto.newPassword, updatedUsers.password) : false;
       console.log('🔍 Verificación: nueva contraseña coincide con hash guardado:', verificationPassword);
       
       // Verificación adicional: leer directamente de la BD
