@@ -164,32 +164,35 @@ model Horario {
 }
 
 model Professional {
-  id                 String                     @id @default(uuid())
-  userId             String                     @unique
-  name               String
-  defaultDurationMin Int                        @default(30)
-  bufferMin          Int                        @default(10)
-  notes              String?
-  createdAt          DateTime                   @default(now())
-  sucursalId         String?
-  agendas            Agenda[]
-  blocks             ProfessionalBlock[]
-  sucursal           Sucursal?                  @relation(fields: [sucursalId], references: [id])
-  user               User                       @relation(fields: [userId], references: [id])
-  especialidades     ProfessionalEspecialidad[]
-  tratamientos       ProfessionalTratamiento[]
-  turnos             Turno[]
+  id                      String                     @id @default(uuid())
+  userId                  String                     @unique
+  name                    String
+  defaultDurationMin      Int                        @default(30)
+  bufferMin               Int                        @default(10)
+  notes                   String?
+  createdAt               DateTime                   @default(now())
+  sucursalId              String?                    // Mantenemos para compatibilidad hacia atrás
+  agendas                 Agenda[]
+  blocks                  ProfessionalBlock[]
+  sucursal                Sucursal?                  @relation(fields: [sucursalId], references: [id]) // Mantenemos para compatibilidad
+  professionalSucursales  ProfessionalSucursal[]     // Nueva relación muchos-a-muchos
+  user                    User                       @relation(fields: [userId], references: [id])
+  especialidades          ProfessionalEspecialidad[]
+  tratamientos            ProfessionalTratamiento[]
+  turnos                  Turno[]
 }
 
 model Agenda {
-  id             String       @id @default(uuid())
-  professionalId String
-  dia            String
-  horaInicio     String
-  horaFin        String
-  duracionMin    Int
-  createdAt      DateTime     @default(now())
-  professional   Professional @relation(fields: [professionalId], references: [id])
+  id                     String                @id @default(uuid())
+  professionalId         String                // Mantenemos para compatibilidad hacia atrás
+  dia                    String
+  horaInicio             String
+  horaFin                String
+  duracionMin            Int
+  createdAt              DateTime              @default(now())
+  professionalSucursalId String?               // Nueva relación opcional para horarios específicos por sucursal
+  professional           Professional          @relation(fields: [professionalId], references: [id])
+  professionalSucursal   ProfessionalSucursal? @relation(fields: [professionalSucursalId], references: [id], onDelete: Cascade)
 }
 
 model ProfessionalBlock {
@@ -320,6 +323,7 @@ model Tratamiento {
   updatedAt         DateTime                  @updatedAt
   profesionales     ProfessionalTratamiento[]
   clinica           Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  ventas            VentaTratamiento[]
 
   @@index([clinicaId])
   @@index([estado])
@@ -341,23 +345,44 @@ model ProfessionalTratamiento {
 }
 
 model Sucursal {
-  id            String         @id @default(cuid())
-  nombre        String
-  direccion     String?
-  telefono      String?
-  email         String?
-  estado        String         @default("activa")
-  clinicaId     String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  ciudad        String?
-  pais          String?
-  provincia     String?
-  professionals Professional[]
-  clinica       Clinica        @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  id                     String                    @id @default(cuid())
+  nombre                 String
+  direccion              String?
+  telefono               String?
+  email                  String?
+  estado                 String                    @default("activa")
+  clinicaId              String
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+  ciudad                 String?
+  pais                   String?
+  provincia              String?
+  professionals          Professional[]            // Mantenemos para compatibilidad hacia atrás
+  professionalSucursales ProfessionalSucursal[]    // Nueva relación muchos-a-muchos
+  clinica                Clinica                   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
 
   @@index([clinicaId])
   @@index([estado])
+}
+
+model ProfessionalSucursal {
+  id             String       @id @default(cuid())
+  professionalId String
+  sucursalId     String
+  activo         Boolean      @default(true)      // Para activar/desactivar la relación
+  fechaInicio    DateTime?    // Fecha desde la cual el profesional trabaja en esta sucursal
+  fechaFin       DateTime?    // Fecha hasta la cual el profesional trabaja en esta sucursal (opcional)
+  notas          String?      // Notas sobre la relación profesional-sucursal
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  sucursal       Sucursal     @relation(fields: [sucursalId], references: [id], onDelete: Cascade)
+  agendas        Agenda[]     // Horarios específicos para esta sucursal
+
+  @@unique([professionalId, sucursalId])
+  @@index([professionalId])
+  @@index([sucursalId])
+  @@index([activo])
 }
 
 model FichaMedica {
@@ -536,7 +561,7 @@ model Venta {
   paciente         String
   email            String
   telefono         String
-  tratamiento      String
+  tratamiento      String     // Mantenemos este campo para compatibilidad hacia atrás
   profesional      String
   profesionalId    String?
   sucursal         String
@@ -557,12 +582,33 @@ model Venta {
   medioPagoId      String?
   clinica          Clinica    @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
   medioPagoRel     MedioPago? @relation(fields: [medioPagoId], references: [id])
+  tratamientos     VentaTratamiento[]
 
   @@index([clinicaId])
   @@index([estado])
   @@index([estadoPago])
   @@index([fechaCreacion])
   @@index([medioPagoId])
+}
+
+model VentaTratamiento {
+  id               String       @id @default(cuid())
+  ventaId          String
+  tratamientoId    String
+  cantidad         Int          @default(1) // Cantidad de sesiones/treatments vendidos
+  precioUnitario   Float?       // Precio individual del tratamiento en esta venta
+  precioTotal      Float?       // Precio total para este tratamiento en esta venta
+  sesionesIncluidas Int         @default(1) // Sesiones incluidas para este tratamiento
+  sesionesUsadas   Int          @default(0) // Sesiones ya utilizadas para este tratamiento
+  notas            String?      // Notas específicas para este tratamiento en la venta
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  venta            Venta        @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  tratamiento      Tratamiento  @relation(fields: [tratamientoId], references: [id], onDelete: Cascade)
+
+  @@unique([ventaId, tratamientoId])
+  @@index([ventaId])
+  @@index([tratamientoId])
 }
 
 model Plan {
