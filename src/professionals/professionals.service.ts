@@ -924,6 +924,132 @@ export class ProfessionalsService {
         }
       }
 
+      // Actualizar sucursales si se proporcionan
+      if (dto.sucursales && dto.sucursales.length > 0) {
+        console.log('🔍 Actualizando múltiples sucursales:', dto.sucursales.length);
+        
+        try {
+          // Obtener relaciones actuales
+          const professionalSucursalesActuales = await this.prisma.professionalSucursal.findMany({
+            where: { professionalId: id },
+            include: { sucursal: true }
+          });
+
+          // Para cada sucursal en el DTO
+          for (const sucursalData of dto.sucursales) {
+            // Validar que la sucursal existe
+            const sucursal = await this.prisma.sucursal.findUnique({
+              where: { id: sucursalData.sucursalId }
+            });
+
+            if (!sucursal) {
+              console.log(`⚠️ Sucursal con ID ${sucursalData.sucursalId} no encontrada, saltando...`);
+              continue;
+            }
+
+            // Buscar si ya existe la relación
+            const existingRel = professionalSucursalesActuales.find(
+              ps => ps.sucursalId === sucursalData.sucursalId
+            );
+
+            let professionalSucursalId: string;
+
+            if (existingRel) {
+              // Actualizar relación existente
+              const updatedRel = await this.prisma.professionalSucursal.update({
+                where: { id: existingRel.id },
+                data: {
+                  fechaInicio: sucursalData.fechaInicio ? new Date(sucursalData.fechaInicio) : existingRel.fechaInicio,
+                  fechaFin: sucursalData.fechaFin ? new Date(sucursalData.fechaFin) : existingRel.fechaFin,
+                  notas: sucursalData.notas || existingRel.notas,
+                  activo: true, // Reactivar si estaba desactivado
+                }
+              });
+              professionalSucursalId = updatedRel.id;
+              console.log(`✅ Relación existente actualizada para sucursal ${sucursalData.sucursalId}`);
+            } else {
+              // Crear nueva relación
+              const newRel = await this.prisma.professionalSucursal.create({
+                data: {
+                  professionalId: id,
+                  sucursalId: sucursalData.sucursalId,
+                  fechaInicio: sucursalData.fechaInicio ? new Date(sucursalData.fechaInicio) : new Date(),
+                  fechaFin: sucursalData.fechaFin ? new Date(sucursalData.fechaFin) : null,
+                  notas: sucursalData.notas,
+                }
+              });
+              professionalSucursalId = newRel.id;
+              console.log(`✅ Nueva relación creada para sucursal ${sucursalData.sucursalId}`);
+            }
+
+            // Manejar horarios para esta sucursal específica
+            if (sucursalData.horariosDetallados && sucursalData.horariosDetallados.length > 0) {
+              console.log(`🔍 Actualizando horarios detallados para sucursal ${sucursalData.sucursalId}`);
+              
+              // Eliminar horarios existentes de esta sucursal específica
+              await this.prisma.agenda.deleteMany({
+                where: { 
+                  professionalId: id,
+                  professionalSucursalId: professionalSucursalId 
+                }
+              });
+
+              // Crear nuevos horarios específicos para esta sucursal
+              const horariosPorSucursal = sucursalData.horariosDetallados.map(horario => ({
+                professionalId: id,
+                professionalSucursalId: professionalSucursalId,
+                dia: horario.dia.toUpperCase(),
+                horaInicio: horario.horaInicio,
+                horaFin: horario.horaFin,
+                duracionMin: dto.defaultDurationMin ?? updatedProfessional.defaultDurationMin ?? 30,
+              }));
+
+              await this.prisma.agenda.createMany({
+                data: horariosPorSucursal,
+              });
+              console.log(`✅ Horarios detallados actualizados para sucursal ${sucursalData.sucursalId}: ${horariosPorSucursal.length} horarios`);
+            // } 
+            // else if (sucursalData.horariosMultiRango && sucursalData.horariosMultiRango.length > 0) {
+            //   console.log(`🔍 Actualizando horarios multi-rango para sucursal ${sucursalData.sucursalId}`);
+              
+            //   // Eliminar horarios existentes de esta sucursal específica
+            //   await this.prisma.agenda.deleteMany({
+            //     where: { 
+            //       professionalId: id,
+            //       professionalSucursalId: professionalSucursalId 
+            //     }
+            //   });
+
+            //   // Crear nuevos horarios multi-rango para esta sucursal
+            //   const horariosPorSucursal: any[] = [];
+              
+            //   sucursalData.horariosMultiRango.forEach(horarioDia => {
+            //     horarioDia.rangos.forEach(rango => {
+            //       horariosPorSucursal.push({
+            //         professionalId: id,
+            //         professionalSucursalId: professionalSucursalId,
+            //         dia: horarioDia.dia.toUpperCase(),
+            //         horaInicio: rango.horaInicio,
+            //         horaFin: rango.horaFin,
+            //         duracionMin: dto.defaultDurationMin ?? updatedProfessional.defaultDurationMin ?? 30,
+            //       });
+            //     });
+            //   });
+
+            //   await this.prisma.agenda.createMany({
+            //     data: horariosPorSucursal,
+            //   });
+            //   console.log(`✅ Horarios multi-rango actualizados para sucursal ${sucursalData.sucursalId}: ${horariosPorSucursal.length} horarios`);
+            } else {
+              console.log(`⚠️ No se proporcionaron horariosDetallados ni horariosMultiRango para sucursal ${sucursalData.sucursalId}`);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error actualizando sucursales:', error);
+          throw new Error(`Error actualizando sucursales: ${error.message}`);
+        }
+      }
+
       // Actualizar horarios si se proporcionan
       if (dto.horariosMultiRango && dto.horariosMultiRango.length > 0) {
         // Formato multi-rango: múltiples rangos por día
@@ -1006,6 +1132,18 @@ export class ProfessionalsService {
           include: { 
             user: true,
             agendas: {
+              include: {
+                professionalSucursal: {
+                  include: {
+                    sucursal: {
+                      select: {
+                        id: true,
+                        nombre: true,
+                      }
+                    }
+                  }
+                }
+              },
               orderBy: {
                 dia: 'asc',
               },
@@ -1018,6 +1156,38 @@ export class ProfessionalsService {
             tratamientos: {
               include: {
                 tratamiento: true
+              }
+            },
+            professionalSucursales: {
+              include: {
+                sucursal: {
+                  select: {
+                    id: true,
+                    nombre: true,
+                    direccion: true,
+                    telefono: true,
+                    email: true,
+                    estado: true,
+                  }
+                },
+                agendas: {
+                  orderBy: {
+                    dia: 'asc',
+                  }
+                }
+              },
+              where: {
+                activo: true
+              }
+            },
+            sucursal: {
+              select: {
+                id: true,
+                nombre: true,
+                direccion: true,
+                telefono: true,
+                email: true,
+                estado: true,
               }
             }
           },
@@ -1049,13 +1219,33 @@ export class ProfessionalsService {
         // Transformar tratamientos al formato esperado
         const tratamientos = (finalProfessional as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
 
+        // Transformar sucursales múltiples
+        const sucursales = (finalProfessional as any).professionalSucursales?.map((ps: any) => ({
+          id: ps.sucursal.id,
+          nombre: ps.sucursal.nombre,
+          direccion: ps.sucursal.direccion,
+          telefono: ps.sucursal.telefono,
+          email: ps.sucursal.email,
+          estado: ps.sucursal.estado,
+          activo: ps.activo,
+          fechaInicio: ps.fechaInicio,
+          fechaFin: ps.fechaFin,
+          notas: ps.notas,
+          horarios: ps.agendas?.map((agenda: any) => ({
+            dia: agenda.dia,
+            horaInicio: agenda.horaInicio,
+            horaFin: agenda.horaFin
+          })) || []
+        })) || [];
+
         // Construir la respuesta con el formato unificado
         const response = {
           ...finalProfessional,
           horariosDetallados,
           specialties,
           tratamientos,
-          sucursal: (finalProfessional as any).sucursalId || null,
+          sucursal: (finalProfessional as any).sucursalId || null, // Mantener compatibilidad
+          sucursales: sucursales, // Nueva funcionalidad
         };
 
         return {
@@ -1071,6 +1261,18 @@ export class ProfessionalsService {
         include: { 
           user: true,
           agendas: {
+            include: {
+              professionalSucursal: {
+                include: {
+                  sucursal: {
+                    select: {
+                      id: true,
+                      nombre: true,
+                    }
+                  }
+                }
+              }
+            },
             orderBy: {
               dia: 'asc',
             },
@@ -1083,6 +1285,38 @@ export class ProfessionalsService {
           tratamientos: {
             include: {
               tratamiento: true
+            }
+          },
+          professionalSucursales: {
+            include: {
+              sucursal: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  direccion: true,
+                  telefono: true,
+                  email: true,
+                  estado: true,
+                }
+              },
+              agendas: {
+                orderBy: {
+                  dia: 'asc',
+                }
+              }
+            },
+            where: {
+              activo: true
+            }
+          },
+          sucursal: {
+            select: {
+              id: true,
+              nombre: true,
+              direccion: true,
+              telefono: true,
+              email: true,
+              estado: true,
             }
           }
         },
@@ -1114,13 +1348,33 @@ export class ProfessionalsService {
       // Transformar tratamientos al formato esperado
       const tratamientos = (finalProfessional as any).tratamientos?.map((trat: any) => trat.tratamiento.name) || [];
 
+      // Transformar sucursales múltiples
+      const sucursales = (finalProfessional as any).professionalSucursales?.map((ps: any) => ({
+        id: ps.sucursal.id,
+        nombre: ps.sucursal.nombre,
+        direccion: ps.sucursal.direccion,
+        telefono: ps.sucursal.telefono,
+        email: ps.sucursal.email,
+        estado: ps.sucursal.estado,
+        activo: ps.activo,
+        fechaInicio: ps.fechaInicio,
+        fechaFin: ps.fechaFin,
+        notas: ps.notas,
+        horarios: ps.agendas?.map((agenda: any) => ({
+          dia: agenda.dia,
+          horaInicio: agenda.horaInicio,
+          horaFin: agenda.horaFin
+        })) || []
+      })) || [];
+
       // Construir la respuesta con el formato unificado
       const response = {
         ...finalProfessional,
         horariosDetallados,
         specialties,
         tratamientos,
-        sucursal: (finalProfessional as any).sucursalId || null,
+        sucursal: (finalProfessional as any).sucursalId || null, // Mantener compatibilidad
+        sucursales: sucursales, // Nueva funcionalidad
       };
 
       return {
