@@ -416,11 +416,28 @@ export class FichasMedicasService {
       }
     });
 
+    // Generar URL firmada para el archivo
+    let finalUrl = uploadResult.url;
+    if (uploadResult.id && !useLocalStorage) {
+      console.log('🔗 [UPLOAD] Generando URL firmada para archivo del microservicio...');
+      try {
+        const signedUrlResult = await this.fileMicroserviceService.getSignedUrl(uploadResult.id.toString(), userToken);
+        if ('url' in signedUrlResult) {
+          finalUrl = signedUrlResult.url;
+          console.log('✅ [UPLOAD] URL firmada generada:', finalUrl);
+        } else {
+          console.log('⚠️ [UPLOAD] No se pudo generar URL firmada, usando URL original');
+        }
+      } catch (error) {
+        console.log('⚠️ [UPLOAD] Error generando URL firmada:', error.message);
+      }
+    }
+
     return {
       id: archivoMedico.id,
       nombre: archivoMedico.nombre,
       tipo: archivoMedico.tipo,
-      url: uploadResult.url,
+      url: finalUrl,
       fecha: archivoMedico.fechaSubida.toISOString().split('T')[0],
       carpetaId: archivoMedico.carpetaId || undefined
     };
@@ -501,31 +518,119 @@ export class FichasMedicasService {
     }
 
     let uploadResult: any;
-    let useLocalStorage = true; // Forzar uso de almacenamiento local
+    let useLocalStorage = false;
 
-    // Usar almacenamiento local directamente para evitar problemas con microservicio
-    console.log('🖼️ [UPLOAD_IMAGE] Usando almacenamiento local para imagen médica');
+    // Verificar si el microservicio está disponible antes de intentar usarlo
+    console.log('🔍 [UPLOAD_IMAGE] Verificando disponibilidad del microservicio...');
+    const microserviceHealth = await this.fileMicroserviceService.checkHealth();
     
-    try {
-      const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'imagenes');
+    if (!microserviceHealth.available) {
+      console.log('⚠️ [UPLOAD_IMAGE] Microservicio no disponible, usando almacenamiento local directamente');
+      console.log('⚠️ [UPLOAD_IMAGE] Error del microservicio:', microserviceHealth.error);
+      useLocalStorage = true;
+    } else {
+      console.log('✅ [UPLOAD_IMAGE] Microservicio disponible, intentando subir...');
+    }
+
+    // Intentar usar el microservicio solo si está disponible
+    if (!useLocalStorage) {
+      try {
+        // Intentar subir imagen al microservicio primero
+        console.log('🌐 [UPLOAD_IMAGE] Intentando subir al microservicio...');
+        console.log('🌐 [UPLOAD_IMAGE] UserToken disponible:', !!userToken);
+        console.log('🌐 [UPLOAD_IMAGE] UserToken length:', userToken?.length);
       
-      uploadResult = {
-        id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        url: await this.storageService.getFileUrl(localUploadResult.url, userToken),
-        nombre: file.originalname,
-        size: file.size,
-        mimeType: file.mimetype
-      };
+        // Registrar usuario en el microservicio si es necesario
+        console.log('👤 [UPLOAD_IMAGE] Verificando registro de usuario en microservicio...');
+        
+        // Decodificar el token del usuario para obtener su email
+        let userEmail = 'temp-user@example.com';
+        if (userToken) {
+          try {
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.decode(userToken);
+            if (decoded && decoded.email) {
+              userEmail = decoded.email;
+              console.log('👤 [UPLOAD_IMAGE] Email del usuario obtenido:', userEmail);
+            }
+          } catch (error) {
+            console.log('⚠️ [UPLOAD_IMAGE] Error decodificando token:', error.message);
+          }
+        }
+        
+        // Intentar registrar el usuario en el microservicio
+        const userData = {
+          name: userEmail.split('@')[0] || 'user',
+          email: userEmail,
+          password: 'default-password-123456' // Mínimo 8 caracteres
+        };
+        
+        console.log('👤 [UPLOAD_IMAGE] Registrando usuario en microservicio:', userData.email);
+        const registerResult = await this.fileMicroserviceService.registerUser(userData);
+        let microserviceToken = userToken; // Usar el token del frontend por defecto
+        
+        if ('error' in registerResult) {
+          if (registerResult.statusCode === 409) {
+            console.log('✅ [UPLOAD_IMAGE] Usuario ya existe en microservicio');
+          } else {
+            console.log('⚠️ [UPLOAD_IMAGE] Error registrando usuario:', registerResult.error);
+          }
+        } else {
+          console.log('✅ [UPLOAD_IMAGE] Usuario registrado exitosamente en microservicio');
+        }
+        
+        const scope = this.fileMicroserviceService.generateScope(clinica.id, pacienteId, 'imagenes');
+        console.log('🌐 [UPLOAD_IMAGE] Scope generado:', scope);
+        const microserviceResult = await this.fileMicroserviceService.uploadFile({
+          file,
+          visibility: 'private', // Las imágenes médicas son privadas
+          scope,
+          conversationId: fichaMedica.id, // Usar el ID de la ficha como conversation_id
+          messageId: `imagen-${Date.now()}` // Generar un message_id único
+        }, microserviceToken);
+        
+        console.log('🌐 [UPLOAD_IMAGE] Resultado del microservicio:', microserviceResult);
+        
+        // Verificar si el resultado es un error
+        if ('error' in microserviceResult) {
+          console.error('❌ [UPLOAD_IMAGE] Error del microservicio:', microserviceResult.error);
+          throw new Error(microserviceResult.error);
+        }
+        
+        uploadResult = microserviceResult;
+        console.log('✅ [UPLOAD_IMAGE] Imagen subida exitosamente al microservicio');
+      } catch (error) {
+        console.log('⚠️ [UPLOAD_IMAGE] Microservicio no disponible, usando almacenamiento local:', error.message);
+        console.error('❌ [UPLOAD_IMAGE] Error completo:', error);
+        useLocalStorage = true;
+      }
+    }
+
+    // Si necesitamos usar almacenamiento local (ya sea por fallo del microservicio o por decisión inicial)
+    if (useLocalStorage) {
+      console.log('💾 [UPLOAD_IMAGE] Usando almacenamiento local...');
       
-      console.log('✅ [UPLOAD_IMAGE] Imagen guardada localmente:', {
-        id: uploadResult.id,
-        url: uploadResult.url,
-        nombre: uploadResult.nombre,
-        size: uploadResult.size
-      });
-    } catch (error) {
-      console.error('❌ [UPLOAD_IMAGE] Error guardando imagen localmente:', error);
-      throw new Error('Error al guardar la imagen');
+      try {
+        const localUploadResult = await this.storageService.uploadFile(file, clinica.id, pacienteId, 'imagenes');
+        
+        uploadResult = {
+          id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          url: await this.storageService.getFileUrl(localUploadResult.url, userToken),
+          nombre: file.originalname,
+          size: file.size,
+          mimeType: file.mimetype
+        };
+        
+        console.log('✅ [UPLOAD_IMAGE] Imagen guardada localmente:', {
+          id: uploadResult.id,
+          url: uploadResult.url,
+          nombre: uploadResult.nombre,
+          size: uploadResult.size
+        });
+      } catch (error) {
+        console.error('❌ [UPLOAD_IMAGE] Error guardando imagen localmente:', error);
+        throw new Error('Error al guardar la imagen');
+      }
     }
 
     // Guardar en base de datos
@@ -535,16 +640,33 @@ export class FichasMedicasService {
         carpetaId: carpetaId || null,
         nombre: uploadResult.nombre,
         nombreArchivo: uploadResult.nombre,
-        url: uploadResult.url, // URL completa generada por getFileUrl
+        url: uploadResult.url, // URL de S3 o ruta local
         tamañoBytes: BigInt(uploadResult.size),
-        // microserviceFileId: null // Usando almacenamiento local
+        microserviceFileId: uploadResult.id.toString() // ID del archivo en el microservicio
       }
     });
+
+    // Generar URL firmada para la imagen
+    let finalUrl = uploadResult.url;
+    if (uploadResult.id && !useLocalStorage) {
+      console.log('🔗 [UPLOAD_IMAGE] Generando URL firmada para imagen del microservicio...');
+      try {
+        const signedUrlResult = await this.fileMicroserviceService.getSignedUrl(uploadResult.id.toString(), userToken);
+        if ('url' in signedUrlResult) {
+          finalUrl = signedUrlResult.url;
+          console.log('✅ [UPLOAD_IMAGE] URL firmada generada:', finalUrl);
+        } else {
+          console.log('⚠️ [UPLOAD_IMAGE] No se pudo generar URL firmada, usando URL original');
+        }
+      } catch (error) {
+        console.log('⚠️ [UPLOAD_IMAGE] Error generando URL firmada:', error.message);
+      }
+    }
 
     return {
       id: imagenMedica.id,
       nombre: imagenMedica.nombre,
-      url: uploadResult.url,
+      url: finalUrl,
       fecha: imagenMedica.fechaSubida.toISOString().split('T')[0],
       descripcion: imagenMedica.descripcion || undefined,
       carpetaId: imagenMedica.carpetaId || undefined
