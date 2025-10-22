@@ -1116,7 +1116,7 @@ export class UsersService {
       // Primero buscar TODOS los usuarios con ese email para ver si hay duplicados
       const allUsersWithEmail = await this.prisma.user.findMany({
         where: { email: normalizedEmail },
-        select: { id: true, email: true, username: true, name: true, password: true }
+        select: { id: true, email: true, username: true, name: true, password: true, clinicaId: true }
       });
       
       console.log('🔍 RESET: Usuarios encontrados con email', normalizedEmail, ':', allUsersWithEmail.length);
@@ -1132,7 +1132,7 @@ export class UsersService {
             { username: normalizedEmail }
           ],
         },
-        select: { id: true, email: true, username: true, name: true, password: true }
+        select: { id: true, email: true, username: true, name: true, password: true, clinicaId: true }
       });
 
       if (!user) {
@@ -1218,6 +1218,105 @@ export class UsersService {
         user.email,
         user.name || 'Usuario',
       );
+
+      // Sincronizar contraseña con Fluentia
+      console.log('🌐 ===== SINCRONIZANDO CONTRASEÑA CON FLUENTIA =====');
+      
+      try {
+        // PASO 1: Obtener userId de Fluentia haciendo login
+        console.log('🔑 PASO 1: Obteniendo userId de Fluentia...');
+        
+        const fluentiaLoginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
+        const fluentiaLoginData = {
+          email: user.email,
+          password: dto.newPassword, // Usar la nueva contraseña para login
+        };
+        
+        console.log('📤 Intentando login en Fluentia con nueva contraseña:', {
+          email: user.email,
+          passwordLength: dto.newPassword.length
+        });
+        
+        let fluentiaUserId: string | null = null;
+        let fluentiaToken: string | null = null;
+        
+        try {
+          const loginResponse = await axios.post(fluentiaLoginUrl, fluentiaLoginData, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
+          });
+          
+          console.log('✅ Login exitoso en Fluentia');
+          fluentiaUserId = loginResponse.data.content?.user?.id || 
+                          loginResponse.data.user?.id || 
+                          loginResponse.data.userId;
+          fluentiaToken = loginResponse.data.content?.accessToken || 
+                        loginResponse.data.access_token || 
+                        loginResponse.data.token;
+          
+          console.log('🔍 Fluentia userId obtenido:', fluentiaUserId);
+          console.log('🔍 Fluentia token obtenido:', fluentiaToken ? 'Sí' : 'No');
+          
+        } catch (loginError) {
+          console.log('⚠️ Login falló en Fluentia (normal si no está sincronizado)');
+          console.log('📄 Error:', JSON.stringify(loginError.response?.data, null, 2));
+        }
+        
+        // PASO 2: Si tenemos userId de Fluentia, actualizar contraseña
+        if (fluentiaUserId && fluentiaToken) {
+          console.log('🔑 PASO 2: Actualizando contraseña en Fluentia...');
+          
+          const fluentiaUpdateUrl = `https://fluentia-api-develop-latest.up.railway.app/users/${fluentiaUserId}/password`;
+          
+          const fluentiaUpdateData = {
+            new_password: dto.newPassword,
+            new_password_confirmation: dto.newPassword,
+          };
+          
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${fluentiaToken}`,
+          };
+          
+          // Agregar Business ID (clinicaId) si está disponible
+          if (user.clinicaId) {
+            headers['X-Business-Id'] = user.clinicaId;
+            console.log('🏥 Usando Business ID (clinicaId):', user.clinicaId);
+          }
+          
+          console.log('📤 Datos del PUT request a Fluentia:', {
+            url: fluentiaUpdateUrl,
+            fluentiaUserId: fluentiaUserId,
+            businessId: user.clinicaId || 'No disponible',
+            tokenLength: fluentiaToken ? fluentiaToken.length : 0,
+            newPasswordLength: dto.newPassword.length
+          });
+          
+          try {
+            const updateResponse = await axios.put(fluentiaUpdateUrl, fluentiaUpdateData, {
+              headers,
+              timeout: 10000,
+            });
+            
+            console.log('✅ Contraseña actualizada exitosamente en Fluentia');
+            console.log('📊 Status Code:', updateResponse.status);
+            console.log('📄 Respuesta:', JSON.stringify(updateResponse.data, null, 2));
+            
+          } catch (putError) {
+            console.log('❌ PUT endpoint falló en Fluentia');
+            console.log('📊 Status Code:', putError.response?.status);
+            console.log('📄 Error:', JSON.stringify(putError.response?.data, null, 2));
+          }
+        } else {
+          console.log('⚠️ No se pudo obtener userId de Fluentia, saltando sincronización');
+        }
+        
+      } catch (fluentiaError) {
+        console.log('⚠️ Error general al sincronizar con Fluentia:', fluentiaError.message);
+        console.log('🔄 La contraseña local se actualizó correctamente');
+      }
 
       console.log('✅ Proceso de restablecimiento completado exitosamente');
 
