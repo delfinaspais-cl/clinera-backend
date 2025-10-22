@@ -26,7 +26,7 @@ import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 @ApiTags('Fichas Médicas Globales')
-@Controller('clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
+@Controller('global/clinica/:clinicaUrl/pacientes/:pacienteId/ficha-medica')
 export class GlobalFichasMedicasController {
   constructor(private readonly fichasMedicasService: FichasMedicasService) {}
 
