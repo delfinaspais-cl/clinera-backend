@@ -33,6 +33,9 @@ export class VentasService {
 
       // Extraer tratamientos si vienen en el DTO
       const { tratamientos, ...ventaData } = createVentaDto;
+      
+      console.log('🔍 DEBUG - Tratamientos recibidos:', tratamientos);
+      console.log('🔍 DEBUG - VentaData:', ventaData);
 
       // Crear la venta (mantener compatibilidad hacia atrás)
       const venta = await this.prisma.venta.create({
@@ -80,6 +83,7 @@ export class VentasService {
       });
 
       // Si se proporcionaron tratamientos específicos, crearlos
+      console.log('🔍 DEBUG - Verificando tratamientos:', tratamientos, 'Length:', tratamientos?.length);
       if (tratamientos && tratamientos.length > 0) {
         for (const tratamientoData of tratamientos) {
           // Validar que el tratamiento existe
