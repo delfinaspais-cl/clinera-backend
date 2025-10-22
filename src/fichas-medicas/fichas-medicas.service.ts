@@ -298,6 +298,7 @@ export class FichasMedicasService {
     
     if (!microserviceHealth.available) {
       console.log('⚠️ [UPLOAD] Microservicio no disponible, usando almacenamiento local directamente');
+      console.log('⚠️ [UPLOAD] Error del microservicio:', microserviceHealth.error);
       useLocalStorage = true;
     } else {
       console.log('✅ [UPLOAD] Microservicio disponible, intentando subir...');

@@ -27,7 +27,7 @@ export class FileMicroserviceService {
   private readonly microserviceJwtSecret: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-develop-latest.up.railway.app');
+    this.microserviceUrl = this.configService.get<string>('FILE_MICROSERVICE_URL', 'https://fluentia-files-staging.up.railway.app');
     this.authToken = ''; // No se usa, el microservicio acepta el JWT del usuario
     this.microserviceJwtSecret = this.configService.get<string>('FILE_MICROSERVICE_JWT_SECRET', '@leaf$MVC*JWT#AUTH.Secret'); // JWT_SECRET del microservicio
     
@@ -654,7 +654,9 @@ export class FileMicroserviceService {
     try {
       console.log('🏥 [HEALTH_CHECK] Verificando salud del microservicio...');
       
-      const response = await axios.get(`${this.microserviceUrl}/health`, {
+      // Probar el endpoint de upload (que requiere autenticación)
+      // Si devuelve 401, significa que el microservicio está funcionando pero necesita auth
+      const response = await axios.post(`${this.microserviceUrl}/files/upload`, {}, {
         timeout: 5000, // 5 segundos de timeout
         headers: {
           'Content-Type': 'application/json'
@@ -669,6 +671,12 @@ export class FileMicroserviceService {
         return { available: false, error: `Status ${response.status}` };
       }
     } catch (error) {
+      // Si es un error 401 (Unauthorized), significa que el microservicio está funcionando
+      if (error.response && error.response.status === 401) {
+        console.log('✅ [HEALTH_CHECK] Microservicio está disponible (401 = necesita autenticación)');
+        return { available: true };
+      }
+      
       console.log('❌ [HEALTH_CHECK] Microservicio no disponible:', error.message);
       return { available: false, error: error.message };
     }
