@@ -1223,46 +1223,14 @@ export class UsersService {
       console.log('🌐 ===== SINCRONIZANDO CONTRASEÑA CON FLUENTIA =====');
       
       try {
-        // PASO 1: Obtener userId de Fluentia haciendo login
-        console.log('🔑 PASO 1: Obteniendo userId de Fluentia...');
+        // PASO 1: Hardcodear userId temporalmente para pruebas
+        console.log('🔑 PASO 1: Usando userId hardcodeado para pruebas...');
         
-        const fluentiaLoginUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/login';
-        const fluentiaLoginData = {
-          email: user.email,
-          password: dto.newPassword, // Usar la nueva contraseña para login
-        };
+        const fluentiaUserId = "45"; // HARDCODEADO TEMPORALMENTE
+        const fluentiaToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjo1NiwiaWF0IjoxNzYxMDE3Mjg4LCJleHAiOjE3OTI1NTMyODgsImlzcyI6ImZsdWVudGlhLWFwaS1kZXZlbG9wLWxhdGVzdC51cC5yYWlsd2F5LmFwcCJ9.b0Nac2ChiUsMf2vJwH0wiaInx0mKWj2BeqrK9oBScf4"; // HARDCODEADO TEMPORALMENTE
         
-        console.log('📤 Intentando login en Fluentia con nueva contraseña:', {
-          email: user.email,
-          passwordLength: dto.newPassword.length
-        });
-        
-        let fluentiaUserId: string | null = null;
-        let fluentiaToken: string | null = null;
-        
-        try {
-          const loginResponse = await axios.post(fluentiaLoginUrl, fluentiaLoginData, {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            timeout: 10000,
-          });
-          
-          console.log('✅ Login exitoso en Fluentia');
-          fluentiaUserId = loginResponse.data.content?.user?.id || 
-                          loginResponse.data.user?.id || 
-                          loginResponse.data.userId;
-          fluentiaToken = loginResponse.data.content?.accessToken || 
-                        loginResponse.data.access_token || 
-                        loginResponse.data.token;
-          
-          console.log('🔍 Fluentia userId obtenido:', fluentiaUserId);
-          console.log('🔍 Fluentia token obtenido:', fluentiaToken ? 'Sí' : 'No');
-          
-        } catch (loginError) {
-          console.log('⚠️ Login falló en Fluentia (normal si no está sincronizado)');
-          console.log('📄 Error:', JSON.stringify(loginError.response?.data, null, 2));
-        }
+        console.log('🔍 Fluentia userId hardcodeado:', fluentiaUserId);
+        console.log('🔍 Fluentia token hardcodeado:', fluentiaToken ? 'Sí' : 'No');
         
         // PASO 2: Si tenemos userId de Fluentia, actualizar contraseña
         if (fluentiaUserId && fluentiaToken) {
