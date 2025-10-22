@@ -646,4 +646,31 @@ export class FileMicroserviceService {
   validateFileSize(file: Express.Multer.File, maxSizeBytes: number): boolean {
     return file.size <= maxSizeBytes;
   }
+
+  /**
+   * Verifica si el microservicio está disponible
+   */
+  async checkHealth(): Promise<{ available: boolean; error?: string }> {
+    try {
+      console.log('🏥 [HEALTH_CHECK] Verificando salud del microservicio...');
+      
+      const response = await axios.get(`${this.microserviceUrl}/health`, {
+        timeout: 5000, // 5 segundos de timeout
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.status === 200) {
+        console.log('✅ [HEALTH_CHECK] Microservicio está disponible');
+        return { available: true };
+      } else {
+        console.log('⚠️ [HEALTH_CHECK] Microservicio respondió con status:', response.status);
+        return { available: false, error: `Status ${response.status}` };
+      }
+    } catch (error) {
+      console.log('❌ [HEALTH_CHECK] Microservicio no disponible:', error.message);
+      return { available: false, error: error.message };
+    }
+  }
 }
