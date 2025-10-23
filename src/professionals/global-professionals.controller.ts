@@ -22,6 +22,8 @@ import {
 import { JwtAuthGuard } from '../auth/jwt.auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import axios from 'axios';
+import { PasswordGenerator } from '../common/utils/password-generator';
 
 @ApiTags('Profesionales Globales')
 @Controller('profesionales')
@@ -198,10 +200,14 @@ export class GlobalProfessionalsController {
       // Hash de la contraseña
       const hashedPassword = await bcrypt.hash(createProfesionalDto.password || 'defaultPassword123', 10);
 
+      // Generar username automáticamente
+      const username = PasswordGenerator.generateUsername(createProfesionalDto.name);
+
       // Crear usuario primero
       const user = await this.prisma.user.create({
         data: {
           email: createProfesionalDto.email,
+          username: username, // Agregar el username generado
           password: hashedPassword,
           name: createProfesionalDto.name,
           phone: createProfesionalDto.phone,
@@ -209,6 +215,64 @@ export class GlobalProfessionalsController {
           clinicaId: createProfesionalDto.clinicaId,
         },
       });
+
+      // Hacer POST a la API externa de Fluentia
+      console.log('🌐 ===== INICIANDO LLAMADA A API EXTERNA (GLOBAL PROFESSIONALS) =====');
+      const startTime = Date.now();
+      try {
+        const externalApiUrl = 'https://fluentia-api-develop-latest.up.railway.app/auth/register';
+        const externalApiData = {
+          name: username, // Usar el username generado
+          email: createProfesionalDto.email,
+          password: createProfesionalDto.password || 'defaultPassword123', // Contraseña en texto plano
+        };
+        
+        console.log('📤 Datos que se enviarán a la API externa (GLOBAL PROFESSIONALS):', JSON.stringify(externalApiData, null, 2));
+        console.log('🔗 URL de la API externa:', externalApiUrl);
+        console.log('⏱️ Iniciando petición HTTP...');
+        
+        const externalApiResponse = await axios.post(externalApiUrl, externalApiData, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 segundos de timeout
+        });
+        
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('✅ ===== LLAMADA A API EXTERNA EXITOSA (GLOBAL PROFESSIONALS) =====');
+        console.log('⏱️ Duración de la petición:', `${duration}ms`);
+        console.log('📊 Status Code:', externalApiResponse.status);
+        console.log('📋 Headers de respuesta:', JSON.stringify(externalApiResponse.headers, null, 2));
+        console.log('📄 Datos de respuesta:', JSON.stringify(externalApiResponse.data, null, 2));
+        console.log('✅ Profesional global registrado exitosamente en Fluentia API');
+        
+      } catch (externalApiError) {
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        
+        console.log('❌ ===== ERROR EN LLAMADA A API EXTERNA (GLOBAL PROFESSIONALS) =====');
+        console.log('⏱️ Duración antes del error:', `${duration}ms`);
+        console.log('🚨 Tipo de error:', externalApiError.name || 'Unknown');
+        console.log('📝 Mensaje de error:', externalApiError.message);
+        
+        if (externalApiError.response) {
+          console.log('📊 Status Code de error:', externalApiError.response.status);
+          console.log('📋 Headers de error:', JSON.stringify(externalApiError.response.headers, null, 2));
+          console.log('📄 Datos de error:', JSON.stringify(externalApiError.response.data, null, 2));
+        } else if (externalApiError.request) {
+          console.log('🔌 Error de conexión - No se recibió respuesta');
+          console.log('📋 Request config:', JSON.stringify(externalApiError.config, null, 2));
+        } else {
+          console.log('⚙️ Error de configuración:', externalApiError.message);
+        }
+        
+        console.log('⚠️ IMPORTANTE: El registro local continúa normalmente');
+        console.log('⚠️ El profesional se registra en el sistema local aunque falle la API externa de Fluentia');
+      }
+
+      console.log('✅ API externa procesada, continuando con el registro local...');
 
       // Crear profesional
       const profesional = await this.prisma.professional.create({
