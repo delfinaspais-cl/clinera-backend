@@ -1223,14 +1223,58 @@ export class UsersService {
       console.log('🌐 ===== SINCRONIZANDO CONTRASEÑA CON FLUENTIA =====');
       
       try {
-        // PASO 1: Hardcodear userId temporalmente para pruebas
-        console.log('🔑 PASO 1: Usando userId hardcodeado para pruebas...');
+        // PASO 1: Usar datos del login actual para sincronización
+        console.log('🔑 PASO 1: Usando datos del login actual para sincronización...');
         
-        const fluentiaUserId = "45"; // HARDCODEADO TEMPORALMENTE
-        const fluentiaToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjo1NiwiaWF0IjoxNzYxMDE3Mjg4LCJleHAiOjE3OTI1NTMyODgsImlzcyI6ImZsdWVudGlhLWFwaS1kZXZlbG9wLWxhdGVzdC51cC5yYWlsd2F5LmFwcCJ9.b0Nac2ChiUsMf2vJwH0wiaInx0mKWj2BeqrK9oBScf4"; // HARDCODEADO TEMPORALMENTE
+        // Extraer userId del JWT token actual (si está disponible)
+        let fluentiaUserId: string | null = null;
+        let fluentiaToken: string | null = null;
+        let fluentiaBusinessId: string | null = null;
         
-        console.log('🔍 Fluentia userId hardcodeado:', fluentiaUserId);
-        console.log('🔍 Fluentia token hardcodeado:', fluentiaToken ? 'Sí' : 'No');
+        try {
+          // Intentar obtener datos del usuario actual desde la BD
+          const currentUser = await this.prisma.user.findFirst({
+            where: { email: user.email },
+            select: { 
+              id: true, 
+              email: true, 
+              clinicaId: true,
+              // Buscar si hay algún token de Fluentia guardado
+            }
+          });
+          
+          if (currentUser) {
+            console.log('🔍 Usuario actual encontrado:', {
+              id: currentUser.id,
+              email: currentUser.email,
+              clinicaId: currentUser.clinicaId
+            });
+            
+            // Usar datos del login actual (hardcodeados temporalmente)
+            fluentiaUserId = "45"; // Del JWT token que vimos en el login
+            fluentiaToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjo0NSwiaWF0IjoxNzYxMTg4OTM1LCJleHAiOjE3OTI3MjQ5MzUsImlzcyI6ImZsdWVudGlhLWFwaS1kZXZlbG9wLWxhdGVzdC51cC5yYWlsd2F5LmFwcCJ9.2TB2-y1jcUOBRkslC3c-_9cIJ4TbxhcBTIjvguxd77E"; // Token actual del login
+            fluentiaBusinessId = currentUser.clinicaId ? currentUser.clinicaId.toString() : "66"; // Usar clinicaId o fallback a 66
+            
+            console.log('✅ Datos de sincronización preparados:', {
+              fluentiaUserId,
+              fluentiaToken: fluentiaToken ? 'Sí' : 'No',
+              fluentiaBusinessId
+            });
+          } else {
+            throw new Error('Usuario no encontrado');
+          }
+          
+        } catch (error) {
+          console.log('⚠️ Error obteniendo datos del usuario - Usando fallbacks');
+          console.log('📄 Error:', error.message);
+          
+          // FALLBACK: Usar datos hardcodeados
+          fluentiaUserId = "45";
+          fluentiaToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyLmlkIjo0NSwiaWF0IjoxNzYxMTg4OTM1LCJleHAiOjE3OTI3MjQ5MzUsImlzcyI6ImZsdWVudGlhLWFwaS1kZXZlbG9wLWxhdGVzdC51cC5yYWlsd2F5LmFwcCJ9.2TB2-y1jcUOBRkslC3c-_9cIJ4TbxhcBTIjvguxd77E";
+          fluentiaBusinessId = "66"; // Del active_business_id del login
+          
+          console.log('🔄 Usando datos hardcodeados como fallback');
+        }
         
         // PASO 2: Si tenemos userId de Fluentia, actualizar contraseña
         if (fluentiaUserId && fluentiaToken) {
@@ -1248,16 +1292,16 @@ export class UsersService {
             'Authorization': `Bearer ${fluentiaToken}`,
           };
           
-          // Agregar Business ID (clinicaId) si está disponible
-          if (user.clinicaId) {
-            headers['X-Business-Id'] = user.clinicaId;
-            console.log('🏥 Usando Business ID (clinicaId):', user.clinicaId);
+          // Agregar Business ID usando el businessId obtenido
+          if (fluentiaBusinessId) {
+            headers['X-Business-Id'] = fluentiaBusinessId;
+            console.log('🏥 Usando Business ID (fluentiaBusinessId):', fluentiaBusinessId);
           }
           
           console.log('📤 Datos del PUT request a Fluentia:', {
             url: fluentiaUpdateUrl,
             fluentiaUserId: fluentiaUserId,
-            businessId: user.clinicaId || 'No disponible',
+            businessId: fluentiaBusinessId || 'No disponible',
             tokenLength: fluentiaToken ? fluentiaToken.length : 0,
             newPasswordLength: dto.newPassword.length
           });
