@@ -368,11 +368,14 @@ export class GlobalClinicasController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Actualizar clínica (PÚBLICO)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar clínica (PRIVADO)' })
   @ApiResponse({ status: 200, description: 'Clínica actualizada exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  async update(@Param('id') id: string, @Body() updateClinicaDto: any) {
+  async update(@Param('id') id: string, @Body() updateClinicaDto: any, @Request() req) {
     try {
       // Verificar que la clínica existe
       const clinicaExistente = await this.prisma.clinica.findUnique({
@@ -381,6 +384,17 @@ export class GlobalClinicasController {
 
       if (!clinicaExistente) {
         throw new NotFoundException('Clínica no encontrada');
+      }
+
+      // Verificar permisos de autorización
+      if (req.user.role === 'OWNER') {
+        // OWNER puede actualizar cualquier clínica
+        console.log('✅ OWNER actualizando clínica:', id);
+      } else if (req.user.role === 'ADMIN' && req.user.clinicaId === id) {
+        // ADMIN solo puede actualizar su propia clínica
+        console.log('✅ ADMIN actualizando su clínica:', id);
+      } else {
+        throw new BadRequestException('No tienes permisos para actualizar esta clínica');
       }
 
       // Preparar datos de actualización (solo campos que se envían)

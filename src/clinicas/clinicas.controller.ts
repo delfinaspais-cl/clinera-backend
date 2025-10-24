@@ -349,7 +349,8 @@ export class ClinicasController {
   }
 
   @Patch(':clinicaUrl/usuarios/:userId/estado')
-  // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   async updateUsuarioEstado(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
@@ -409,9 +410,11 @@ export class ClinicasController {
   }
 
   @Put(':clinicaUrl/usuarios/:userId')
-  // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Actualizar permisos de usuario de la clínica' })
   @ApiResponse({ status: 200, description: 'Permisos actualizados exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   async updateUsuario(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
@@ -659,10 +662,28 @@ export class ClinicasController {
   }
 
   @Put(':clinicaId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar configuración de clínica por ID (PRIVADO)' })
+  @ApiResponse({ status: 200, description: 'Configuración actualizada exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   async updateClinicaConfiguracionById(
     @Param('clinicaId') clinicaId: string,
     @Body() dto: UpdateClinicaConfiguracionDto,
+    @Request() req,
   ) {
+    // Verificar permisos de autorización
+    if (req.user.role === 'OWNER') {
+      // OWNER puede actualizar cualquier clínica
+      console.log('✅ OWNER actualizando configuración de clínica:', clinicaId);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaId === clinicaId) {
+      // ADMIN solo puede actualizar su propia clínica
+      console.log('✅ ADMIN actualizando configuración de su clínica:', clinicaId);
+    } else {
+      throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+    }
+    
     return this.clinicasService.updateClinicaConfiguracionById(clinicaId, dto);
   }
 
@@ -1288,7 +1309,9 @@ export class ClinicasController {
   }
 
   @Put(':clinicaUrl/logo')
-  @ApiOperation({ summary: 'Actualizar logo de la clínica' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Actualizar logo de la clínica (PRIVADO)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -1303,6 +1326,7 @@ export class ClinicasController {
     },
   })
   @ApiResponse({ status: 200, description: 'Logo actualizado exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 400, description: 'El archivo debe ser una imagen válida' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada' })
   @UseInterceptors(
@@ -1331,11 +1355,23 @@ export class ClinicasController {
     @Param('clinicaUrl') clinicaUrl: string,
     @UploadedFile() file: Express.Multer.File,
     @Headers('authorization') authHeader?: string,
+    @Request() req?: any,
   ) {
     console.log('🔄 [LOGO] Actualizando logo de clínica:', clinicaUrl);
     
     if (!file) {
       throw new BadRequestException('No se proporcionó archivo');
+    }
+
+    // Verificar permisos de autorización
+    if (req?.user?.role === 'OWNER') {
+      // OWNER puede actualizar cualquier clínica
+      console.log('✅ OWNER actualizando logo de clínica:', clinicaUrl);
+    } else if (req?.user?.role === 'ADMIN' && req?.user?.clinicaUrl === clinicaUrl) {
+      // ADMIN solo puede actualizar su propia clínica
+      console.log('✅ ADMIN actualizando logo de su clínica:', clinicaUrl);
+    } else {
+      throw new BadRequestException('No tienes permisos para actualizar el logo de esta clínica');
     }
     
     const token = authHeader?.replace('Bearer ', '') || '';
@@ -1343,13 +1379,29 @@ export class ClinicasController {
   }
 
   @Delete(':clinicaUrl/logo')
-  @ApiOperation({ summary: 'Eliminar logo de la clínica' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Eliminar logo de la clínica (PRIVADO)' })
   @ApiResponse({ status: 200, description: 'Logo eliminado exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Clínica no encontrada o no tiene logo' })
   async deleteLogo(
     @Param('clinicaUrl') clinicaUrl: string,
+    @Request() req,
   ) {
     console.log('🗑️ [LOGO] Eliminando logo de clínica:', clinicaUrl);
+    
+    // Verificar permisos de autorización
+    if (req.user.role === 'OWNER') {
+      // OWNER puede eliminar logo de cualquier clínica
+      console.log('✅ OWNER eliminando logo de clínica:', clinicaUrl);
+    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
+      // ADMIN solo puede eliminar logo de su propia clínica
+      console.log('✅ ADMIN eliminando logo de su clínica:', clinicaUrl);
+    } else {
+      throw new BadRequestException('No tienes permisos para eliminar el logo de esta clínica');
+    }
+    
     return this.clinicaLogoService.deleteLogo(clinicaUrl);
   }
 
