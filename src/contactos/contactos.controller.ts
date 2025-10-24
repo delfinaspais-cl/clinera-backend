@@ -84,13 +84,13 @@ export class ContactosController {
   }
 
   // Endpoint para limpiar contactos de prueba (solo en desarrollo/Railway)
-  @Delete('clear-test')
-  async clearTestContacts() {
-    const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.RAILWAY_ENVIRONMENT;
-    if (!isDevelopment) {
-      throw new BadRequestException('Este endpoint solo está disponible en desarrollo');
-    }
+  // @Delete('clear-test')
+  // async clearTestContacts() {
+//     const isDevelopment = process.env.NODE_ENV !== 'production' || process.env.RAILWAY_ENVIRONMENT;
+//     if (!isDevelopment) {
+//       throw new BadRequestException('Este endpoint solo está disponible en desarrollo');
+//     }
     
-    return await this.contactosService.clearTestContacts();
-  }
+//     return await this.contactosService.clearTestContacts();
+//   }
 }

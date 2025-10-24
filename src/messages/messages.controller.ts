@@ -27,11 +27,11 @@ export class MensajesController {
     return this.mensajesService.findAll(clinicaUrl);
   }
 
-  @Get('test/:clinicaUrl')
-  testFindAll(@Param('clinicaUrl') clinicaUrl: string) {
-    this.logger.log(`Solicitud GET de prueba para mensajes de clínica: ${clinicaUrl}`);
-    return this.mensajesService.findAll(clinicaUrl);
-  }
+  // @Get('test/:clinicaUrl')
+  // testFindAll(@Param('clinicaUrl') clinicaUrl: string) {
+  //   this.logger.log(`Solicitud GET de prueba para mensajes de clínica: ${clinicaUrl}`);
+  //   return this.mensajesService.findAll(clinicaUrl);
+  // }
 
   @Post()
   create(

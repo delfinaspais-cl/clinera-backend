@@ -39,16 +39,16 @@ export class UsersController {
     return this.usersService.register(dto);
   }
 
-  @Post('test')
-  @ApiOperation({ summary: 'Endpoint de prueba' })
-  @ApiResponse({ status: 200, description: 'Prueba exitosa' })
-  async test() {
-    return {
-      success: true,
-      message: 'Endpoint de usuarios funcionando',
-      timestamp: new Date().toISOString()
-    };
-  }
+  // @Post('test')
+  // @ApiOperation({ summary: 'Endpoint de prueba' })
+  // @ApiResponse({ status: 200, description: 'Prueba exitosa' })
+  // async test() {
+  //   return {
+  //     success: true,
+  //     message: 'Endpoint de usuarios funcionando',
+  //     timestamp: new Date().toISOString()
+  //   };
+  // }
 
   @Post('login')
   @ApiOperation({ summary: 'Iniciar sesión con username/email y password' })

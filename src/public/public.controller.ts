@@ -102,54 +102,54 @@ export class PublicController {
   }
 
   // Endpoint de prueba simple
-  @Get('test')
-  async testEndpoint() {
-    // 🔧 CAMBIO TEMPORAL PARA FORZAR DEPLOY - REMOVER DESPUÉS
-    return {
-      success: true,
-      message: 'Endpoint de prueba funcionando - DEPLOY FORZADO',
-      timestamp: new Date().toISOString(),
-      version: '1.0.1'
-    };
-  }
+  // @Get('test')
+  // async testEndpoint() {
+  //   // 🔧 CAMBIO TEMPORAL PARA FORZAR DEPLOY - REMOVER DESPUÉS
+  //   return {
+  //     success: true,
+  //     message: 'Endpoint de prueba funcionando - DEPLOY FORZADO',
+  //     timestamp: new Date().toISOString(),
+  //     version: '1.0.1'
+  //   };
+  // }
 
   // Endpoint de prueba específico para el problema de redirección
-  @Get('debug-redirect')
-  async debugRedirect() {
-    return {
-      success: true,
-      message: 'Debug endpoint funcionando correctamente',
-      timestamp: new Date().toISOString(),
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    };
-  }
+  // @Get('debug-redirect')
+  // async debugRedirect() {
+  //   return {
+  //     success: true,
+  //     message: 'Debug endpoint funcionando correctamente',
+  //     timestamp: new Date().toISOString(),
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Cache-Control': 'no-cache, no-store, must-revalidate',
+  //       'Pragma': 'no-cache',
+  //       'Expires': '0'
+  //     }
+  //   };
+  // }
 
   // Endpoint de prueba específico para clinica-cuyo
-  @Get('debug-clinica-cuyo')
-  async debugClinicaCuyo() {
-    try {
-      const result = await this.clinicasService.checkClinicaExists('clinica-cuyo');
-      return {
-        success: true,
-        message: 'Debug específico para clinica-cuyo',
-        result,
-        timestamp: new Date().toISOString(),
-        endpoint: '/api/public/debug-clinica-cuyo'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Error en debug de clinica-cuyo',
-        error: error.message,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
+  // @Get('debug-clinica-cuyo')
+  // async debugClinicaCuyo() {
+  //   try {
+  //     const result = await this.clinicasService.checkClinicaExists('clinica-cuyo');
+  //     return {
+  //       success: true,
+  //       message: 'Debug específico para clinica-cuyo',
+  //       result,
+  //       timestamp: new Date().toISOString(),
+  //       endpoint: '/api/public/debug-clinica-cuyo'
+  //     };
+  //   } catch (error) {
+  //     return {
+  //       success: false,
+  //       message: 'Error en debug de clinica-cuyo',
+  //       error: error.message,
+  //       timestamp: new Date().toISOString()
+  //     };
+  //   }
+  // }
 
   // ✅ NUEVO ENDPOINT SIMPLIFICADO (URL más corta)
   @Post(':clinicaUrl/turnos')
@@ -383,157 +383,157 @@ export class PublicController {
     }
   }
 
-  @Get('clinica/:clinicaUrl/debug-users')
-  async debugUsers(@Param('clinicaUrl') clinicaUrl: string) {
-    try {
-      const clinica = await this.prisma.clinica.findFirst({
-        where: { url: clinicaUrl },
-        include: {
-          users: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              role: true,
-              estado: true,
-              createdAt: true,
-            },
-          },
-        },
-      });
+  // @Get('clinica/:clinicaUrl/debug-users')
+  // async debugUsers(@Param('clinicaUrl') clinicaUrl: string) {
+  //   try {
+  //     const clinica = await this.prisma.clinica.findFirst({
+  //       where: { url: clinicaUrl },
+  //       include: {
+  //         users: {
+  //           select: {
+  //             id: true,
+  //             email: true,
+  //             name: true,
+  //             role: true,
+  //             estado: true,
+  //             createdAt: true,
+  //           },
+  //         },
+  //       },
+  //     });
 
-      if (!clinica) {
-        return { success: false, message: 'Clínica no encontrada' };
-      }
+  //     if (!clinica) {
+  //       return { success: false, message: 'Clínica no encontrada' };
+  //     }
 
-      return {
-        success: true,
-        clinica: {
-          id: clinica.id,
-          nombre: clinica.name,
-          url: clinica.url,
-          estado: clinica.estado,
-        },
-        usuarios: clinica.users,
-      };
-    } catch (error) {
-      console.error('Error en debug-users:', error);
-      return { success: false, message: 'Error interno del servidor' };
-    }
-  }
+  //     return {
+  //       success: true,
+  //       clinica: {
+  //         id: clinica.id,
+  //         nombre: clinica.name,
+  //         url: clinica.url,
+  //         estado: clinica.estado,
+  //       },
+  //       usuarios: clinica.users,
+  //     };
+  //   } catch (error) {
+  //     console.error('Error en debug-users:', error);
+  //     return { success: false, message: 'Error interno del servidor' };
+  //   }
+  // }
 
   // 🚨 ENDPOINT TEMPORAL - SOLO PARA PRUEBAS
   // ⚠️ REMOVER EN PRODUCCIÓN
-  @Post('register-clinica-temp')
-  async registerClinicaTemp(@Body() body: any) {
-    console.log('🚨 Endpoint temporal usado:', body);
+  // @Post('register-clinica-temp')
+  // async registerClinicaTemp(@Body() body: any) {
+  //   console.log('🚨 Endpoint temporal usado:', body);
 
-    try {
-      const {
-        admin,
-        clinica,
-        planId = 'professional',
-        simulatePayment = true,
-      } = body;
+  //   try {
+  //     const {
+  //       admin,
+  //       clinica,
+  //       planId = 'professional',
+  //       simulatePayment = true,
+  //     } = body;
 
-      // Validar datos requeridos
-      if (!admin || !clinica) {
-        throw new BadRequestException(
-          'Datos de admin y clínica son requeridos',
-        );
-      }
+  //     // Validar datos requeridos
+  //     if (!admin || !clinica) {
+  //       throw new BadRequestException(
+  //         'Datos de admin y clínica son requeridos',
+  //       );
+  //     }
 
-      // Normalizar URL a minúsculas
-      const urlNormalizada = clinica.url.toLowerCase().trim();
+  //     // Normalizar URL a minúsculas
+  //     const urlNormalizada = clinica.url.toLowerCase().trim();
       
-      // Verificar si la URL de clínica ya existe
-      const existingClinica = await this.prisma.clinica.findFirst({
-        where: { url: urlNormalizada },
-      });
+  //     // Verificar si la URL de clínica ya existe
+  //     const existingClinica = await this.prisma.clinica.findFirst({
+  //       where: { url: urlNormalizada },
+  //     });
 
-      if (existingClinica) {
-        throw new BadRequestException(`La URL "${urlNormalizada}" ya está en uso`);
-      }
+  //     if (existingClinica) {
+  //       throw new BadRequestException(`La URL "${urlNormalizada}" ya está en uso`);
+  //     }
 
-      // Verificar si el email del admin ya existe
-      const existingUser = await this.prisma.user.findFirst({
-        where: { email: admin.email },
-      });
+  //     // Verificar si el email del admin ya existe
+  //     const existingUser = await this.prisma.user.findFirst({
+  //       where: { email: admin.email },
+  //     });
 
-      if (existingUser) {
-        throw new BadRequestException(
-          `El email "${admin.email}" ya está registrado`,
-        );
-      }
+  //     if (existingUser) {
+  //       throw new BadRequestException(
+  //         `El email "${admin.email}" ya está registrado`,
+  //       );
+  //     }
 
-      // Crear la clínica
-      const clinicaData = {
-        nombre: clinica.nombre,
-        url: urlNormalizada,
-        colorPrimario: clinica.color_primario || '#3B82F6',
-        colorSecundario: clinica.color_secundario || '#1E40AF',
-        direccion: clinica.direccion || '',
-        telefono: clinica.telefono || '',
-        email: clinica.email || '',
-      };
+  //     // Crear la clínica
+  //     const clinicaData = {
+  //       nombre: clinica.nombre,
+  //       url: urlNormalizada,
+  //       colorPrimario: clinica.color_primario || '#3B82F6',
+  //       colorSecundario: clinica.color_secundario || '#1E40AF',
+  //       direccion: clinica.direccion || '',
+  //       telefono: clinica.telefono || '',
+  //       email: clinica.email || '',
+  //     };
 
-      const clinicaCreada = await this.prisma.clinica.create({
-        data: {
-          name: clinicaData.nombre,
-          url: clinicaData.url,
-          colorPrimario: clinicaData.colorPrimario,
-          colorSecundario: clinicaData.colorSecundario,
-          address: clinicaData.direccion,
-          phone: clinicaData.telefono,
-          email: clinicaData.email,
-          estado: 'activa',
-          estadoPago: 'pagado',
-        },
-      });
+  //     const clinicaCreada = await this.prisma.clinica.create({
+  //       data: {
+  //         name: clinicaData.nombre,
+  //         url: clinicaData.url,
+  //         colorPrimario: clinicaData.colorPrimario,
+  //         colorSecundario: clinicaData.colorSecundario,
+  //         address: clinicaData.direccion,
+  //         phone: clinicaData.telefono,
+  //         email: clinicaData.email,
+  //         estado: 'activa',
+  //         estadoPago: 'pagado',
+  //       },
+  //     });
 
-      // Crear el usuario admin
-      const adminUser = await this.authService.register({
-        email: admin.email,
-        password: admin.password,
-        name: admin.nombre,
-        role: 'ADMIN',
-      });
+  //     // Crear el usuario admin
+  //     const adminUser = await this.authService.register({
+  //       email: admin.email,
+  //       password: admin.password,
+  //       name: admin.nombre,
+  //       role: 'ADMIN',
+  //     });
 
-      // Actualizar el usuario con la clínica
-      const userToUpdate = await this.prisma.user.findFirst({
-        where: { email: admin.email },
-      });
+  //     // Actualizar el usuario con la clínica
+  //     const userToUpdate = await this.prisma.user.findFirst({
+  //       where: { email: admin.email },
+  //     });
       
-      if (userToUpdate) {
-        await this.prisma.user.update({
-          where: { id: userToUpdate.id },
-          data: { clinicaId: clinicaCreada.id },
-        });
-      }
+  //     if (userToUpdate) {
+  //       await this.prisma.user.update({
+  //         where: { id: userToUpdate.id },
+  //         data: { clinicaId: clinicaCreada.id },
+  //       });
+  //     }
 
-      return {
-        success: true,
-        message: '🚨 Registro temporal exitoso - REMOVER EN PRODUCCIÓN',
-        clinica: {
-          id: clinicaCreada.id,
-          name: clinicaCreada.name,
-          url: clinicaCreada.url,
-          colorPrimario: clinicaCreada.colorPrimario,
-          colorSecundario: clinicaCreada.colorSecundario,
-          especialidades: [],
-          horarios: [],
-        },
-        plan: planId,
-        paymentSimulated: simulatePayment,
-        adminCreated: true,
-        adminToken: adminUser.access_token,
-        warning: '⚠️ Este es un endpoint temporal solo para pruebas',
-      };
-    } catch (error) {
-      console.error('Error en registro temporal:', error);
-      throw error;
-    }
-  }
+  //     return {
+  //       success: true,
+  //       message: '🚨 Registro temporal exitoso - REMOVER EN PRODUCCIÓN',
+  //       clinica: {
+  //         id: clinicaCreada.id,
+  //         name: clinicaCreada.name,
+  //         url: clinicaCreada.url,
+  //         colorPrimario: clinicaCreada.colorPrimario,
+  //         colorSecundario: clinicaCreada.colorSecundario,
+  //         especialidades: [],
+  //         horarios: [],
+  //       },
+  //       plan: planId,
+  //       paymentSimulated: simulatePayment,
+  //       adminCreated: true,
+  //       adminToken: adminUser.access_token,
+  //       warning: '⚠️ Este es un endpoint temporal solo para pruebas',
+  //     };
+  //   } catch (error) {
+  //     console.error('Error en registro temporal:', error);
+  //     throw error;
+  //   }
+  // }
 
   // ===== ENDPOINTS PÚBLICOS PARA PACIENTES =====
   

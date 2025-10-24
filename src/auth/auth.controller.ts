@@ -86,92 +86,92 @@ export class AuthController {
     return this.authService.clinicaLogin(dto);
   }
 
-  @ApiOperation({
-    summary: 'Generar token temporal con secreto hardcodeado (TEMPORAL)',
-  })
-  @ApiResponse({ status: 200, description: 'Token temporal' })
-  @Post('temp-token')
-  async generateTempToken(@Body() body: any) {
-    try {
-      const { clinicaUrl, username, password } = body;
+  // @ApiOperation({
+  //   summary: 'Generar token temporal con secreto hardcodeado (TEMPORAL)',
+  // })
+  // @ApiResponse({ status: 200, description: 'Token temporal' })
+  // @Post('temp-token')
+  // async generateTempToken(@Body() body: any) {
+  // //   try {
+  // //     const { clinicaUrl, username, password } = body;
 
-      // Usar el mismo proceso de login pero con secreto hardcodeado
-      const clinica = await this.prisma.clinica.findUnique({
-        where: { url: clinicaUrl },
-      });
+  // //     // Usar el mismo proceso de login pero con secreto hardcodeado
+  // //     const clinica = await this.prisma.clinica.findUnique({
+  // //       where: { url: clinicaUrl },
+  // //     });
 
-      if (!clinica) {
-        throw new UnauthorizedException('Clínica no encontrada');
-      }
+  // //     if (!clinica) {
+  // //       throw new UnauthorizedException('Clínica no encontrada');
+  // //     }
 
-      // Normalizar username a minúsculas para búsqueda case-insensitive
-      const normalizedUsername = username.toLowerCase();
-      const user = await this.prisma.user.findFirst({
-        where: {
-          OR: [
-            { email: normalizedUsername },
-            { username: normalizedUsername }
-          ],
-          clinicaId: clinica.id,
-        },
-        include: {
-          clinica: true,
-        },
-      });
+  // //     // Normalizar username a minúsculas para búsqueda case-insensitive
+  // //     const normalizedUsername = username.toLowerCase();
+  // //     const user = await this.prisma.user.findFirst({
+  // //       where: {
+  // //         OR: [
+  // //           { email: normalizedUsername },
+  // //           { username: normalizedUsername }
+  // //         ],
+  // //         clinicaId: clinica.id,
+  // //       },
+  // //       include: {
+  // //         clinica: true,
+  // //       },
+  // //     });
 
-      if (!user) {
-        throw new UnauthorizedException('Credenciales inválidas');
-      }
+  // //     if (!user) {
+  // //       throw new UnauthorizedException('Credenciales inválidas');
+  // //     }
 
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        throw new UnauthorizedException('Credenciales inválidas');
-      }
+  // //     const isValidPassword = await bcrypt.compare(password, user.password);
+  // //     if (!isValidPassword) {
+  // //       throw new UnauthorizedException('Credenciales inválidas');
+  // //     }
 
-      // Generar token con secreto hardcodeado
-      const payload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        clinicaId: user.clinicaId,
-        clinicaUrl: clinica.url,
-      };
+  // //     // Generar token con secreto hardcodeado
+  // //     const payload = {
+  // //       sub: user.id,
+  // //       email: user.email,
+  // //       role: user.role,
+  // //       name: user.name,
+  // //       clinicaId: user.clinicaId,
+  // //       clinicaUrl: clinica.url,
+  // //     };
 
-      // Usar JWT_SECRET hardcodeado
-      const jwt = require('jsonwebtoken');
-      const token = jwt.sign(payload, 'supersecret123', { expiresIn: '1d' });
+  // //     // Usar JWT_SECRET hardcodeado
+  // //     const jwt = require('jsonwebtoken');
+  // //     const token = jwt.sign(payload, 'supersecret123', { expiresIn: '1d' });
 
-      return {
-        success: true,
-        token,
-        user: {
-          id: user.id,
-          name: user.name,
-          role: user.role,
-          clinicaId: user.clinicaId,
-          clinicaUrl: clinica.url,
-        },
-        note: 'Token generado con secreto hardcodeado - SOLO PARA PRUEBAS',
-      };
-    } catch (error) {
-      console.error('Error en temp-token:', error);
-      throw error;
-    }
-  }
+  // //     return {
+  // //       success: true,
+  // //       token,
+  // //       user: {
+  // //         id: user.id,
+  // //         name: user.name,
+  // //         role: user.role,
+  // //         clinicaId: user.clinicaId,
+  // //         clinicaUrl: clinica.url,
+  // //       },
+  // //       note: 'Token generado con secreto hardcodeado - SOLO PARA PRUEBAS',
+  // //     };
+  // //   } catch (error) {
+  // //     console.error('Error en temp-token:', error);
+  // //     throw error;
+  // //   }
+  // // }
 
-  @ApiOperation({ summary: 'Verificar configuración JWT (TEMPORAL)' })
-  @ApiResponse({ status: 200, description: 'Configuración JWT' })
-  @Get('jwt-config')
-  jwtConfig() {
-    return {
-      jwtSecret: process.env.JWT_SECRET ? 'CONFIGURADO' : 'NO CONFIGURADO',
-      jwtSecretLength: process.env.JWT_SECRET?.length || 0,
-      usingFallback: !process.env.JWT_SECRET,
-      fallbackSecret: 'supersecret123',
-      timestamp: new Date().toISOString(),
-    };
-  }
+  // @ApiOperation({ summary: 'Verificar configuración JWT (TEMPORAL)' })
+  // @ApiResponse({ status: 200, description: 'Configuración JWT' })
+  // @Get('jwt-config')
+  // jwtConfig() {
+  //   return {
+  //     jwtSecret: process.env.JWT_SECRET ? 'CONFIGURADO' : 'NO CONFIGURADO',
+  //     jwtSecretLength: process.env.JWT_SECRET?.length || 0,
+  //     usingFallback: !process.env.JWT_SECRET,
+  //     fallbackSecret: 'supersecret123',
+  //     timestamp: new Date().toISOString(),
+  //   };
+  // }
 
   @ApiOperation({ summary: 'Verificar token JWT' })
   @ApiResponse({ status: 200, description: 'Token válido' })

@@ -398,15 +398,28 @@ export class GlobalClinicasController {
         } else {
           // Si no hay clinicaId en el token, verificar en la base de datos
           console.log('🔍 Verificando acceso de ADMIN a clínica en BD...');
+          console.log('🔍 User ID:', req.user.id);
+          console.log('🔍 Clínica ID solicitada:', id);
+          
           const userClinica = await this.prisma.user.findUnique({
             where: { id: req.user.id },
             include: { clinica: true }
+          });
+          
+          console.log('🔍 Usuario encontrado en BD:', {
+            userId: userClinica?.id,
+            userRole: userClinica?.role,
+            clinicaId: userClinica?.clinica?.id,
+            clinicaName: userClinica?.clinica?.name
           });
           
           if (userClinica?.clinica?.id === id) {
             console.log('✅ ADMIN actualizando su clínica (verificado en BD):', id);
           } else {
             console.log('❌ ADMIN no tiene acceso a esta clínica');
+            console.log('🔍 Comparación fallida:');
+            console.log('  - userClinica?.clinica?.id:', userClinica?.clinica?.id);
+            console.log('  - id solicitado:', id);
             throw new BadRequestException('No tienes permisos para actualizar esta clínica');
           }
         }

@@ -47,21 +47,21 @@ export class GlobalTurnosController {
   }
 
   // Endpoint de prueba para verificar que el controlador funciona
-  @Get('test-endpoint')
-  @ApiOperation({ summary: 'Endpoint de prueba' })
-  async testEndpoint() {
-    console.log('🧪 ENDPOINT DE PRUEBA LLAMADO');
-    return {
-      success: true,
-      message: 'El controlador GlobalTurnosController está funcionando correctamente',
-      timestamp: new Date().toISOString(),
-      rutas: [
-        'GET /api/turnos/test-endpoint',
-        'GET /api/turnos/confirmar/:token',
-        'GET /api/turnos/cancelar/:token',
-      ]
-    };
-  }
+  // @Get('test-endpoint')
+  // @ApiOperation({ summary: 'Endpoint de prueba' })
+  // async testEndpoint() {
+  //   console.log('🧪 ENDPOINT DE PRUEBA LLAMADO');
+  //   return {
+  //     success: true,
+  //     message: 'El controlador GlobalTurnosController está funcionando correctamente',
+  //     timestamp: new Date().toISOString(),
+  //     rutas: [
+  //       'GET /api/turnos/test-endpoint',
+  //       'GET /api/turnos/confirmar/:token',
+  //       'GET /api/turnos/cancelar/:token',
+  //     ]
+  //   };
+  // }
 
   // Función helper para procesar datos de pago de un turno
   private procesarDatosPago(turno: any) {
