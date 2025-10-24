@@ -401,27 +401,59 @@ export class GlobalClinicasController {
           console.log('🔍 User ID:', req.user.id);
           console.log('🔍 Clínica ID solicitada:', id);
           
-          const userClinica = await this.prisma.user.findUnique({
-            where: { id: req.user.id },
-            include: { clinica: true }
+          // PRIMERO: Buscar el usuario actual por ID
+          const currentUser = await this.clinicasService.getUserById(req.user.id);
+          
+          console.log('🔍 Usuario actual encontrado:', {
+            userId: currentUser?.id,
+            userRole: currentUser?.role,
+            clinicaId: currentUser?.clinica?.id,
+            clinicaName: currentUser?.clinica?.name
           });
           
-          console.log('🔍 Usuario encontrado en BD:', {
-            userId: userClinica?.id,
-            userRole: userClinica?.role,
-            clinicaId: userClinica?.clinica?.id,
-            clinicaName: userClinica?.clinica?.name
-          });
-          
-          if (userClinica?.clinica?.id === id) {
-            console.log('✅ ADMIN actualizando su clínica (verificado en BD):', id);
+          // Si el usuario actual tiene acceso directo, usarlo
+          if (currentUser?.clinica?.id === id && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER')) {
+            console.log('✅ Usuario actual tiene acceso directo a la clínica');
           } else {
-            console.log('❌ ADMIN no tiene acceso a esta clínica');
-            console.log('🔍 Comparación fallida:');
-            console.log('  - userClinica?.clinica?.id:', userClinica?.clinica?.id);
-            console.log('  - id solicitado:', id);
-            throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+            // Si no tiene acceso directo, buscar TODOS los usuarios con ese email
+            console.log('🔍 Usuario actual no tiene acceso, buscando duplicados...');
+            const allUsers = await this.clinicasService.getUsersByEmail(req.user.email);
+            
+            console.log('🔍 Usuarios encontrados con email:', allUsers.length);
+            allUsers.forEach((user, index) => {
+              console.log(`🔍 Usuario ${index + 1}:`, {
+                userId: user.id,
+                userRole: user.role,
+                clinicaId: user.clinica?.id,
+                clinicaName: user.clinica?.name,
+                isCurrentUser: user.id === req.user.id
+              });
+            });
+            
+            // Buscar el usuario que tenga acceso a esta clínica específica
+            const userWithAccess = allUsers.find(user => 
+              user.clinica?.id === id && (user.role === 'ADMIN' || user.role === 'OWNER')
+            );
+            
+            if (!userWithAccess) {
+              console.log('❌ Ningún usuario ADMIN tiene acceso a esta clínica');
+              console.log('🔍 Clínica solicitada:', id);
+              console.log('🔍 Usuarios disponibles:', allUsers.map(u => ({
+                id: u.id,
+                role: u.role,
+                clinicaId: u.clinica?.id
+              })));
+              throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+            }
+            
+            console.log('✅ ADMIN encontrado con acceso a la clínica:', {
+              userId: userWithAccess.id,
+              role: userWithAccess.role,
+              clinicaId: userWithAccess.clinica?.id
+            });
           }
+          
+          console.log('✅ ADMIN actualizando su clínica (verificado en BD):', id);
         }
       } else {
         throw new BadRequestException('No tienes permisos para actualizar esta clínica');

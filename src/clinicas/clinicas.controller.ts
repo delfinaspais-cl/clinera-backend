@@ -63,141 +63,143 @@ export class ClinicasController {
     private clinicaLogoService: ClinicaLogoService,
   ) {}
 
+  // ===== ENDPOINTS TEMPORALES/DEBUG - COMENTADOS PARA PRODUCCIÓN =====
+  
   // Endpoint de prueba simple
-  @Post('test')
-  @ApiOperation({ summary: 'Endpoint de prueba' })
-  async testEndpoint() {
-    return { message: 'Endpoint funcionando correctamente', timestamp: new Date().toISOString() };
-  }
+  // @Post('test')
+  // @ApiOperation({ summary: 'Endpoint de prueba' })
+  // async testEndpoint() {
+  //   return { message: 'Endpoint funcionando correctamente', timestamp: new Date().toISOString() };
+  // }
 
   // Endpoint de prueba para usuarios (sin autenticación)
-  @Get('test-usuarios/:clinicaUrl')
-  @ApiOperation({ summary: 'Endpoint de prueba para usuarios' })
-  async testUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
-    try {
-      console.log('🔍 Test usuarios endpoint - clinicaUrl:', clinicaUrl);
-      return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
-    } catch (error) {
-      console.error('❌ Error en test usuarios:', error);
-      throw error;
-    }
-  }
+  // @Get('test-usuarios/:clinicaUrl')
+  // @ApiOperation({ summary: 'Endpoint de prueba para usuarios' })
+  // async testUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
+  //   try {
+  //     console.log('🔍 Test usuarios endpoint - clinicaUrl:', clinicaUrl);
+  //     return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
+  //   } catch (error) {
+  //     console.error('❌ Error en test usuarios:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint temporal para usuarios SIN autenticación (para debugging)
-  @Get('temp-usuarios/:clinicaUrl')
-  @ApiOperation({ summary: 'Endpoint temporal para usuarios SIN autenticación' })
-  async tempUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
-    try {
-      console.log('🔍 Temp usuarios endpoint - clinicaUrl:', clinicaUrl);
-      return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
-    } catch (error) {
-      console.error('❌ Error en temp usuarios:', error);
-      throw error;
-    }
-  }
+  // @Get('temp-usuarios/:clinicaUrl')
+  // @ApiOperation({ summary: 'Endpoint temporal para usuarios SIN autenticación' })
+  // async tempUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
+  //   try {
+  //     console.log('🔍 Temp usuarios endpoint - clinicaUrl:', clinicaUrl);
+  //     return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
+  //   } catch (error) {
+  //     console.error('❌ Error en temp usuarios:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint de debugging que simula usuario autenticado
-  @Get('debug-usuarios/:clinicaUrl')
-  @ApiOperation({ summary: 'Endpoint de debugging con usuario simulado' })
-  async debugUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
-    try {
-      console.log('🔍 Debug usuarios endpoint - clinicaUrl:', clinicaUrl);
-      
-      // Simular un usuario autenticado
-      const mockUser = {
-        id: 'debug_user_id',
-        email: 'debug@example.com',
-        role: 'OWNER',
-        clinicaUrl: clinicaUrl
-      };
-      
-      console.log('🔍 Usuario simulado:', mockUser);
-      
-      // Llamar al servicio directamente
-      return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
-    } catch (error) {
-      console.error('❌ Error en debug usuarios:', error);
-      throw error;
-    }
-  }
+  // @Get('debug-usuarios/:clinicaUrl')
+  // @ApiOperation({ summary: 'Endpoint de debugging con usuario simulado' })
+  // async debugUsuarios(@Param('clinicaUrl') clinicaUrl: string) {
+  //   try {
+  //     console.log('🔍 Debug usuarios endpoint - clinicaUrl:', clinicaUrl);
+  //     
+  //     // Simular un usuario autenticado
+  //     const mockUser = {
+  //       id: 'debug_user_id',
+  //       email: 'debug@example.com',
+  //       role: 'OWNER',
+  //       clinicaUrl: clinicaUrl
+  //     };
+  //     
+  //     console.log('🔍 Usuario simulado:', mockUser);
+  //     
+  //     // Llamar al servicio directamente
+  //     return await this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, {});
+  //   } catch (error) {
+  //     console.error('❌ Error en debug usuarios:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint de prueba para verificar autenticación
-  @Get('test-auth/:clinicaUrl')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Endpoint de prueba para verificar autenticación' })
-  async testAuth(@Request() req, @Param('clinicaUrl') clinicaUrl: string) {
-    try {
-      console.log('🔍 Test auth endpoint - req.user:', req.user);
-      console.log('🔍 Test auth endpoint - clinicaUrl:', clinicaUrl);
-      return {
-        message: 'Autenticación exitosa',
-        user: req.user,
-        clinicaUrl: clinicaUrl,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      console.error('❌ Error en test auth:', error);
-      throw error;
-    }
-  }
+  // @Get('test-auth/:clinicaUrl')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiOperation({ summary: 'Endpoint de prueba para verificar autenticación' })
+  // async testAuth(@Request() req, @Param('clinicaUrl') clinicaUrl: string) {
+  //   try {
+  //     console.log('🔍 Test auth endpoint - req.user:', req.user);
+  //     console.log('🔍 Test auth endpoint - clinicaUrl:', clinicaUrl);
+  //     return {
+  //       message: 'Autenticación exitosa',
+  //       user: req.user,
+  //       clinicaUrl: clinicaUrl,
+  //       timestamp: new Date().toISOString()
+  //     };
+  //   } catch (error) {
+  //     console.error('❌ Error en test auth:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint de debug para verificar información del usuario
-  @Get('debug-user')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Debug: Verificar información del usuario autenticado' })
-  async debugUser(@Request() req) {
-    try {
-      console.log('🔍 DEBUG USER - req.user:', req.user);
+  // @Get('debug-user')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiOperation({ summary: 'Debug: Verificar información del usuario autenticado' })
+  // async debugUser(@Request() req) {
+  //   try {
+  //     console.log('🔍 DEBUG USER - req.user:', req.user);
       
-      // Obtener información adicional del usuario desde la base de datos
-      const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
-      console.log('🔍 DEBUG USER - userClinica from DB:', userClinica);
+  //     // Obtener información adicional del usuario desde la base de datos
+  //     const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+  //     console.log('🔍 DEBUG USER - userClinica from DB:', userClinica);
       
-      return {
-        tokenUser: req.user,
-        dbUserClinica: userClinica,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      console.error('❌ Error en debug user:', error);
-      throw error;
-    }
-  }
+  //     return {
+  //       tokenUser: req.user,
+  //       dbUserClinica: userClinica,
+  //       timestamp: new Date().toISOString()
+  //     };
+  //   } catch (error) {
+  //     console.error('❌ Error en debug user:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint público para crear usuario de prueba (TEMPORAL)
-  @Post('create-test-user')
-  @ApiOperation({ summary: 'Crear usuario de prueba (TEMPORAL)' })
-  async createTestUser(@Body() body: any) {
-    try {
-      console.log('🔍 Creando usuario de prueba:', body);
+  // @Post('create-test-user')
+  // @ApiOperation({ summary: 'Crear usuario de prueba (TEMPORAL)' })
+  // async createTestUser(@Body() body: any) {
+  //   try {
+  //     console.log('🔍 Creando usuario de prueba:', body);
       
-      const { clinicaUrl, nombre, email, password, rol = 'ADMIN' } = body;
+  //     const { clinicaUrl, nombre, email, password, rol = 'ADMIN' } = body;
       
-      if (!clinicaUrl || !nombre || !email || !password) {
-        throw new BadRequestException('Faltan campos requeridos: clinicaUrl, nombre, email, password');
-      }
+  //     if (!clinicaUrl || !nombre || !email || !password) {
+  //       throw new BadRequestException('Faltan campos requeridos: clinicaUrl, nombre, email, password');
+  //     }
       
-      // Buscar la clínica
-      const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
-      if (!clinica) {
-        throw new BadRequestException('Clínica no encontrada');
-      }
+  //     // Buscar la clínica
+  //     const clinica = await this.clinicasService.getClinicaByUrl(clinicaUrl);
+  //     if (!clinica) {
+  //       throw new BadRequestException('Clínica no encontrada');
+  //     }
       
-      // Crear el usuario
-      const user = await this.clinicasService.createUsuarioClinica(clinicaUrl, {
-        nombre,
-        email,
-        rol
-      });
+  //     // Crear el usuario
+  //     const user = await this.clinicasService.createUsuarioClinica(clinicaUrl, {
+  //       nombre,
+  //       email,
+  //       rol
+  //     });
       
-      console.log('✅ Usuario de prueba creado:', user);
-      return user;
+  //     console.log('✅ Usuario de prueba creado:', user);
+  //     return user;
       
-    } catch (error) {
-      console.error('❌ Error creando usuario de prueba:', error);
-      throw error;
-    }
-  }
+  //   } catch (error) {
+  //     console.error('❌ Error creando usuario de prueba:', error);
+  //     throw error;
+  //   }
+  // }
 
   // Endpoint público para crear clínicas (versión simplificada)
   @Post()
@@ -244,7 +246,11 @@ export class ClinicasController {
   }
 
   @Get(':clinicaUrl/usuarios')
-  // @UseGuards(JwtAuthGuard) // Temporalmente deshabilitado para debugging
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obtener usuarios de la clínica (PRIVADO)' })
+  @ApiResponse({ status: 200, description: 'Usuarios obtenidos exitosamente' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
   async getUsuariosByClinicaUrl(
     @Request() req,
     @Param('clinicaUrl') clinicaUrl: string,
@@ -256,9 +262,45 @@ export class ClinicasController {
       console.log('🔍 clinicaUrl:', clinicaUrl);
       console.log('🔍 filters:', filters);
       
-      // TEMPORAL: Permitir acceso sin autenticación para debugging
-      console.log('🔍 MODO DEBUG: Permitiendo acceso sin autenticación');
-      return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+      // Verificar que el usuario esté autenticado
+      if (!req.user) {
+        console.log('🔍 Usuario no autenticado');
+        throw new UnauthorizedException('Usuario no autenticado');
+      }
+      
+      // Permitir acceso a todos los roles autenticados
+      // OWNER puede acceder a cualquier clínica
+      if (req.user.role === 'OWNER') {
+        console.log('🔍 Usuario es OWNER, accediendo a cualquier clínica');
+        return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+      }
+      
+      // Para otros roles (ADMIN, SECRETARY, PROFESSIONAL, etc.), permitir acceso
+      // pero verificar que tengan acceso a esta clínica específica
+      console.log(`🔍 Usuario es ${req.user.role}, verificando acceso a clínica`);
+      
+      // Primero intentar usar la información del token
+      if (req.user.clinicaUrl && req.user.clinicaUrl === clinicaUrl) {
+        console.log(`🔍 Usuario es ${req.user.role} de la clínica correcta (desde token)`);
+        return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+      }
+      
+      // Si no hay clinicaUrl en el token, consultar la base de datos
+      console.log('🔍 No hay clinicaUrl en token, consultando DB...');
+      const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+      console.log('🔍 Clínica del usuario desde DB:', userClinica);
+      
+      if (userClinica && userClinica.url === clinicaUrl) {
+        console.log(`🔍 Usuario es ${req.user.role} de la clínica correcta (desde DB)`);
+        return this.clinicasService.getUsuariosByClinicaUrl(clinicaUrl, filters);
+      } else {
+        console.log('🔍 Acceso denegado - Usuario no tiene acceso a esta clínica');
+        console.log('🔍 userClinica.url:', userClinica?.url);
+        console.log('🔍 clinicaUrl solicitada:', clinicaUrl);
+        throw new UnauthorizedException(
+          'Acceso denegado. No tienes permisos para acceder a esta clínica.',
+        );
+      }
       
       /* CÓDIGO ORIGINAL COMENTADO PARA DEBUGGING
       // Verificar que el usuario esté autenticado
@@ -685,14 +727,62 @@ export class ClinicasController {
       } else {
         // Si no hay clinicaId en el token, verificar en la base de datos
         console.log('🔍 Verificando acceso de ADMIN a clínica en BD...');
-        const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+        console.log('🔍 User ID:', req.user.id);
+        console.log('🔍 Clínica ID solicitada:', clinicaId);
         
-        if (userClinica?.id === clinicaId) {
-          console.log('✅ ADMIN actualizando configuración de su clínica (verificado en BD):', clinicaId);
+        // PRIMERO: Buscar el usuario actual por ID
+        const currentUser = await this.clinicasService.getUserById(req.user.id);
+        
+        console.log('🔍 Usuario actual encontrado:', {
+          userId: currentUser?.id,
+          userRole: currentUser?.role,
+          clinicaId: currentUser?.clinica?.id,
+          clinicaName: currentUser?.clinica?.name
+        });
+        
+        // Si el usuario actual tiene acceso directo, usarlo
+        if (currentUser?.clinica?.id === clinicaId && (currentUser.role === 'ADMIN' || currentUser.role === 'OWNER')) {
+          console.log('✅ Usuario actual tiene acceso directo a la clínica');
         } else {
-          console.log('❌ ADMIN no tiene acceso a esta clínica');
-          throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+          // Si no tiene acceso directo, buscar TODOS los usuarios con ese email
+          console.log('🔍 Usuario actual no tiene acceso, buscando duplicados...');
+          const allUsers = await this.clinicasService.getUsersByEmail(req.user.email);
+          
+          console.log('🔍 Usuarios encontrados con email:', allUsers.length);
+          allUsers.forEach((user, index) => {
+            console.log(`🔍 Usuario ${index + 1}:`, {
+              userId: user.id,
+              userRole: user.role,
+              clinicaId: user.clinica?.id,
+              clinicaName: user.clinica?.name,
+              isCurrentUser: user.id === req.user.id
+            });
+          });
+          
+          // Buscar el usuario que tenga acceso a esta clínica específica
+          const userWithAccess = allUsers.find(user => 
+            user.clinica?.id === clinicaId && (user.role === 'ADMIN' || user.role === 'OWNER')
+          );
+          
+          if (!userWithAccess) {
+            console.log('❌ Ningún usuario ADMIN tiene acceso a esta clínica');
+            console.log('🔍 Clínica solicitada:', clinicaId);
+            console.log('🔍 Usuarios disponibles:', allUsers.map(u => ({
+              id: u.id,
+              role: u.role,
+              clinicaId: u.clinica?.id
+            })));
+            throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+          }
+          
+          console.log('✅ ADMIN encontrado con acceso a la clínica:', {
+            userId: userWithAccess.id,
+            role: userWithAccess.role,
+            clinicaId: userWithAccess.clinica?.id
+          });
         }
+        
+        console.log('✅ ADMIN actualizando configuración de su clínica (verificado en BD):', clinicaId);
       }
     } else {
       throw new BadRequestException('No tienes permisos para actualizar esta clínica');
@@ -824,8 +914,8 @@ export class ClinicasController {
   }
 
   // Endpoint temporal de debug sin autenticación
-  @Get(':clinicaUrl/turnos-debug')
-  @ApiOperation({ summary: 'DEBUG: Obtener turnos sin autenticación' })
+  // @Get(':clinicaUrl/turnos-debug')
+  // @ApiOperation({ summary: 'DEBUG: Obtener turnos sin autenticación' })
   async getTurnosDebug(
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() filters: any,
@@ -844,8 +934,8 @@ export class ClinicasController {
   }
 
   // Endpoint temporal con token de prueba
-  @Get(':clinicaUrl/turnos-test')
-  @ApiOperation({ summary: 'DEBUG: Obtener turnos con token de prueba' })
+  // @Get(':clinicaUrl/turnos-test')
+  // @ApiOperation({ summary: 'DEBUG: Obtener turnos con token de prueba' })
   async getTurnosTest(
     @Param('clinicaUrl') clinicaUrl: string,
     @Query() filters: any,
@@ -874,8 +964,8 @@ export class ClinicasController {
   }
  
   // Endpoint de prueba simple sin filtros
-  @Get(':clinicaUrl/turnos-simple')
-  @ApiOperation({ summary: 'DEBUG: Obtener turnos simple sin filtros' })
+  // @Get(':clinicaUrl/turnos-simple')
+  // @ApiOperation({ summary: 'DEBUG: Obtener turnos simple sin filtros' })
   async getTurnosSimple(
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
@@ -908,8 +998,8 @@ export class ClinicasController {
   }
 
   // Endpoint de prueba básico - solo verificar clínica
-  @Get(':clinicaUrl/test-basic')
-  @ApiOperation({ summary: 'DEBUG: Test básico de clínica' })
+  // @Get(':clinicaUrl/test-basic')
+  // @ApiOperation({ summary: 'DEBUG: Test básico de clínica' })
   async testBasic(
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
@@ -946,8 +1036,8 @@ export class ClinicasController {
   }
 
   // Endpoint de prueba con valores hardcodeados
-  @Get(':clinicaUrl/turnos-hardcoded')
-  @ApiOperation({ summary: 'DEBUG: Test con valores hardcodeados' })
+  // @Get(':clinicaUrl/turnos-hardcoded')
+  // @ApiOperation({ summary: 'DEBUG: Test con valores hardcodeados' })
   async getTurnosHardcoded(
     @Param('clinicaUrl') clinicaUrl: string,
   ) {
@@ -977,8 +1067,8 @@ export class ClinicasController {
   }
 
   // Endpoint de prueba sin filtros de fecha
-  @Get(':clinicaUrl/turnos-no-fecha')
-  @ApiOperation({ summary: 'DEBUG: Test sin filtros de fecha' })
+  // @Get(':clinicaUrl/turnos-no-fecha')
+  // @ApiOperation({ summary: 'DEBUG: Test sin filtros de fecha' })
   async getTurnosNoFecha(
     @Param('clinicaUrl') clinicaUrl: string,
   ) {

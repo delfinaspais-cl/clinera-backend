@@ -248,6 +248,32 @@ export class ClinicasService {
     }
   }
 
+  async getUserById(userId: string) {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { clinica: true }
+      });
+      return user;
+    } catch (error) {
+      console.error('Error al obtener usuario por ID:', error);
+      return null;
+    }
+  }
+
+  async getUsersByEmail(email: string) {
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { email: email },
+        include: { clinica: true }
+      });
+      return users;
+    } catch (error) {
+      console.error('Error al obtener usuarios por email:', error);
+      return [];
+    }
+  }
+
   async getUsuariosByClinicaUrl(
     clinicaUrl: string,
     filters: GetUsuariosFiltersDto = {},
