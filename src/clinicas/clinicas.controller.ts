@@ -677,9 +677,23 @@ export class ClinicasController {
     if (req.user.role === 'OWNER') {
       // OWNER puede actualizar cualquier clínica
       console.log('✅ OWNER actualizando configuración de clínica:', clinicaId);
-    } else if (req.user.role === 'ADMIN' && req.user.clinicaId === clinicaId) {
-      // ADMIN solo puede actualizar su propia clínica
-      console.log('✅ ADMIN actualizando configuración de su clínica:', clinicaId);
+    } else if (req.user.role === 'ADMIN') {
+      // Para ADMIN, verificar si tiene acceso a esta clínica
+      // Si clinicaId está en el token, comparar directamente
+      if (req.user.clinicaId && req.user.clinicaId === clinicaId) {
+        console.log('✅ ADMIN actualizando configuración de su clínica (por clinicaId):', clinicaId);
+      } else {
+        // Si no hay clinicaId en el token, verificar en la base de datos
+        console.log('🔍 Verificando acceso de ADMIN a clínica en BD...');
+        const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+        
+        if (userClinica?.id === clinicaId) {
+          console.log('✅ ADMIN actualizando configuración de su clínica (verificado en BD):', clinicaId);
+        } else {
+          console.log('❌ ADMIN no tiene acceso a esta clínica');
+          throw new BadRequestException('No tienes permisos para actualizar esta clínica');
+        }
+      }
     } else {
       throw new BadRequestException('No tienes permisos para actualizar esta clínica');
     }
@@ -1367,9 +1381,23 @@ export class ClinicasController {
     if (req?.user?.role === 'OWNER') {
       // OWNER puede actualizar cualquier clínica
       console.log('✅ OWNER actualizando logo de clínica:', clinicaUrl);
-    } else if (req?.user?.role === 'ADMIN' && req?.user?.clinicaUrl === clinicaUrl) {
-      // ADMIN solo puede actualizar su propia clínica
-      console.log('✅ ADMIN actualizando logo de su clínica:', clinicaUrl);
+    } else if (req?.user?.role === 'ADMIN') {
+      // Para ADMIN, verificar si tiene acceso a esta clínica
+      // Si clinicaUrl está en el token, comparar directamente
+      if (req?.user?.clinicaUrl && req?.user?.clinicaUrl === clinicaUrl) {
+        console.log('✅ ADMIN actualizando logo de su clínica (por clinicaUrl):', clinicaUrl);
+      } else {
+        // Si no hay clinicaUrl en el token, verificar en la base de datos
+        console.log('🔍 Verificando acceso de ADMIN a clínica en BD...');
+        const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+        
+        if (userClinica?.url === clinicaUrl) {
+          console.log('✅ ADMIN actualizando logo de su clínica (verificado en BD):', clinicaUrl);
+        } else {
+          console.log('❌ ADMIN no tiene acceso a esta clínica');
+          throw new BadRequestException('No tienes permisos para actualizar el logo de esta clínica');
+        }
+      }
     } else {
       throw new BadRequestException('No tienes permisos para actualizar el logo de esta clínica');
     }
@@ -1395,9 +1423,23 @@ export class ClinicasController {
     if (req.user.role === 'OWNER') {
       // OWNER puede eliminar logo de cualquier clínica
       console.log('✅ OWNER eliminando logo de clínica:', clinicaUrl);
-    } else if (req.user.role === 'ADMIN' && req.user.clinicaUrl === clinicaUrl) {
-      // ADMIN solo puede eliminar logo de su propia clínica
-      console.log('✅ ADMIN eliminando logo de su clínica:', clinicaUrl);
+    } else if (req.user.role === 'ADMIN') {
+      // Para ADMIN, verificar si tiene acceso a esta clínica
+      // Si clinicaUrl está en el token, comparar directamente
+      if (req.user.clinicaUrl && req.user.clinicaUrl === clinicaUrl) {
+        console.log('✅ ADMIN eliminando logo de su clínica (por clinicaUrl):', clinicaUrl);
+      } else {
+        // Si no hay clinicaUrl en el token, verificar en la base de datos
+        console.log('🔍 Verificando acceso de ADMIN a clínica en BD...');
+        const userClinica = await this.clinicasService.getClinicaByUserId(req.user.id);
+        
+        if (userClinica?.url === clinicaUrl) {
+          console.log('✅ ADMIN eliminando logo de su clínica (verificado en BD):', clinicaUrl);
+        } else {
+          console.log('❌ ADMIN no tiene acceso a esta clínica');
+          throw new BadRequestException('No tienes permisos para eliminar el logo de esta clínica');
+        }
+      }
     } else {
       throw new BadRequestException('No tienes permisos para eliminar el logo de esta clínica');
     }
