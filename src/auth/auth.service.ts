@@ -470,12 +470,13 @@ export class AuthService {
   // Métodos de recuperación de contraseña
   async forgotPassword(dto: ForgotPasswordDto) {
     try {
-      // Buscar usuario por email
-      // Normalizar email a minúsculas para búsqueda case-insensitive
-      const normalizedEmail = dto.email.toLowerCase();
+      // Buscar usuario por email con búsqueda case-insensitive
       const user = await this.prisma.user.findFirst({
           where: { 
-            email: normalizedEmail
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            }
           },
       });
 

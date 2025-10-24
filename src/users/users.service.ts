@@ -1015,12 +1015,13 @@ export class UsersService {
     try {
       console.log('🔑 USERS SERVICE - Solicitud de recuperación de contraseña para:', dto.email);
       
-      // Buscar usuario por email
-      // Normalizar email a minúsculas para búsqueda case-insensitive
-      const normalizedEmail = dto.email.toLowerCase();
+      // Buscar usuario por email con búsqueda case-insensitive
       const user = await this.prisma.user.findFirst({
           where: { 
-            email: normalizedEmail
+            email: {
+              equals: dto.email,
+              mode: 'insensitive'
+            }
           },
       });
 
